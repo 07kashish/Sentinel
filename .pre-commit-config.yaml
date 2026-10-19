@@ -1,0 +1,18 @@
+﻿repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.0
+    hooks:
+      - id: ruff
+        args: [--check, sentinel, tests_arch]
+  - repo: local
+    hooks:
+      - id: architecture-fitness
+        name: architecture fitness rules
+        entry: pytest -q tests_arch/test_architecture_rules.py
+        language: system
+        pass_filenames: false
+      - id: empty-module-gate
+        name: refuse empty load-bearing modules
+        entry: python scripts/check_empty_modules.py
+        language: system
+        pass_filenames: false

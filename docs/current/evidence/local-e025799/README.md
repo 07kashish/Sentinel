@@ -1,0 +1,5 @@
+# Local evidence checkpoint e025799
+
+These unsigned local reports describe commit `e025799f495747cce4d9b84a678668d166021d3d`. The later documentation commit does not change the tested executable inputs. `provenance.json` records artifact digests; full JUnit, built packages, image archive, SBOM, vulnerability inventory and reproduction script are retained in the sibling `sentinel_program_evidence/2026-09-19-e025799` directory. Those larger artifacts are not distributed by this documentation snapshot. A checksum is not independent signer verification.
+
+The image vulnerability gate is **failed**, despite passing functional tests. Two historical-layer pattern hits are parser delimiters and are recorded with exact-file triage; the raw pattern verdict was not rewritten. Two-pod echo tests and the HTTP harness that mutates real Kubernetes objects are separate scopes. Production, external security, independent recovery and paid-customer acceptance remain unverified. GitHub Actions remains held until October 2.

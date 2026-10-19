@@ -1,0 +1,14 @@
+{
+  "does_not_prove": "Absence of unknown vulnerabilities, application safety, or an independent assessment.",
+  "embedded_secrets": [],
+  "exit_code": 0,
+  "finished_at": "2026-09-20T07:10:56.777081+00:00",
+  "fixable_findings": [],
+  "gate": "container_scanning",
+  "image_id": "sha256:5db1d2ab51d54ee0b146e2a4224b55a6a156ee9b80e4b5f6c4a6a10a2939c09b",
+  "misconfigurations": [],
+  "ok": true,
+  "report_valid": true,
+  "summary": "HIGH/CRITICAL vulnerabilities and misconfigurations, and every secret finding, block release; no automatic unfixed exemption.",
+  "unfixed_findings": []
+}

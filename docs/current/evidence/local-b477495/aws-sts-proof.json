@@ -1,0 +1,27 @@
+{
+  "schema": "sentinel.aws-sts-proof/v1",
+  "commit": "ff8344af643553e49c4efa37fff995edf38a172e",
+  "started_at": "2026-09-25T16:02:49.218460+00:00",
+  "region": "ap-south-1",
+  "executor_role": "sentinel-proof-executor",
+  "operation_id": "op-aws-proof-660ef3b839a92c5b",
+  "expected_session_name": "sentinel-op-7588fb7dd46c9f897cb7e83217822804f6213277",
+  "credential": {
+    "mode": "assume_role",
+    "session": "sentinel-op-7588fb7dd46c9f897cb7e83217822804f6213277",
+    "expires_at": "2026-09-25T16:17:55Z",
+    "role": "sentinel-proof-executor"
+  },
+  "operation": {
+    "status": 200,
+    "answered": true
+  },
+  "reconciliation": {
+    "attempts": 3,
+    "state": "succeeded",
+    "evidence": "CloudTrail event 883be83f-327c-42b1-8dda-0a1294b3b899 records DescribeVpcs by this operation's session",
+    "minutes_until_settled": 1.4
+  },
+  "passed": true,
+  "finished_at": "2026-09-25T16:04:36.579477+00:00"
+}

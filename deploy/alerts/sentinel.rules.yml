@@ -1,0 +1,123 @@
+# Prometheus alerting rules for Sentinel.
+#
+# Loaded by `deploy/prometheus.yml` via `rule_files`. Every expression here is
+# checked against the metric names and label sets the code actually emits by
+# `tests_arch/test_alert_rules.py` -- a rule whose PromQL does not match the
+# exposition is silent forever, which reads exactly like "nothing is wrong".
+#
+# Two of these alert on a metric being ABSENT or STALE rather than on its value.
+# That is deliberate: for both conditions covered here, the failure mode and the
+# healthy state produce the same number (0), so a rule that only watches the
+# value cannot tell "nothing to report" from "nothing is reporting".
+
+groups:
+  - name: sentinel-detection
+    rules:
+      # Detection has fallen back to the deterministic rules alone. Measured
+      # independent English recall for that path is ~0.067, against ~0.855 for
+      # soft+rules -- so the product is nominally up and missing roughly nine
+      # attacks in ten. It is the one condition here that is unambiguously a
+      # page: the service will not tell anyone else that it happened.
+      - alert: SentinelDetectionDegraded
+        expr: sentinel_detection_degraded == 1
+        # Long enough to ride out a rollout, short enough to matter. The gauge is
+        # set once at composition time, so a restarting pod briefly has no series
+        # at all rather than a wrong one.
+        for: 2m
+        labels:
+          severity: critical
+          page: "true"
+        annotations:
+          summary: "Sentinel detection degraded to rules-only"
+          description: >-
+            The soft prompt classifier did not load, so this instance is
+            detecting with the deterministic rules alone (~0.067 measured
+            independent English recall vs ~0.855 with the classifier).
+            Check the mode with sentinel_detection_mode, and the startup log for
+            detection_degraded_soft_prompt_missing / _unloadable.
+          runbook: >-
+            Confirm evaluation/artifacts/soft_prompt_model.pkl is present in the
+            image and that scikit-learn==1.4.0 is installed (they are a matched
+            pair -- see requirements.txt). Restart after fixing; the mode is
+            decided once at startup.
+
+      # The rule above can only fire if the series exists. If a build renames or
+      # drops the metric, `== 1` quietly never matches and the alert becomes
+      # decoration. This is the guard for that.
+      - alert: SentinelDetectionMetricMissing
+        expr: absent(sentinel_detection_degraded)
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "sentinel_detection_degraded is not being exposed"
+          description: >-
+            No instance is exposing sentinel_detection_degraded. Either every
+            Sentinel target is down (check up{job="sentinel"}), or the metric was
+            renamed and SentinelDetectionDegraded can no longer fire.
+
+  - name: sentinel-protect
+    rules:
+      # Enrolled agents that have gone silent past the idle SLA. Sentinel cannot
+      # see traffic that never reaches it, so silence from an agent it knows
+      # about is the only bypass signal available -- and silence is not an event,
+      # which is why it has to be polled and published rather than raised.
+      - alert: SentinelPossibleAgentBypass
+        expr: sentinel_possible_bypass_agents > 0
+        for: 10m
+        labels:
+          severity: critical
+          page: "true"
+        annotations:
+          summary: "{{ $value }} enrolled agent(s) silent past the idle threshold"
+          description: >-
+            One or more enrolled agents have produced no observed events within
+            SENTINEL_BYPASS_IDLE_SECONDS. They may be stopped, or they may be
+            acting without routing through /v1/events, /v1/tools/execute or the
+            SDK interceptor.
+          runbook: >-
+            GET /v1/protect/bypass-signals (capability read_diagnostics) for the
+            per-agent detail this counter aggregates.
+
+      # A stopped sweep publishes nothing, and the last value sticks at whatever
+      # it was -- usually 0. Without this, "no bypass detected" and "bypass
+      # detection is not running" look identical on a dashboard.
+      - alert: SentinelBypassSweepStale
+        expr: time() - sentinel_bypass_sweep_timestamp_seconds > 900
+        for: 5m
+        labels:
+          severity: critical
+          page: "true"
+        annotations:
+          summary: "Bypass detection sweep has not run for over 15 minutes"
+          description: >-
+            sentinel_bypass_sweep_timestamp_seconds is stale, so
+            sentinel_possible_bypass_agents is no longer being refreshed and
+            SentinelPossibleAgentBypass cannot fire. The MaintenanceLoop is the
+            publisher; check that a worker replica is running.
+
+      - alert: SentinelBypassSweepMetricMissing
+        expr: absent(sentinel_bypass_sweep_timestamp_seconds)
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bypass sweep timestamp is not being exposed"
+          description: >-
+            No target is exposing sentinel_bypass_sweep_timestamp_seconds. If no
+            replica runs the MaintenanceLoop, bypass detection is not running at
+            all and both protect alerts above are inert.
+
+  - name: sentinel-operational-traces
+    rules:
+      - alert: SentinelTraceDeliveryLoss
+        expr: sum(increase(sentinel_trace_spans_dropped_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Operational traces were dropped"
+          description: >-
+            Check reason labels for queue_full, export_failed or shutdown_timeout.
+            Check collector TLS, reachability and capacity. These lossy operational
+            spans do not replace durable execution receipts or audit export.

@@ -1,0 +1,45 @@
+{
+  "schema": "sentinel.workflow-loadtest/v1",
+  "measured_at": "2026-09-20T07:50:45.661092+00:00",
+  "commit": "184a43f3bf6567e02fa320df58def25014296f13",
+  "workload": {
+    "changes_requested": 2000,
+    "concurrency": 16,
+    "tool": "no-op (Sentinel overhead only)",
+    "per_change": "evaluate + bound execute"
+  },
+  "result": {
+    "completed": 2000,
+    "failed": 0,
+    "seconds": 11.43,
+    "changes_per_second": 175.0,
+    "evaluate_ms": {
+      "p50": 33.31,
+      "p95": 41.99,
+      "p99": 46.63
+    },
+    "execute_ms": {
+      "p50": 57.32,
+      "p95": 67.13,
+      "p99": 72.63
+    },
+    "mean_change_ms": 91.04
+  },
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.14",
+    "cpu_count": 10,
+    "database": "PostgreSQL on the same host",
+    "service": "one uvicorn process, one event loop",
+    "transport": "loopback HTTP, no TLS"
+  },
+  "limitations": [
+    "client, service and database share one machine and its cores",
+    "no network latency and no TLS",
+    "one service process; replica contention is not exercised",
+    "a no-op tool; target latency excluded",
+    "rate limits and the per-agent tool budget were raised so they do not shape the result",
+    "not a capacity or sizing claim"
+  ]
+}

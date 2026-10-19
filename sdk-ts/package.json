@@ -1,0 +1,16 @@
+{
+  "name": "@sentinel/agent-trust",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Dependency-free Sentinel Agent Trust SDK for JavaScript and TypeScript runtimes.",
+  "exports": {
+    ".": "./src/client.ts",
+    "./canonical": "./src/canonical.ts",
+    "./passport": "./src/passport.ts"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

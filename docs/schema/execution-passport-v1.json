@@ -1,0 +1,158 @@
+{
+  "$comment": "additionalProperties is true so a v1 verifier can read the shared fields of a later passport; refusing would make every schema addition a flag day. The SCHEMA constant is still checked exactly.",
+  "$id": "https://sentinel.dev/schema/execution-passport/v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "One consequential autonomous action, in a form verifiable with a public key and nothing else. Canonicalisation for signing: keys sorted, no insignificant whitespace, non-ASCII left as UTF-8 rather than escaped, nulls serialised rather than dropped, and FLOATS FORBIDDEN -- a value that does not round-trip gives one passport two signatures.",
+  "properties": {
+    "action": {
+      "type": "string"
+    },
+    "action_semantics": {
+      "type": "object"
+    },
+    "agent_framework": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_instance": {
+      "type": "string"
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "approval_actor": {
+      "type": "string"
+    },
+    "approval_at": {
+      "type": "string"
+    },
+    "approval_required": {
+      "type": "boolean"
+    },
+    "attestation_reference": {
+      "type": "string"
+    },
+    "attestation_status": {
+      "type": "string"
+    },
+    "credential_id": {
+      "type": "string"
+    },
+    "data_classifications": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "decision": {
+      "type": "string"
+    },
+    "delegation_chain": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "destination": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "evidence_digest": {
+      "type": "string"
+    },
+    "execution_fence": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": "string"
+    },
+    "human_principal": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "mcp_server_fingerprint": {
+      "type": "string"
+    },
+    "mcp_server_id": {
+      "type": "string"
+    },
+    "model_identity": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "parent_execution_id": {
+      "type": "string"
+    },
+    "policy_digest": {
+      "type": "string"
+    },
+    "policy_id": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "previous_passport_digest": {
+      "type": "string"
+    },
+    "resource": {
+      "type": "string"
+    },
+    "risk_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "risk_score": {
+      "type": "integer"
+    },
+    "schema": {
+      "const": "sentinel.passport/v1"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "side_effect": {
+      "type": "string"
+    },
+    "skill_ids": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "tool_definition_fingerprint": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "execution_id",
+    "tenant_id",
+    "occurred_at",
+    "agent_id",
+    "action",
+    "decision"
+  ],
+  "title": "Sentinel Execution Passport v1",
+  "type": "object"
+}

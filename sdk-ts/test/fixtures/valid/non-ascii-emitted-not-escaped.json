@@ -1,0 +1,66 @@
+{
+  "name": "non-ascii-emitted-not-escaped",
+  "why": "A Cyrillic agent name. Escaping it would give one name two representations differing only in escaping, and a canonical form with two representations is not one.",
+  "document": {
+    "schema": "sentinel.execution_passport.v1",
+    "execution_id": "exec-7f3a",
+    "tenant_id": "acme",
+    "occurred_at": "2026-09-03T12:00:00+00:00",
+    "previous_passport_digest": "",
+    "parent_execution_id": "",
+    "session_id": "sess-1",
+    "human_principal": "user:priya",
+    "agent_id": "agent:Аркадий",
+    "agent_instance": "i-04",
+    "agent_version": "2.1.0",
+    "agent_framework": "langgraph",
+    "model_identity": "claude-opus-5",
+    "delegation_chain": [
+      {
+        "issuer": "user:priya",
+        "subject": "agent:infra-writer",
+        "depth": 1
+      }
+    ],
+    "mcp_server_id": "mcp:aws-prod",
+    "mcp_server_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "tool_name": "s3.put_object",
+    "tool_definition_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "skill_ids": [],
+    "credential_id": "cred:ci-role",
+    "action": "s3:PutObject",
+    "action_semantics": {
+      "class": "data_write"
+    },
+    "resource": "arn:aws:s3:::acme-reports/q3/summary.pdf",
+    "environment": "production",
+    "data_classifications": [
+      "internal"
+    ],
+    "destination": "",
+    "policy_id": "pol-baseline",
+    "policy_version": "14",
+    "policy_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "decision": "allow",
+    "risk_score": 12,
+    "risk_reasons": [],
+    "approval_required": false,
+    "approval_actor": "",
+    "approval_at": "",
+    "idempotency_key": "idem-9",
+    "execution_fence": "fence-3",
+    "outcome": "succeeded",
+    "side_effect": "object_written",
+    "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "attestation_status": "attested",
+    "attestation_reference": "https://transparency.example/1"
+  },
+  "expect": {
+    "defects": [],
+    "tolerate": [
+      "signature_unverified",
+      "policy_unverified"
+    ],
+    "digest": "6b2e8d6480d9bed077ca13f9be4699a78204a43a6533a8ddf86892475a919003"
+  }
+}

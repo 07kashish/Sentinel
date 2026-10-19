@@ -1,0 +1,62 @@
+# F-11 deployment contract: reject agent pods that are not under Protect controls.
+#
+# Requires Kubernetes 1.30+ ValidatingAdmissionPolicy (or equivalent webhook).
+# Apply alongside NetworkPolicy in deploy/agent-egress/.
+#
+# Effect: pods labeled sentinel.io/role=agent MUST also carry
+#   sentinel.io/enrolled=true
+# and annotation sentinel.io/tool-path in {sdk, execute, egress-proxy}
+# (or use a cluster policy that injects the egress-proxy sidecar).
+#
+# Residual intentionally NOT claimed: wire-transparent OS intercept outside
+# this contract. Breaking the contract is an operator choice.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: sentinel-agent-protect-contract
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: >-
+        !has(object.metadata.labels) ||
+        !has(object.metadata.labels['sentinel.io/role']) ||
+        object.metadata.labels['sentinel.io/role'] != 'agent' ||
+        (
+          has(object.metadata.labels['sentinel.io/enrolled']) &&
+          object.metadata.labels['sentinel.io/enrolled'] == 'true' &&
+          has(object.metadata.annotations) &&
+          has(object.metadata.annotations['sentinel.io/tool-path']) &&
+          (
+            object.metadata.annotations['sentinel.io/tool-path'] == 'sdk' ||
+            object.metadata.annotations['sentinel.io/tool-path'] == 'execute' ||
+            object.metadata.annotations['sentinel.io/tool-path'] == 'egress-proxy'
+          )
+        )
+      message: >-
+        Sentinel Protect contract: agent pods require labels
+        sentinel.io/role=agent, sentinel.io/enrolled=true and annotation
+        sentinel.io/tool-path in {sdk, execute, egress-proxy}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: sentinel-agent-protect-contract-binding
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  policyName: sentinel-agent-protect-contract
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: sentinel.io/enforce-protect-contract
+          operator: In
+          values: ["true"]

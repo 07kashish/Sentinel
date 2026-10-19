@@ -1,0 +1,68 @@
+{
+  "name": "parent-commitment-with-no-parent-supplied",
+  "why": "Commits to a parent nobody can produce. Must report that the chain is unverified rather than treating an uncheckable claim as satisfied.",
+  "document": {
+    "schema": "sentinel.execution_passport.v1",
+    "execution_id": "exec-7f3a",
+    "tenant_id": "acme",
+    "occurred_at": "2026-09-03T12:00:00+00:00",
+    "previous_passport_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "parent_execution_id": "",
+    "session_id": "sess-1",
+    "human_principal": "user:priya",
+    "agent_id": "agent:infra-writer",
+    "agent_instance": "i-04",
+    "agent_version": "2.1.0",
+    "agent_framework": "langgraph",
+    "model_identity": "claude-opus-5",
+    "delegation_chain": [
+      {
+        "issuer": "user:priya",
+        "subject": "agent:infra-writer",
+        "depth": 1
+      }
+    ],
+    "mcp_server_id": "mcp:aws-prod",
+    "mcp_server_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "tool_name": "s3.put_object",
+    "tool_definition_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "skill_ids": [],
+    "credential_id": "cred:ci-role",
+    "action": "s3:PutObject",
+    "action_semantics": {
+      "class": "data_write"
+    },
+    "resource": "arn:aws:s3:::acme-reports/q3/summary.pdf",
+    "environment": "production",
+    "data_classifications": [
+      "internal"
+    ],
+    "destination": "",
+    "policy_id": "pol-baseline",
+    "policy_version": "14",
+    "policy_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "decision": "allow",
+    "risk_score": 12,
+    "risk_reasons": [],
+    "approval_required": false,
+    "approval_actor": "",
+    "approval_at": "",
+    "idempotency_key": "idem-9",
+    "execution_fence": "fence-3",
+    "outcome": "succeeded",
+    "side_effect": "object_written",
+    "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "attestation_status": "attested",
+    "attestation_reference": "https://transparency.example/1"
+  },
+  "expect": {
+    "defects": [
+      "parent_unverified"
+    ],
+    "tolerate": [
+      "signature_unverified",
+      "policy_unverified"
+    ],
+    "digest": "ad13de39400d8aaa87c82f7b12f8c50381a1c702da61471b4e0e28dd35150493"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "why": "A signature that covers different bytes than the ones supplied.",
+  "passport": {
+    "schema": "sentinel.passport/v1",
+    "execution_id": "exec-1",
+    "tenant_id": "acme",
+    "occurred_at": "2026-03-01T12:00:00+00:00",
+    "agent_id": "finance-agent",
+    "action": "transfer_funds",
+    "decision": "allowed"
+  },
+  "signature_override": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+  "expect_codes": [
+    "modified"
+  ]
+}

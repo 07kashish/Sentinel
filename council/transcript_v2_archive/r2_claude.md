@@ -1,0 +1,43 @@
+I read the code. Here is where the council stands after I checked each load-bearing claim myself.
+
+## Where they are right and I was wrong
+
+I wrote this remediation, so I start with the failures I own. Both non-Claude seats are correct on the dominant regression, and Antigravity correctly predicted I would be tempted to rubber-stamp it. I will not.
+
+**Claim 7 (durable state) is FALSE, and it is my defect.** The pipeline's only writer is `push()` → `store.update_incident` (in-memory) at `api/main.py:154-156`. `db.save_incident` is called exactly once, at ingestion (`api/main.py:699`) — confirmed by grep: no other production call site exists. Every read serves SQLite (`/incidents` → `db.list_incidents`, `api/main.py:852`; `/incidents/{id}` → `db.get_incident`, `:858`). So the API serves the frozen ingestion-time snapshot forever; the entire pipeline (detection, evidence, attestation, reporting) is invisible to operators, and a restart wipes it. This is worse than a dual-write divergence — it is a permanent one, because the two stores are never reconciled.
+
+**The report endpoint is permanently broken and no seat but Codex said so plainly.** `db.save_report` exists (`db.py:508`) and is in `__all__`, but grep shows it is called *only from tests* (`test_remediation_guarantees.py`, `test_auth_failclosed.py`) — never from the pipeline. The pipeline writes the report to a file (`main.py:381-382`) and never persists it. `/incidents/{id}/report` reads `db.get_report` (`main.py:877`), which is always `None`, so it *always* returns "Report not yet generated. Pipeline is still running." (`main.py:881`). That sentence is now structurally false for every completed incident.
+
+**Phantom execution (Codex Claim 3) is real and it re-opens Finding 2.** `integration_status` returns `configured=True` when the env var is set *even though every handler is `None`* (`mitigation.py:64`). No handler is ever populated (`mitigation.py:40-46`), so the "success" branch runs `handler(...) if handler else {}` → `{}` and returns `status="success", executed=True` (`mitigation.py:171-181`). The only reachable "executed" outcome is a lie. Confirmed.
+
+**Cross-tenant dedupe (Codex regression #3):** `events` has `PRIMARY KEY (event_digest)` alone (`db.py:67`), while `nonces` correctly uses `(tenant_id, event_digest)` (`db.py:139`). So tenant B's identical event is silently dropped as tenant A's "duplicate." Confirmed tenant-isolation break.
+
+**No enrollment endpoint (Codex #5):** `enroll_agent`/`revoke_agent` exist (`db.py:229,239`) but grep finds no route wiring them; `rbac.py:148` even reserves a rate-limit class for `/agents` routes that do not exist. Verification requires the signer to be enrolled (`verifier`), so a fresh customer can never reach `verified` → never attest → severity capped forever. The one genuinely good subsystem is unreachable through the product.
+
+## Where they are wrong
+
+**Antigravity: "Claim 1 VERIFIED" and "Claim 11 VERIFIED."** Both overstate. On Claim 1, `is_anchored` (`schemas.py:60`) is a sound gate — I agree the MOCK label is honest. But the claim asserts "*no code path can report REAL without a mined transaction*," and `attestation_mode` does exactly that: `Skipped` returns `readiness.mode` which is `"REAL"` when configured (`attestation_agent.py:108`), and a *reverted* transaction returns `attestation_mode="REAL"` unconditionally (`attestation_agent.py:182`). That mode string is pushed into the incident record (`main.py:327`). Sound decision, dishonest label → PARTIAL, not VERIFIED.
+
+On Claim 11, `verify_package` returns `ok=True` for a package with no proof and no ledger `entry_hash` (`ledger.py:170-182`: the mismatch check is skipped when `entry_hash` is falsy, then it `return ok, notes` with `ok` still `True`). And `verify_proof` never checks `leaf_index`/`tree_size` (`merkle.py:178-195`). "Offline-verifiable" holds for a sealed multi-leaf batch, but the verifier greenlights packages it cannot actually verify. That is the original sin — conflating "did not run" with "verified" — reappearing inside the *new* attestation code. PARTIAL.
+
+**Codex: "Claim 1 FALSE."** Codex is right about the label leak but implies the success decision is compromised. It is not: the pipeline gates on `is_anchored` (`main.py:312`), and a reverted tx has `status="Failed"`, so `is_anchored` is `False`. I'd score it PARTIAL, not FALSE — the gate is correct; only the surfaced label lies.
+
+**Codex's duplicate-key RBAC probe** is a genuine parser divergence — `configured_keys` is last-wins (`auth.py:59`), `role_for_key` is first-match (`rbac.py:66`) — but it requires an operator to assign the *same key string to two tenants*, a misconfiguration, not a remote exploit. Real latent bug, calibrated severity lower than Codex's "violates least privilege" framing implies.
+
+**Antigravity: the corpus is "highly adversarial," testing "absolute limits."** Half true and it matters. The five hard cases (renamed cred file, novel C2, paraphrase, unicode, French) exist — but they are labeled `known_gap=True` and *excluded from the CI gate* (`metrics.py:90`). The detected positives are the literal strings pre-seeded into the policy: `.env` (`default_policy.json:25` ↔ `corpus.py:85`) and `hacker-c2.net` (`default_policy.json:102` ↔ `corpus.py:94`). Recall on non-gap cases is a trivial 9/9. Codex is closer: this is a fitted regression fixture, not an efficacy study. To my own credit, `metrics.py:112-117` states this honestly ("Recall here is an upper bound… Do not quote these figures as a product detection rate") — so the harness is honest *about* being unrepresentative, which is not the same as being representative.
+
+## What all of us missed entirely
+
+There is a **third state store**, not two. `app/metrics/system_metrics.py` maintains a JSON-file counter that the pipeline still writes on the hot path (`main.py:168` `total_incidents`, `:215` `critical_threats`). But `/metrics` and `/status` now read `db.metrics` (`main.py:482,580`) and ignore that file entirely. So those writes are dead — and worse, `/demo/simulation/start` "resets" metrics by decrementing the *dead* JSON store (`main.py:530-533`) while `clear_store()` empties memory and the SQLite `incidents` rows survive untouched. After a demo re-run, `db.metrics` still counts every prior incident and the reset is theater. The "single source of truth" is actually three divergent stores, and the reset path operates on the one nobody reads. Codex noted the JSON *file write* fails under the read-only container; none of us named it as a third accumulating state store whose reset is a no-op.
+
+## The disagreement that actually matters for the decision
+
+Antigravity votes **acqui-hire** — the identity/Merkle/sanitize work is worth buying. Codex votes **not a company, not pilot-ready**. The crux is whether the cryptographic identity subsystem is a *sellable asset*. It is the best code in the repo (`canonical.py`, `verifier.py`, `replay.py`). But it has **no enrollment endpoint**, is **bypassed by five ingestion routes** (`/analyze`, `/ingest-event`, three `/ingest/*`), and is **never exercised by the evaluation** (the harness injects `trust_level` directly, `metrics.py:51`). An asset you cannot reach through the product API and that your own benchmark never runs is not yet a demonstrable asset. On this point I side with Codex.
+
+## My revised position
+
+**Unchanged: not pilot-ready, not a standalone company.** My conflict of interest is real — I wrote the fix — so I have tried to weight the failures above their comfort.
+
+The remediation did what it claimed at the *component* layer: labels are honest (MOCK, simulated, unavailable), auth fails closed, the identity primitive is sound. But it **relocated the core dishonesty up one level rather than fixing it.** The original finding was "the system misrepresents its own state." It still does — only now the misrepresentation is systemic: a frozen snapshot served as live truth, a report endpoint that permanently claims work is "still running," a `remediations_executed` metric counting simulated non-executions (`db.py:610` counts every `state='approved'`, which `mitigation.py:168` assigns to simulated actions), and a phantom-execution path whose only success is a fabrication.
+
+For my vote to change I would need: one authoritative state machine (pipeline writes and reads hit the same store), `save_report` actually called, the five bypass routes closed or removed, an enrollment endpoint, and the phantom-execution branch made unreachable. Those are days of work, not a rewrite — but until they land, the product cannot reliably say what it did, which is the one thing a trust layer must do.

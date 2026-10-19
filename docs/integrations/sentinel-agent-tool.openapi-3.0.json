@@ -1,0 +1,361 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Sentinel action gate",
+    "version": "1.0.0",
+    "description": "Ask Sentinel before an AI agent acts. If Sentinel cannot be reached or returns anything but a decision, do not act."
+  },
+  "servers": [
+    {
+      "url": "https://app.joinsentinelai.com"
+    }
+  ],
+  "paths": {
+    "/v1/protect/evaluate": {
+      "post": {
+        "operationId": "checkAction",
+        "summary": "Ask Sentinel whether an action may proceed",
+        "description": "Call BEFORE any action that changes, sends, deletes, deploys or pays. Describe the exact tool, resource and arguments. Proceed only if decision is allow or warn. On require_approval, tell the user a person must approve; on block, stop.",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "agentId",
+                  "tool"
+                ],
+                "properties": {
+                  "agentId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "description": "A stable name for this assistant, e.g. agent:support-gpt. Always send the same value."
+                  },
+                  "tool": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "The name of the tool or API operation you are about to use, e.g. send_email, create_refund, deploy."
+                  },
+                  "action": {
+                    "type": "string",
+                    "maxLength": 8192,
+                    "description": "The verb: read, create, update, delete, send, pay, deploy."
+                  },
+                  "resource": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "What the action touches, as a path, e.g. /orders/1042 or /protected-change/prod/checkout."
+                  },
+                  "destination": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "For outbound calls, the URL or host the data is going to."
+                  },
+                  "arguments": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "The exact arguments you will pass to the tool. Sentinel decides on these and binds its approval to them."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sentinel's decision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "decision"
+                  ],
+                  "properties": {
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "allow",
+                        "warn",
+                        "require_approval",
+                        "block"
+                      ],
+                      "description": "allow or warn: proceed. require_approval: wait for a person. block: stop."
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Why. Tell the user in plain words."
+                    },
+                    "enforced": {
+                      "type": "boolean"
+                    },
+                    "matched_rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "authorization": {
+                      "type": "object",
+                      "description": "Present when the action may run now or after approval. Pass authorization.token to executeApprovedAction.",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "authorization_id": {
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string"
+                        }
+                      },
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key was rejected. No decision was made: do NOT proceed."
+          },
+          "403": {
+            "description": "Blocked by policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "decision"
+                  ],
+                  "properties": {
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "allow",
+                        "warn",
+                        "require_approval",
+                        "block"
+                      ],
+                      "description": "allow or warn: proceed. require_approval: wait for a person. block: stop."
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Why. Tell the user in plain words."
+                    },
+                    "enforced": {
+                      "type": "boolean"
+                    },
+                    "matched_rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "authorization": {
+                      "type": "object",
+                      "description": "Present when the action may run now or after approval. Pass authorization.token to executeApprovedAction.",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "authorization_id": {
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string"
+                        }
+                      },
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sentinelKey": []
+          }
+        ]
+      }
+    },
+    "/v1/tools/execute": {
+      "post": {
+        "operationId": "executeApprovedAction",
+        "summary": "Run an approved action through Sentinel",
+        "description": "Run a tool through Sentinel using the authorization token that checkAction returned. Use the SAME tool, resource and arguments. A 403 means not approved yet, already used, or changed: do not retry with different arguments.",
+        "x-openai-isConsequential": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "agentId",
+                  "tool",
+                  "authorization"
+                ],
+                "properties": {
+                  "agentId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "description": "A stable name for this assistant, e.g. agent:support-gpt. Always send the same value."
+                  },
+                  "tool": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "description": "The name of the tool or API operation you are about to use, e.g. send_email, create_refund, deploy."
+                  },
+                  "action": {
+                    "type": "string",
+                    "maxLength": 8192,
+                    "description": "The verb: read, create, update, delete, send, pay, deploy."
+                  },
+                  "resource": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "What the action touches, as a path, e.g. /orders/1042 or /protected-change/prod/checkout."
+                  },
+                  "arguments": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "The exact arguments you will pass to the tool. Sentinel decides on these and binds its approval to them."
+                  },
+                  "authorization": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "description": "The authorization.token string from checkAction's answer."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tool ran once under the approval.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tool": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "description": "What the tool returned."
+                    },
+                    "protect": {
+                      "type": "object",
+                      "required": [
+                        "decision"
+                      ],
+                      "properties": {
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "allow",
+                            "warn",
+                            "require_approval",
+                            "block"
+                          ],
+                          "description": "allow or warn: proceed. require_approval: wait for a person. block: stop."
+                        },
+                        "reason": {
+                          "type": "string",
+                          "description": "Why. Tell the user in plain words."
+                        },
+                        "enforced": {
+                          "type": "boolean"
+                        },
+                        "matched_rules": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "authorization": {
+                          "type": "object",
+                          "description": "Present when the action may run now or after approval. Pass authorization.token to executeApprovedAction.",
+                          "properties": {
+                            "token": {
+                              "type": "string"
+                            },
+                            "authorization_id": {
+                              "type": "string"
+                            },
+                            "expires_at": {
+                              "type": "string"
+                            },
+                            "state": {
+                              "type": "string"
+                            }
+                          },
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "receipt": {
+                      "type": "object",
+                      "description": "Proof binding what ran to what was approved.",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key was rejected. No decision was made: do NOT proceed."
+          },
+          "403": {
+            "description": "Refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "description": "Why Sentinel refused."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sentinelKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sentinelKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "A Sentinel API key with the ingest role."
+      }
+    },
+    "schemas": {}
+  }
+}

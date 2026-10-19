@@ -1,0 +1,11 @@
+{
+  "name": "sentinel-blockchain",
+  "version": "1.0.0",
+  "description": "Smart contracts and deployment scripts for Sentinel",
+  "main": "hardhat.config.js",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.1"
+  }
+}

@@ -1,0 +1,9 @@
+# Default review path for production-sensitive surfaces.
+* @sentinel-maintainers
+
+/sentinel/domain/ @sentinel-maintainers
+/sentinel/interface/http.py @sentinel-maintainers
+/sentinel/composition/ @sentinel-maintainers
+/tests_arch/ @sentinel-maintainers
+/docs/ @sentinel-maintainers
+/.github/ @sentinel-maintainers

@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.dev/spec/execution-passport/v1/schema.json",
+  "title": "Execution Passport v1",
+  "description": "Generated from sentinel/domain/passport.py. A hand-written schema beside a dataclass drifts the first time a field is added, and it drifts silently, because it still validates every document anybody happens to test with.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "execution_id",
+    "tenant_id",
+    "occurred_at",
+    "agent_id",
+    "action",
+    "decision"
+  ],
+  "properties": {
+    "action": {
+      "type": "string"
+    },
+    "action_semantics": {
+      "type": "object"
+    },
+    "agent_framework": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_instance": {
+      "type": "string"
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "approval_actor": {
+      "type": "string"
+    },
+    "approval_at": {
+      "type": "string"
+    },
+    "approval_required": {
+      "type": "boolean"
+    },
+    "attestation_reference": {
+      "type": "string"
+    },
+    "attestation_status": {
+      "type": "string"
+    },
+    "credential_id": {
+      "type": "string"
+    },
+    "data_classifications": {
+      "type": "array"
+    },
+    "decision": {
+      "type": "string"
+    },
+    "delegation_chain": {
+      "type": "array"
+    },
+    "destination": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "evidence_digest": {
+      "type": "string"
+    },
+    "execution_fence": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": "string"
+    },
+    "human_principal": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "mcp_server_fingerprint": {
+      "type": "string"
+    },
+    "mcp_server_id": {
+      "type": "string"
+    },
+    "model_identity": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "parent_execution_id": {
+      "type": "string"
+    },
+    "policy_digest": {
+      "type": "string"
+    },
+    "policy_id": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "previous_passport_digest": {
+      "type": "string"
+    },
+    "resource": {
+      "type": "string"
+    },
+    "risk_reasons": {
+      "type": "array"
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "schema": {
+      "const": "sentinel.passport/v1"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "side_effect": {
+      "type": "string"
+    },
+    "skill_ids": {
+      "type": "array"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "tool_definition_fingerprint": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    }
+  },
+  "$comment": "Schema validation is NECESSARY AND NOT SUFFICIENT. It cannot check the canonical form, the digest, the signature or the parent chain -- a document that validates here may still be forged. Use a conforming verifier; see README.md section 3."
+}

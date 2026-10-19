@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "status": "measured_dump_roundtrip",
+  "precondition": null,
+  "targets": {
+    "rpo_seconds": 300,
+    "rto_seconds": 1800
+  },
+  "measured": {
+    "backup_seconds": 0.0015,
+    "restore_seconds": 0.0015,
+    "experimental_rto_seconds": 0.0537,
+    "experimental_rpo_seconds": 0.0,
+    "notes": "SQL dump round-trip of probe table only \u2014 NOT continuous WAL archive PITR / region failover"
+  },
+  "meets_rpo_target": true,
+  "meets_rto_target": true,
+  "recorded_at": "2026-08-10T12:16:13.619535+00:00"
+}

@@ -1,0 +1,37 @@
+# Alias / documentation copy of the enrolled allowlist selector.
+# Prefer deploy/agent-egress/networkpolicy.yaml (default-deny + enrolled allowlist).
+# Kept so existing references to networkpolicy-enrolled.yaml remain valid.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-agent-require-enrolled-label
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  podSelector:
+    matchLabels:
+      sentinel.io/role: agent
+      sentinel.io/enrolled: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sentinel
+          podSelector:
+            matchLabels:
+              app: sentinel
+      ports:
+        - {protocol: TCP, port: 8000}
+        - {protocol: TCP, port: 80}

@@ -1,0 +1,899 @@
+{
+  "schema": "sentinel.test-evidence/v1",
+  "identity": {
+    "commit": "b477495d7c9c6b2c24e1e25a6491ac71eea3e55d",
+    "inputs_sha256": "dfd7e05c3b9ed0ae67cf1a66f268c743ebd5a2ff3d6422a6186c7958d1cdc4b4"
+  },
+  "started_at": "2026-09-25T16:58:10.016654+00:00",
+  "completed_at": "2026-09-25T17:04:03.642901+00:00",
+  "python": "3.13.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": [
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/Users/lokeshjain/Documents/sentinel_soc-main/sentinel_soc-main/docs/current/evidence/local-b477495/run.xml",
+    "tests_arch"
+  ],
+  "exit_code": 0,
+  "inputs_changed_during_run": false,
+  "modules": {
+    "test_a2a_delegation": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_a2a_malformed_hops": {
+      "total": 4,
+      "passed": 4,
+      "postgres_passed": 2
+    },
+    "test_a2a_proxy": {
+      "total": 24,
+      "passed": 24
+    },
+    "test_a2a_registry": {
+      "total": 24,
+      "passed": 24,
+      "postgres_passed": 12
+    },
+    "test_action_semantics": {
+      "total": 46,
+      "passed": 46
+    },
+    "test_adapter_outcomes": {
+      "total": 30,
+      "passed": 30
+    },
+    "test_adoption": {
+      "total": 27,
+      "passed": 27
+    },
+    "test_agent_capabilities": {
+      "total": 40,
+      "passed": 40,
+      "postgres_passed": 17
+    },
+    "test_agent_discovery": {
+      "total": 110,
+      "passed": 110,
+      "postgres_passed": 48
+    },
+    "test_agent_identity_providers": {
+      "total": 19,
+      "passed": 19,
+      "postgres_passed": 6
+    },
+    "test_ai_bom": {
+      "total": 35,
+      "passed": 35
+    },
+    "test_ai_connectors": {
+      "total": 27,
+      "passed": 27
+    },
+    "test_alert_rules": {
+      "total": 8,
+      "passed": 8
+    },
+    "test_analysis_routes": {
+      "total": 26,
+      "passed": 26,
+      "postgres_passed": 13
+    },
+    "test_application_pipeline": {
+      "total": 18,
+      "passed": 18
+    },
+    "test_approval_experience": {
+      "total": 16,
+      "passed": 16,
+      "postgres_passed": 5
+    },
+    "test_architecture_rules": {
+      "total": 33,
+      "passed": 33
+    },
+    "test_attack_campaign": {
+      "total": 43,
+      "passed": 43
+    },
+    "test_attack_surface": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_authorization_routes": {
+      "total": 6,
+      "passed": 6,
+      "postgres_passed": 3
+    },
+    "test_binding_routes": {
+      "total": 34,
+      "passed": 34,
+      "postgres_passed": 17
+    },
+    "test_blind_evaluation": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_component_status": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_components_are_reachable": {
+      "total": 25,
+      "passed": 25
+    },
+    "test_config_alignment": {
+      "total": 7,
+      "passed": 6,
+      "skipped": 1
+    },
+    "test_connectors": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_console_bundle": {
+      "total": 29,
+      "passed": 29,
+      "postgres_passed": 1
+    },
+    "test_container_context": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_container_detonation": {
+      "total": 35,
+      "passed": 35
+    },
+    "test_containment_http_seam": {
+      "total": 48,
+      "passed": 48,
+      "postgres_passed": 24
+    },
+    "test_cost_ingestion": {
+      "total": 17,
+      "passed": 17
+    },
+    "test_cross_region_dr": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_current_status": {
+      "total": 9,
+      "passed": 9
+    },
+    "test_current_test_evidence": {
+      "total": 11,
+      "passed": 11,
+      "postgres_passed": 1
+    },
+    "test_data_integrity": {
+      "total": 3,
+      "passed": 3
+    },
+    "test_delegation_constraints": {
+      "total": 28,
+      "passed": 28
+    },
+    "test_delegation_passport": {
+      "total": 48,
+      "passed": 48
+    },
+    "test_delivery_status": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_demo_execution_trust": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_dependency_chaos": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_deployment_environment_is_canonical": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_detection_agent_tool_calls": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_detection_metrics": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_detection_mode": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_detonation": {
+      "total": 24,
+      "passed": 24
+    },
+    "test_detonation_tracing": {
+      "total": 30,
+      "passed": 29,
+      "skipped": 1
+    },
+    "test_discovery_wiring": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_dlq_http_stub": {
+      "total": 1,
+      "passed": 1
+    },
+    "test_documentation_cites_real_tests": {
+      "total": 5,
+      "passed": 5
+    },
+    "test_domain_incident": {
+      "total": 25,
+      "passed": 25
+    },
+    "test_dr_postgres_pitr_drill": {
+      "total": 1,
+      "passed": 1,
+      "postgres_passed": 1
+    },
+    "test_dr_postgres_wal_pitr_drill": {
+      "total": 6,
+      "passed": 5,
+      "skipped": 1
+    },
+    "test_dr_test_entrypoint": {
+      "total": 14,
+      "passed": 14,
+      "postgres_passed": 2
+    },
+    "test_dsn_rewriting": {
+      "total": 9,
+      "passed": 9
+    },
+    "test_effective_permissions": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_end_to_end": {
+      "total": 16,
+      "passed": 16
+    },
+    "test_endpoint_sensor": {
+      "total": 33,
+      "passed": 33
+    },
+    "test_enterprise_controls": {
+      "total": 53,
+      "passed": 53
+    },
+    "test_error_taxonomy": {
+      "total": 3,
+      "passed": 3
+    },
+    "test_estate_routes": {
+      "total": 68,
+      "passed": 68,
+      "postgres_passed": 33
+    },
+    "test_evaluation_promotion": {
+      "total": 5,
+      "passed": 5
+    },
+    "test_evidence_commitments": {
+      "total": 11,
+      "passed": 11,
+      "postgres_passed": 5
+    },
+    "test_evidence_encryption": {
+      "total": 15,
+      "passed": 15,
+      "postgres_passed": 5
+    },
+    "test_evidence_recovery": {
+      "total": 7,
+      "passed": 7,
+      "postgres_passed": 3
+    },
+    "test_execution_binding": {
+      "total": 52,
+      "passed": 52
+    },
+    "test_execution_binding_seam": {
+      "total": 29,
+      "passed": 29,
+      "postgres_passed": 1
+    },
+    "test_execution_chaos": {
+      "total": 44,
+      "passed": 44,
+      "postgres_passed": 22
+    },
+    "test_execution_concurrency": {
+      "total": 24,
+      "passed": 24,
+      "postgres_passed": 12
+    },
+    "test_execution_contract": {
+      "total": 69,
+      "passed": 69,
+      "postgres_passed": 34
+    },
+    "test_execution_graph": {
+      "total": 47,
+      "passed": 47
+    },
+    "test_execution_model": {
+      "total": 13,
+      "passed": 13
+    },
+    "test_execution_mutation": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_execution_mutation_campaign": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_execution_passport": {
+      "total": 36,
+      "passed": 36
+    },
+    "test_execution_properties": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_execution_uncertainty": {
+      "total": 12,
+      "passed": 12,
+      "postgres_passed": 6
+    },
+    "test_exposure_graph": {
+      "total": 34,
+      "passed": 34
+    },
+    "test_ga_gates_cannot_be_faked": {
+      "total": 9,
+      "passed": 9
+    },
+    "test_gap_closures": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_gated_remediation": {
+      "total": 3,
+      "passed": 3
+    },
+    "test_github_discovery": {
+      "total": 25,
+      "passed": 25
+    },
+    "test_helm_postgres_archive": {
+      "total": 9,
+      "passed": 8,
+      "postgres_passed": 1,
+      "skipped": 1
+    },
+    "test_image_scan_gate": {
+      "total": 12,
+      "passed": 12
+    },
+    "test_image_signing": {
+      "total": 18,
+      "passed": 18
+    },
+    "test_infrastructure_chaos": {
+      "total": 11,
+      "passed": 11
+    },
+    "test_kubernetes_live_contract": {
+      "total": 10,
+      "passed": 10,
+      "postgres_passed": 5
+    },
+    "test_kubernetes_outcome": {
+      "total": 21,
+      "passed": 21,
+      "postgres_passed": 4
+    },
+    "test_ledger_multi_replica": {
+      "total": 8,
+      "passed": 8,
+      "postgres_passed": 4
+    },
+    "test_mcp_attacks": {
+      "total": 38,
+      "passed": 38,
+      "postgres_passed": 19
+    },
+    "test_mcp_cli_enrolment": {
+      "total": 20,
+      "passed": 20,
+      "postgres_passed": 10
+    },
+    "test_mcp_discovery": {
+      "total": 10,
+      "passed": 10,
+      "postgres_passed": 5
+    },
+    "test_mcp_estate": {
+      "total": 17,
+      "passed": 17
+    },
+    "test_mcp_gateway": {
+      "total": 20,
+      "passed": 20
+    },
+    "test_mcp_http_seam": {
+      "total": 36,
+      "passed": 36,
+      "postgres_passed": 18
+    },
+    "test_mcp_registry": {
+      "total": 25,
+      "passed": 25,
+      "postgres_passed": 12
+    },
+    "test_mcp_streaming": {
+      "total": 29,
+      "passed": 29,
+      "postgres_passed": 7
+    },
+    "test_mcp_wire_client": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_mcp_wire_proxy": {
+      "total": 60,
+      "passed": 60,
+      "postgres_passed": 30
+    },
+    "test_metric_intervals": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_migrations": {
+      "total": 21,
+      "passed": 20,
+      "postgres_passed": 9,
+      "skipped": 1
+    },
+    "test_model_artifact_carries_no_training_data": {
+      "total": 4,
+      "passed": 4
+    },
+    "test_multi_tenant_soak": {
+      "total": 2,
+      "passed": 2
+    },
+    "test_native_remediation": {
+      "total": 20,
+      "passed": 20
+    },
+    "test_native_sentinel_containment": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_observability_bounds": {
+      "total": 5,
+      "passed": 5,
+      "postgres_passed": 1
+    },
+    "test_observed_binding": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_openapi_ingestion": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_openapi_risk": {
+      "total": 17,
+      "passed": 17
+    },
+    "test_operation_store": {
+      "total": 14,
+      "passed": 14,
+      "postgres_passed": 7
+    },
+    "test_outbound_chaos": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_passport_conformance": {
+      "total": 33,
+      "passed": 33
+    },
+    "test_passport_standard": {
+      "total": 24,
+      "passed": 24
+    },
+    "test_persistence_backup_pitr": {
+      "total": 19,
+      "skipped": 17,
+      "passed": 2
+    },
+    "test_persistence_benchmarks": {
+      "total": 22,
+      "passed": 17,
+      "postgres_passed": 11,
+      "skipped": 5
+    },
+    "test_persistence_crypto_audit": {
+      "total": 38,
+      "passed": 38,
+      "postgres_passed": 12
+    },
+    "test_persistence_storage_cache": {
+      "total": 31,
+      "passed": 28,
+      "skipped": 3
+    },
+    "test_phase4_wiring": {
+      "total": 19,
+      "passed": 19,
+      "postgres_passed": 3
+    },
+    "test_phase_closures": {
+      "total": 15,
+      "passed": 15
+    },
+    "test_platform_adapters": {
+      "total": 48,
+      "passed": 48
+    },
+    "test_platform_discovery": {
+      "total": 17,
+      "passed": 17
+    },
+    "test_platform_wiring": {
+      "total": 16,
+      "passed": 16
+    },
+    "test_policy_as_code_seam": {
+      "total": 54,
+      "passed": 54,
+      "postgres_passed": 27
+    },
+    "test_policy_diff_and_blast_radius": {
+      "total": 11,
+      "passed": 11
+    },
+    "test_product_readiness": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_production_preflight": {
+      "total": 26,
+      "passed": 26,
+      "postgres_passed": 2
+    },
+    "test_protect_controls": {
+      "total": 3,
+      "passed": 3
+    },
+    "test_protect_decisions": {
+      "total": 13,
+      "passed": 13
+    },
+    "test_protect_gate": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_protected_change_journey": {
+      "total": 3,
+      "passed": 3,
+      "postgres_passed": 1
+    },
+    "test_protected_changes_manifests": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_quickstart": {
+      "total": 9,
+      "passed": 9
+    },
+    "test_readiness_doc_matches_ledger": {
+      "total": 8,
+      "passed": 8
+    },
+    "test_readiness_matrix": {
+      "total": 35,
+      "passed": 35
+    },
+    "test_readiness_probe_cache": {
+      "total": 11,
+      "passed": 11,
+      "postgres_passed": 4
+    },
+    "test_receipt_store": {
+      "total": 35,
+      "passed": 35,
+      "postgres_passed": 16
+    },
+    "test_red_team_suite": {
+      "total": 15,
+      "passed": 15,
+      "postgres_passed": 6
+    },
+    "test_release_binding": {
+      "total": 28,
+      "passed": 28
+    },
+    "test_release_gate_runner": {
+      "total": 17,
+      "passed": 17
+    },
+    "test_release_hygiene": {
+      "total": 30,
+      "passed": 30
+    },
+    "test_release_packaging": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_remediation_execution": {
+      "total": 59,
+      "passed": 59,
+      "postgres_passed": 10
+    },
+    "test_research_page": {
+      "total": 18,
+      "passed": 18
+    },
+    "test_response_and_containment": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_retention_sweep": {
+      "total": 44,
+      "passed": 44,
+      "postgres_passed": 19
+    },
+    "test_root_publication": {
+      "total": 12,
+      "passed": 12,
+      "postgres_passed": 6
+    },
+    "test_root_sink": {
+      "total": 14,
+      "passed": 14
+    },
+    "test_runtime_topology": {
+      "total": 34,
+      "passed": 34,
+      "postgres_passed": 2
+    },
+    "test_s3_root_sink": {
+      "total": 48,
+      "passed": 48
+    },
+    "test_saml_xml_hardening": {
+      "total": 7,
+      "passed": 7
+    },
+    "test_sdk_adapters": {
+      "total": 9,
+      "passed": 9
+    },
+    "test_sdk_canonical": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_sdk_mcp_stdio": {
+      "total": 4,
+      "passed": 4
+    },
+    "test_sdk_remote": {
+      "total": 51,
+      "passed": 51
+    },
+    "test_security_audit_trail": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_security_bounds": {
+      "total": 15,
+      "passed": 15
+    },
+    "test_security_bypass_detection": {
+      "total": 15,
+      "passed": 15
+    },
+    "test_security_edge": {
+      "total": 56,
+      "passed": 56
+    },
+    "test_security_mfa": {
+      "total": 47,
+      "passed": 47
+    },
+    "test_security_outbound": {
+      "total": 49,
+      "passed": 49
+    },
+    "test_security_passkeys": {
+      "total": 49,
+      "passed": 49
+    },
+    "test_security_prompt_injection": {
+      "total": 16,
+      "passed": 16
+    },
+    "test_security_rules": {
+      "total": 19,
+      "passed": 19
+    },
+    "test_security_secrets": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_security_threat_detection": {
+      "total": 16,
+      "passed": 16
+    },
+    "test_security_throttle": {
+      "total": 22,
+      "passed": 22
+    },
+    "test_security_verification": {
+      "total": 7,
+      "passed": 7
+    },
+    "test_sequence_corpus": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_sequence_escalation": {
+      "total": 34,
+      "passed": 34,
+      "postgres_passed": 17
+    },
+    "test_shared_process_controls": {
+      "total": 4,
+      "passed": 3,
+      "postgres_passed": 1,
+      "skipped": 1
+    },
+    "test_siem_delivery": {
+      "total": 7,
+      "passed": 7
+    },
+    "test_siem_export": {
+      "total": 100,
+      "passed": 100
+    },
+    "test_siem_transports": {
+      "total": 21,
+      "passed": 21
+    },
+    "test_skill_detonation": {
+      "total": 18,
+      "passed": 18
+    },
+    "test_skill_registry": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_slo_evaluation": {
+      "total": 26,
+      "passed": 26
+    },
+    "test_soft_detection_independent": {
+      "total": 4,
+      "passed": 4
+    },
+    "test_source_hygiene": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_sql_infrastructure": {
+      "total": 57,
+      "passed": 56,
+      "postgres_passed": 29,
+      "skipped": 1
+    },
+    "test_sql_is_never_built_from_data": {
+      "total": 7,
+      "passed": 7
+    },
+    "test_strace_parse": {
+      "total": 23,
+      "passed": 23
+    },
+    "test_stream_guard": {
+      "total": 15,
+      "passed": 15
+    },
+    "test_tenant_directory": {
+      "total": 7,
+      "passed": 7,
+      "postgres_passed": 3
+    },
+    "test_tenant_integrations": {
+      "total": 27,
+      "passed": 27
+    },
+    "test_tenant_isolation_rls": {
+      "total": 25,
+      "passed": 18,
+      "postgres_passed": 12,
+      "skipped": 7
+    },
+    "test_tenant_siem_credentials": {
+      "total": 10,
+      "passed": 10
+    },
+    "test_terraform_posture": {
+      "total": 31,
+      "passed": 31
+    },
+    "test_threat_intel": {
+      "total": 41,
+      "passed": 41,
+      "postgres_passed": 1
+    },
+    "test_tool_adapters": {
+      "total": 31,
+      "passed": 31
+    },
+    "test_tool_names_are_not_prompts": {
+      "total": 8,
+      "passed": 8
+    },
+    "test_tool_runner": {
+      "total": 6,
+      "passed": 6
+    },
+    "test_trace_export": {
+      "total": 11,
+      "passed": 11,
+      "postgres_passed": 1
+    },
+    "test_transparency": {
+      "total": 53,
+      "passed": 53
+    },
+    "test_transparency_routes": {
+      "total": 50,
+      "passed": 50,
+      "postgres_passed": 25
+    },
+    "test_transparency_store": {
+      "total": 39,
+      "passed": 39,
+      "postgres_passed": 17
+    },
+    "test_value_metrics": {
+      "total": 25,
+      "passed": 25
+    },
+    "test_vcs_integrity": {
+      "total": 3,
+      "passed": 3
+    },
+    "test_work_queue_sharding": {
+      "total": 9,
+      "passed": 9,
+      "postgres_passed": 3
+    },
+    "test_workflow_metrics": {
+      "total": 7,
+      "passed": 7,
+      "postgres_passed": 3
+    },
+    "test_workload_identity": {
+      "total": 33,
+      "passed": 33,
+      "postgres_passed": 2
+    }
+  },
+  "junit_sha256": "9b51a7fcd05a0a76b968eba8f70f3938228491b9db05e4e2016fedee872c332e",
+  "limitations": [
+    "local or CI test execution; not production observation",
+    "PostgreSQL counts identify executed backend-parametrized tests; not a cloud topology test",
+    "JSON and JUnit checksums do not establish independent signer identity"
+  ]
+}

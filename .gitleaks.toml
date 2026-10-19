@@ -1,0 +1,171 @@
+# gitleaks configuration — documented exceptions only.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# The `security` CI job runs `gitleaks git` over the FULL history, and it was
+# failing on four findings, all of them false positives, all of them in commits
+# that predate this file. A scan that always fails is a scan nobody reads, which
+# is the same failure mode as `pip-audit` running with `|| true` — an audit gate
+# that cannot fail. That one was fixed by recording exceptions with reasons in
+# `security/pip-audit-ignore.txt`; this file is the same idea for secrets.
+#
+# RULES FOR EDITING THIS FILE
+# ---------------------------
+# * Never allowlist a rule wholesale. Every entry below is scoped to a specific
+#   path and a specific reason.
+# * A finding that is a REAL credential is not an exception. It is an incident:
+#   rotate the credential first, then purge it from history. Allowlisting a live
+#   secret because it is inconvenient is the single worst thing this file could
+#   be used for.
+# * State why, in a sentence someone can disagree with.
+
+title = "Sentinel gitleaks configuration"
+
+# Start from gitleaks' shipped rules rather than replacing them. Without this,
+# an `[[rules]]`-free config would disable EVERY detector and the job would go
+# green by detecting nothing — the exact "silent pass" this repository treats as
+# worse than a failure.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented false positives. Each entry names a path and a reason."
+
+paths = [
+  # An .env EXAMPLE in the pilot onboarding doc. The line immediately above it
+  # reads "# .env  (example shape -- use YOUR generated value, not this one)",
+  # and the value is a random string generated for illustration. It has never
+  # been a credential for any deployment: `SENTINEL_API_KEYS` is parsed as
+  # `tenant:key:role` triples, so this bare value is not even the right SHAPE to
+  # authenticate with. Reviewed 2026-08-19.
+  #
+  # The example has ALSO been changed to an obvious placeholder so a reader
+  # cannot mistake it for a usable key — but history still contains the old
+  # value, and this scan reads history, so the allowlist is still required.
+  '''PILOT_README\.md''',
+
+  # An archived council review transcript. The match is prose:
+  # "ownership-token acknowledgements, resumable/idempotent processing, ..."
+  # The generic-api-key rule fires on the long hyphenated run near the word
+  # "token". There is no credential on the line. Reviewed 2026-08-19.
+  '''council/transcript_v4_archive/r2_codex\.md''',
+
+  # Test fixtures for the agent-inventory credential edges. The match is
+  # `abc123def456` sitting next to `ObservedEdgeKind.CREDENTIAL` in commit
+  # 41a7c2d -- a made-up string in a test that asserts a credential FINGERPRINT
+  # is stored and a secret never is. It has never authenticated anything, and
+  # the code under test records `principal.key_hash[:12]`, which is a hash
+  # prefix rather than key material.
+  #
+  # The fixtures have ALSO been renamed to obvious placeholders
+  # (`credential-fingerprint-one` and friends), so a reader of the current tree
+  # cannot mistake them for real values. That rename does not clear the finding:
+  # this scan reads HISTORY, and the old commit still contains the old string --
+  # the same reason PILOT_README.md above is still listed after its example was
+  # changed. Rewriting history to remove a non-secret would destroy the record
+  # for no security gain.
+  #
+  # Reviewed 2026-08-23.
+  '''tests_arch/test_agent_discovery\.py''',
+]
+
+# Matched against the whole matching LINE rather than a path, because each of
+# these is one specific construct that is provably not a credential. A path
+# entry would also excuse a real secret added to the same file later; these
+# cannot excuse anything but themselves.
+regexTarget = "line"
+
+regexes = [
+  # A TYPE ANNOTATION. `private_key: Ed25519PrivateKey` is a dataclass field
+  # declaration in `passport_signing.SigningKey` -- there is no value on the
+  # line at all, and the generic-api-key rule fires on the word next to the
+  # colon. Scoped to the exact annotation so any assignment of a private key to
+  # a literal in that file is still a finding. Reviewed 2026-09-01.
+  # Anchored to END OF LINE. Without the anchor it also excused
+  # `private_key: Ed25519PrivateKey = load("-----BEGIN PRIVATE KEY-----")`,
+  # an annotated assignment carrying real key material -- caught by
+  # `test_the_gitleaks_allowlist_regexes_cannot_excuse_a_real_secret`, which
+  # exists for exactly this.
+  '''^\s*private_key:\s*Ed25519PrivateKey\s*$''',
+
+  # A CANARY, which is a fake credential ON PURPOSE. `test_detonation.py`
+  # exercises the one thing the detonation harness treats as PROOF of a
+  # malicious skill: exfiltration of a planted token. The value has to look
+  # like a credential and must never be one. It authenticates nothing and
+  # matches no account. Reviewed 2026-09-01.
+  # The whole literal, not just the prefix. A prefix pattern would excuse any
+  # line that happened to mention the canary, including one that also carried a
+  # real credential.
+  '''CANARIES = \{"aws_secret_key": "AKIA-CANARY-9f3c1d2e4b5a6789"\}''',
+
+  # A HASH, not a key. `key_hash = "abcdef0123456789"` is a placeholder in an
+  # A2A proxy test double, standing in for `principal.key_hash`, which is a
+  # digest prefix the code stores precisely so key material is not. Reviewed
+  # 2026-09-01.
+  '''key_hash\s*=\s*"abcdef0123456789"''',
+
+  # A FIELD-NAME TABLE PASSED TO A WALKER. `_strings_under(scope, _URL_KEYS,
+  # depth=MAX_DEPTH - 1)` in the event normaliser reads the payload keys named
+  # in `_URL_KEYS` (`url`, `destination`, ...). The generic-api-key rule fires
+  # on `_KEYS` followed by `=` and a token. The line carries the NAME of a
+  # tuple of field names and no value; the tuples themselves are literal key
+  # names like "command" and "sql". Scoped to the exact call shape, so a
+  # literal assigned near the word KEYS in that file is still a finding.
+  # Reviewed 2026-09-11.
+  '''_strings_under\((?:scope|item), _(?:COMMAND|SQL|URL|PATH)_KEYS(?:, depth=MAX_DEPTH - 1)?\)''',
+
+  # A REDACTION FIXTURE. `test_binding_routes.py` plants a string shaped like
+  # a patient record inside a tool argument to prove the approved-versus-
+  # executed diff serves DIGESTS and never the argument values. It is the
+  # thing that must not leak, standing in for one; it authenticates nothing.
+  # The whole literal, so any other assignment to that name is still a
+  # finding. Reviewed 2026-09-11.
+  '''SECRET_VALUE = "PATIENT-4471-DIAGNOSIS"''',
+]
+
+# ONE COMMIT, by full SHA. The narrowest exception this file contains.
+#
+# 4ae9dee added `test_the_gitleaks_allowlist_regexes_cannot_excuse_a_real_secret`
+# with its probe strings written out as plain literals -- a PEM header, a
+# GitHub PAT and an AWS key ID, none of them credentials, all of them there so
+# the allowlist could be tried against lines it must never excuse.
+#
+# The working tree no longer contains them: the probes are assembled at runtime
+# in that test, so a scan of the CURRENT files is clean. This scan reads
+# HISTORY, and that commit still holds the old lines.
+#
+# Scoped to the SHA rather than to the path, because a path entry would excuse
+# a real credential added to that test module at any point in the future, and a
+# test module full of plausible keys is the last place to switch the scanner
+# off. This excuses exactly one commit, whose contents anyone can read with
+# `git show 4ae9dee`.
+#
+# Rewriting history to drop a non-secret would destroy the record for no
+# security gain -- the same reasoning as PILOT_README.md above.
+#
+# Reviewed 2026-09-01.
+#
+# cfaa345 is the forensic audit ledger. Two of its evidence strings are PROSE
+# that the generic-api-key rule reads as an assignment: one ends "...rather
+# than on the delegator's key." and the next line opens with a string; the
+# other says, in words, that the working tree at the time "currently contains a
+# real .env with live AWS credentials" -- a FINDING about a file that is
+# gitignored and has never been committed, not a credential on the line. Both
+# sentences were later rewritten and no longer exist in the tree, so the scan of
+# current files is clean; this scan reads HISTORY. Scoped to the SHA, for the
+# same reason as above. Reviewed 2026-09-11.
+#
+# abbde3f added three production-mode test environments carrying the SAME
+# fixture data key -- base64 of "0123456789abcdef" twice, a value chosen to be
+# obviously synthetic -- because production refuses to start without one. The
+# working tree now derives that value at import time (`base64.b64encode(...)`),
+# so a scan of the current files is clean; this scan reads HISTORY. b479184
+# added an approval-experience fixture API key that was later renamed to a
+# placeholder for the same reason. Neither has ever authenticated anything.
+# Scoped to the SHAs, as above. Reviewed 2026-09-25.
+commits = [
+  "4ae9dee63d525b1d43d7a1e5746dd66552b5d7eb",
+  "cfaa3458b242b9ffafb9648f866ce46a05eabb5e",
+  "abbde3f0f6d4177b0e0161c2ccc87b1889084d62",
+  "b479184ba9ec1c7c22f1966fb54275c08a78612c",
+]

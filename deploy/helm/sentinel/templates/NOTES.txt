@@ -1,0 +1,21 @@
+Sentinel {{ .Chart.AppVersion }} installed as {{ .Release.Name }}.
+
+Replicas: {{ .Values.replicaCount }}
+
+VERIFY BEFORE TRUSTING:
+  - This chart requires PostgreSQL. Sentinel raises PostgresUnavailable rather
+    than falling back to SQLite if it cannot connect.
+  - This chart does NOT deploy or configure PostgreSQL -- it consumes a DSN from
+    the {{ .Values.postgres.existingSecret }} secret. The RPO target in
+    docs/DISASTER_RECOVERY.md therefore depends on settings this chart cannot
+    apply for you. On whatever runs your database, set:
+        wal_level = replica
+        archive_mode = on
+        archive_command = <copy %p to durable storage, refusing to overwrite>
+        archive_timeout = 60s
+    These are configuration prerequisites. Archive delivery failures can still
+    cause unbounded data loss; verify restore in an independent failure domain
+    and measure RPO/RTO for the exact topology before making a recovery claim.
+  - With no API keys configured, every authenticated route returns 503 by design.
+  - Capabilities NOT provided: SAML, SCIM, Kafka, in-app mTLS.
+    See docs/ARCHITECTURE_DECISIONS.md for why each is out of scope.

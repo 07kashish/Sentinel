@@ -1,0 +1,94 @@
+{
+  "started_utc": "2026-07-21T17:16:34.888065+00:00",
+  "repo": "C:\\Users\\pc\\Downloads\\sentinel_soc-main\\sentinel_soc-main",
+  "seats": [
+    {
+      "key": "claude",
+      "display": "Claude Opus 4.8",
+      "vendor": "Anthropic",
+      "model": "claude-opus-4-8"
+    },
+    {
+      "key": "codex",
+      "display": "Codex GPT-5.6-sol",
+      "vendor": "OpenAI",
+      "model": "gpt-5.6-sol"
+    },
+    {
+      "key": "antigravity",
+      "display": "Antigravity (Gemini, pro)",
+      "vendor": "Google",
+      "model": "agentapi --model=pro (MODEL_PLACEHOLDER_M36, Google Gemini)"
+    }
+  ],
+  "unavailable": [
+    {
+      "key": "gemini",
+      "display": "Gemini 2.5 Flash",
+      "needs": "GEMINI_API_KEY"
+    }
+  ],
+  "rounds": {
+    "1": {
+      "claude": {
+        "ok": true,
+        "chars": 13940,
+        "sec": 409.1,
+        "err": ""
+      },
+      "codex": {
+        "ok": true,
+        "chars": 14741,
+        "sec": 652.2,
+        "err": ""
+      },
+      "antigravity": {
+        "ok": true,
+        "chars": 7921,
+        "sec": 435.1,
+        "err": ""
+      }
+    },
+    "2": {
+      "claude": {
+        "ok": true,
+        "chars": 8680,
+        "sec": 298.9,
+        "err": ""
+      },
+      "codex": {
+        "ok": true,
+        "chars": 9549,
+        "sec": 203.4,
+        "err": ""
+      },
+      "antigravity": {
+        "ok": true,
+        "chars": 6188,
+        "sec": 245.9,
+        "err": ""
+      }
+    },
+    "3": {
+      "claude": {
+        "ok": true,
+        "chars": 8536,
+        "sec": 85.8,
+        "err": ""
+      },
+      "codex": {
+        "ok": true,
+        "chars": 8571,
+        "sec": 41.3,
+        "err": ""
+      },
+      "antigravity": {
+        "ok": true,
+        "chars": 8075,
+        "sec": 126.4,
+        "err": ""
+      }
+    }
+  },
+  "finished_utc": "2026-07-21T17:34:32.370268+00:00"
+}

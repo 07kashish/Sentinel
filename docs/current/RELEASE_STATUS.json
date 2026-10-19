@@ -1,0 +1,430 @@
+{
+  "schema": "sentinel.release-status/v1",
+  "generated_at": "2026-10-12T18:08:38.948337+00:00",
+  "inputs_identity": {
+    "commit": "b8cbd8fbc2be07291ca2520850a7cd7ef3949d04",
+    "inputs_sha256": "62a3876a6c6357e65e538510546e4c66197ae4e163038613225d3fa331326a44"
+  },
+  "accepted_test_evidence": [
+    {
+      "path": "docs/current/evidence/local-b8cbd8f/run.json",
+      "sha256": "47253d33fd1e4ff5542a32b15ddd29acec890302ec97e2689ea8be6fc7a7fdb9"
+    }
+  ],
+  "commit": "b8cbd8fbc2be07291ca2520850a7cd7ef3949d04",
+  "branch": "program/production-readiness",
+  "working_tree_dirty": true,
+  "source_tree_sha256": "66c326c80b8d05018d0756d73e30ea4b6e3048ad9513277733742f2880fa81a5",
+  "tests_collected": 4609,
+  "tests_on_postgresql": 688,
+  "ci_jobs": [
+    "deployment-validation",
+    "docker",
+    "dynamic-api-security",
+    "guard-mutation",
+    "kind-helm-smoke",
+    "license-scan",
+    "live-minio",
+    "live-postgres",
+    "live-postgres-service",
+    "live-redis",
+    "provenance",
+    "release-evidence",
+    "release-hygiene",
+    "security",
+    "sign-image",
+    "test",
+    "types",
+    "verification"
+  ],
+  "artifacts": [],
+  "tiers": [
+    "implemented",
+    "unit_tested",
+    "integration_tested",
+    "production_observed",
+    "externally_verified"
+  ],
+  "tier_counts": {
+    "not_implemented": 0,
+    "implemented": 0,
+    "unit_tested": 4,
+    "integration_tested": 12,
+    "production_observed": 0,
+    "externally_verified": 0
+  },
+  "capabilities": [
+    {
+      "key": "authorization",
+      "name": "Execution authorization and binding",
+      "tier": "integration_tested",
+      "limits": "Bound to tenant, agent, tool, action, resource, parameter digest, policy digest, expiry and single-use nonce. The agent can be an attested workload (see Workload identity); that is off until a customer issuer is registered.",
+      "tests_passed": 164,
+      "postgres_tests_passed": 55,
+      "modules_present": [
+        "sentinel/domain/execution_binding.py",
+        "sentinel/application/tool_runner.py",
+        "sentinel/infrastructure/sql/authorization_store.py",
+        "sentinel/infrastructure/sql/nonce_ledger.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 165,
+      "tests_on_postgresql": 55,
+      "ci_jobs": [
+        "test",
+        "live-postgres"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "approval",
+      "name": "Approval semantics under enforcement",
+      "tier": "integration_tested",
+      "limits": "A recorded approval satisfies require_approval only; never step_up_auth, block or contain. Approvers see a redacted structural view of the change. A quorum of distinct approvers and requester/approver separation are enforced. No integration with an external ticketing or paging system.",
+      "tests_passed": 109,
+      "postgres_tests_passed": 44,
+      "modules_present": [
+        "sentinel/application/protect_gate.py",
+        "sentinel/interface/authorizations.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 109,
+      "tests_on_postgresql": 44,
+      "ci_jobs": [
+        "test",
+        "live-postgres"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "operations",
+      "name": "Durable intent and outcome, reconcilable unknown state",
+      "tier": "integration_tested",
+      "limits": "A definitive target rejection is a recorded failure; a lost response is unknown and is reconciled from the target automatically for the Kubernetes tool, with bounded attempts and a quiescence window. GitHub contents writes and deletes are reconciled from the blob sha without attribution; AWS operations run under a brokered role session are reconciled from CloudTrail by session name, where absence of an event is never read as failure; GitHub POSTs, other PUTs, AWS data events and AWS without a brokered role still need a human (RISK R-012). For GitHub and AWS a 4xx is now a recorded failure instead of a succeeded operation.",
+      "tests_passed": 146,
+      "postgres_tests_passed": 51,
+      "modules_present": [
+        "sentinel/domain/operations.py",
+        "sentinel/infrastructure/sql/operation_store.py",
+        "sentinel/interface/operations_routes.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 146,
+      "tests_on_postgresql": 51,
+      "ci_jobs": [
+        "test",
+        "live-postgres"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "controls",
+      "name": "Shared, tenant-scoped budget and circuit breaker",
+      "tier": "integration_tested",
+      "limits": "State lives in the database with a row lock; fails closed when the store is unavailable. Not yet load-tested across more than two pools.",
+      "tests_passed": 86,
+      "postgres_tests_passed": 41,
+      "modules_present": [
+        "sentinel/infrastructure/sql/protect_controls_store.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 86,
+      "tests_on_postgresql": 41,
+      "ci_jobs": [
+        "test",
+        "live-postgres"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "identity",
+      "name": "Workload identity for agents",
+      "tier": "integration_tested",
+      "limits": "SPIFFE JWT-SVIDs and pod-bound Kubernetes service-account tokens are verified against registered keys; SENTINEL_REQUIRE_WORKLOAD_IDENTITY refuses API keys on the agent path. Keys are pinned or fetched from a stated or DISCOVERED https jwks_uri (OIDC metadata, which is how SPIRE, Okta and Entra publish keys) with rate-limited rotation that keeps the last good keys; the SPIRE Workload API itself is not spoken. A pod-bound token was accepted from a real agent pod on a local cluster. Default is off (DECISION_LOG FCX-006). No customer identity provider has been integrated.",
+      "tests_passed": 62,
+      "postgres_tests_passed": 12,
+      "modules_present": [
+        "sentinel/infrastructure/agent_identity_providers.py",
+        "sentinel/interface/principals.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 62,
+      "tests_on_postgresql": 12,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "credentials",
+      "name": "Constrained credentials and bypass prevention",
+      "tier": "integration_tested",
+      "limits": "Sentinel holds a broker token that can only mint ten-minute tokens for one executor account; the API server refuses agent writes and unstamped executor writes in protected namespaces. Deletes are stamped on the object and admission requires the stamp. Proven in-process against a real API server and DEPLOYED (two pods, production mode, pod-bound agent token, kindnet enforcing the agent egress policy) by scripts/run_deployed_journey.py on one local node. The deployed run uses TLS between agent and Sentinel under a private CA. A cloud cluster, another CNI, mutual TLS and a customer are unverified. AWS gets a fifteen-minute role session per operation and GitHub a per-call App installation token scoped to one repository and permission family; both are tested against fakes only, never against the real services, and neither has a target-side bypass control like the Kubernetes admission policy.",
+      "tests_passed": 70,
+      "postgres_tests_passed": 10,
+      "modules_present": [
+        "sentinel/infrastructure/platforms/kubernetes.py",
+        "sentinel/infrastructure/platforms/kubernetes_outcome.py",
+        "sentinel/infrastructure/platforms/aws_outcome.py",
+        "sentinel/infrastructure/platforms/github_app.py",
+        "deploy/protected-changes/admission-policy.yaml",
+        "deploy/protected-changes/rbac.yaml"
+      ],
+      "modules_missing": [],
+      "tests_collected": 70,
+      "tests_on_postgresql": 10,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "measurement",
+      "name": "Workflow measurement",
+      "tier": "integration_tested",
+      "limits": "Approval latency, interruptions, refusals and unknown outcomes are counted from records with sample sizes. Gateway overhead, refusal legitimacy and onboarding effort are not derivable from records and are named as such. scripts/run_workflow_loadtest.py measures the bound path on one machine as a regression baseline, not a capacity claim. No customer data exists.",
+      "tests_passed": 17,
+      "postgres_tests_passed": 3,
+      "modules_present": [
+        "sentinel/infrastructure/sql/workflow_metrics.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 17,
+      "tests_on_postgresql": 3,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "tenancy",
+      "name": "Tenant isolation in storage",
+      "tier": "integration_tested",
+      "limits": "Forced row-level security on PostgreSQL; explicit tenant predicates on SQLite. Operational telemetry omits tenant/agent identifiers; durable records are tenant-scoped. Per-pod aggregation and soak remain unverified (RISK R-008).",
+      "tests_passed": 130,
+      "postgres_tests_passed": 41,
+      "modules_present": [
+        "sentinel/infrastructure/sql/schema.py",
+        "sentinel/infrastructure/sql/engine.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 138,
+      "tests_on_postgresql": 41,
+      "ci_jobs": [
+        "test",
+        "live-postgres",
+        "live-postgres-service"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "receipts",
+      "name": "Execution receipts and Execution Passport",
+      "tier": "integration_tested",
+      "limits": "Receipts are committed to the tenant transparency log by the maintenance loop and export as a bundle that verifies offline with the standard library. Commitment is asynchronous; the export reports the uncommitted count. Evidence BODIES are sealed per record (AES-256-GCM envelope, bound to tenant and incident) when a data key is configured, production refuses to start without a key or an explicit opt-out, and rotation rewraps without decrypting payloads; keys come from the environment or a Kubernetes secret, not yet from a KMS. A customer can witness roots with a standalone tool that verifies consistency locally, and a drill restores evidence into a new database and verifies an old bundle against the customer-held root. One host: not an independent failure domain (RISK R-003); no customer runs the witness (RISK R-018).",
+      "tests_passed": 128,
+      "postgres_tests_passed": 29,
+      "modules_present": [
+        "sentinel/domain/passport.py",
+        "sentinel/infrastructure/passport_signing.py",
+        "sentinel/infrastructure/sql/receipt_store.py",
+        "sentinel/infrastructure/sql/evidence_commitments.py",
+        "standard/execution-passport-v1/verify_evidence_bundle.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 128,
+      "tests_on_postgresql": 29,
+      "ci_jobs": [
+        "test",
+        "verification"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "coverage",
+      "name": "Coverage model (observed vs routed vs enforced)",
+      "tier": "integration_tested",
+      "limits": "Reports counts per tenant and refuses to combine them into a percentage. Bypass signals depend on the endpoint sensor being deployed.",
+      "tests_passed": 69,
+      "postgres_tests_passed": 34,
+      "modules_present": [
+        "sentinel/infrastructure/sql/coverage.py",
+        "sentinel/interface/operations_routes.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 69,
+      "tests_on_postgresql": 34,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "policy",
+      "name": "Deterministic policy and policy versions",
+      "tier": "unit_tested",
+      "limits": "Deterministic rule contents and active tenant policy bind authorizations. Tenant policy can tighten the baseline; ML remains advisory. The optional classifier is repository-only (RISK R-010) and its corpus is curated (RISK R-005).",
+      "tests_passed": 42,
+      "postgres_tests_passed": 0,
+      "modules_present": [
+        "sentinel/infrastructure/detection.py",
+        "sentinel/domain/policy_as_code.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 42,
+      "tests_on_postgresql": 0,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "mcp",
+      "name": "MCP tool gateway",
+      "tier": "integration_tested",
+      "limits": "Pinned tool definitions and drift detection. Shadow and unused servers are derived from the proxy's audit rows, which include refused calls to unenrolled servers; traffic that bypasses the proxy is invisible to it. With SENTINEL_MCP_PROXY_STREAMING (off by default) progress and log notifications are relayed incrementally on tools/call, each inspected before release and bounded per event, in total and in time; server-initiated requests (sampling, elicitation, roots) and the standalone GET stream are never relayed. Streaming has been exercised against scripted upstreams only, not a third-party MCP server.",
+      "tests_passed": 180,
+      "postgres_tests_passed": 74,
+      "modules_present": [
+        "sentinel/domain/mcp.py",
+        "sentinel/domain/mcp_estate.py",
+        "sentinel/interface/mcp_proxy_routes.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 180,
+      "tests_on_postgresql": 74,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "siem",
+      "name": "SIEM export",
+      "tier": "unit_tested",
+      "limits": "Syslog, OTLP and webhook sinks with per-tenant configuration. No named-vendor certification; no real tenant has consumed the export (RISK R-001).",
+      "tests_passed": 48,
+      "postgres_tests_passed": 0,
+      "modules_present": [
+        "sentinel/infrastructure/siem.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 48,
+      "tests_on_postgresql": 0,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "dr",
+      "name": "Backup, restore and point-in-time recovery",
+      "tier": "unit_tested",
+      "limits": "Local test and historical drill evidence does not establish independent failure-domain recovery (RISK R-003).",
+      "tests_passed": 26,
+      "postgres_tests_passed": 0,
+      "modules_present": [
+        "scripts/run_dr_postgres_wal_pitr_drill.py",
+        "deploy/wal-archive/wal_s3.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 44,
+      "tests_on_postgresql": 6,
+      "ci_jobs": [
+        "test"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "deploy",
+      "name": "Deployment configuration and operational telemetry",
+      "tier": "integration_tested",
+      "limits": "Local chart/settings, OTLP HTTP and separately retained two-pod kind smoke evidence. The image moved to a minimal digest-pinned base and the local vulnerability gate reports no HIGH or CRITICAL findings; CI and a published, signed image have not confirmed it (RISK R-015). scripts/run_cloud_proof.py ran the whole deployed journey on an AWS EC2 host (ap-south-1, Ubuntu 24.04, k3s with containerd, flannel plus kube-router policy) and removed it; that is a real cloud host and a second Kubernetes distribution and network plugin, NOT the declared topology: no managed PostgreSQL or Redis, load balancer, object store, second node or IAM integration. Collector TLS, the Terraform topology and soak remain unverified. Actions held until 2026-10-02.",
+      "tests_passed": 79,
+      "postgres_tests_passed": 5,
+      "modules_present": [
+        "Dockerfile",
+        "deploy/helm/sentinel/Chart.yaml",
+        "deploy/terraform/aws",
+        "sentinel/infrastructure/trace_export.py"
+      ],
+      "modules_missing": [],
+      "tests_collected": 80,
+      "tests_on_postgresql": 13,
+      "ci_jobs": [
+        "docker",
+        "kind-helm-smoke",
+        "deployment-validation"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    },
+    {
+      "key": "packaging",
+      "name": "Release hygiene",
+      "tier": "unit_tested",
+      "limits": "Allowlisted artifact contents, secret scan that never echoes, hash-pinned lock, clean-install smoke with a thin SDK. Image signing is opt-in and unverified until publishing is enabled.",
+      "tests_passed": 79,
+      "postgres_tests_passed": 0,
+      "modules_present": [
+        "scripts/build_release_artifact.py",
+        "scripts/scan_release_for_secrets.py",
+        "scripts/smoke_clean_install.py",
+        "requirements.lock"
+      ],
+      "modules_missing": [],
+      "tests_collected": 79,
+      "tests_on_postgresql": 0,
+      "ci_jobs": [
+        "release-hygiene",
+        "security"
+      ],
+      "ci_jobs_missing": [],
+      "production_evidence": [],
+      "external_evidence": []
+    }
+  ],
+  "external_gates_unverified": [
+    "independent security assessment (RISK R-002)",
+    "production observation by a real tenant (RISK R-001)",
+    "independent-failure-domain disaster recovery (RISK R-003)",
+    "applied cloud environment (RISK R-004)",
+    "blind detection evaluation (RISK R-005)"
+  ],
+  "claims_not_made": [
+    "production-ready",
+    "market-leading",
+    "compliant",
+    "secure",
+    "superior to a named competitor"
+  ]
+}

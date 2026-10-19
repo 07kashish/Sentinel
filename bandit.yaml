@@ -1,0 +1,52 @@
+# bandit configuration — exactly one documented skip.
+#
+# WHY THERE IS A SKIP AT ALL
+# --------------------------
+# `bandit -r sentinel -ll` reported 100 findings. Ninety-nine were B608
+# (`hardcoded_sql_expressions`) and one was B314 (stdlib XML parsing).
+#
+# The B314 finding was REAL: `SamlValidator.validate` parsed an unauthenticated
+# SAML assertion with `xml.etree.ElementTree`, which expands internal entities,
+# before it could check the signature. That is a pre-authentication denial of
+# service and it is fixed — `defusedxml`, `forbid_dtd=True`, a size cap, and
+# `tests_arch/test_saml_xml_hardening.py` to hold it.
+#
+# The ninety-nine B608 findings are a systematic false positive produced by this
+# codebase's design. Every statement is an f-string because the PLACEHOLDER
+# TOKEN differs per dialect — `?` on SQLite, `%s` on PostgreSQL — so
+# `Connection.p` is interpolated and every actual value is bound. Enumerated,
+# the 99 sites interpolate exactly this:
+#
+#       316  {p}
+#        28  {conn.p}
+#         1  {states}     ", ".join(p for _ in TERMINAL_STATES) — placeholders
+#         1  {table}      loop variable over INCIDENT_CHILD_TABLES, a constant
+#
+# Not one interpolates caller data.
+#
+# WHY THIS IS NOT A WEAKENING
+# ---------------------------
+# B608 is not silenced, it is REPLACED BY A STRICTER CHECK.
+# `tests_arch/test_sql_is_never_built_from_data.py` walks every SQL f-string in
+# the package by AST and asserts each interpolation is on a closed allowlist of
+# placeholder tokens and fixed identifiers — and separately proves those
+# identifiers come from module-level constants rather than trusting the name.
+#
+# Bandit asks "is there an f-string that looks like SQL?", which is true of
+# every statement here and so distinguishes nothing. The replacement asks "what
+# CAN be interpolated?" and fails on anything new, including shapes bandit rates
+# LOW confidence and passes over.
+#
+# A gate that can never pass is a gate that gets switched off, and that is how a
+# real finding eventually ships. B314 is the proof that this scan is worth
+# keeping runnable.
+#
+# RULES FOR EDITING THIS FILE
+# ---------------------------
+# `skips` must stay exactly [B608]. That is asserted by
+# `test_bandit_still_runs_every_other_rule`, so growing this list into a blanket
+# off-switch fails the build rather than quietly turning `security` green.
+# A finding that is real is not a skip — it is a fix, as B314 was.
+
+skips:
+  - B608

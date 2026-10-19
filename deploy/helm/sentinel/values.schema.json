@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "replicaCount",
+    "image",
+    "postgres",
+    "externalPostgres",
+    "auth",
+    "metrics",
+    "autoscaling",
+    "networkPolicy",
+    "serviceMesh",
+    "redis",
+    "requireExecutionBinding",
+    "rateLimitFailOpen",
+    "evidenceEncryption"
+  ],
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 3
+    },
+    "image": {
+      "type": "object",
+      "required": [
+        "repository",
+        "tag",
+        "digest",
+        "pullPolicy"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "latest"
+          }
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^$|^sha256:[0-9a-f]{64}$"
+        },
+        "pullPolicy": {
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        }
+      }
+    },
+    "evidenceEncryption": {
+      "type": "object",
+      "required": ["existingSecret", "secretKey", "keyId"],
+      "additionalProperties": false,
+      "properties": {
+        "existingSecret": {"type": "string", "minLength": 1},
+        "secretKey": {"type": "string", "minLength": 1},
+        "keyId": {"type": "string", "pattern": "^[a-z0-9]{1,32}$"}
+      }
+    },
+    "postgres": {
+      "$ref": "#/definitions/secretReference"
+    },
+    "auth": {
+      "$ref": "#/definitions/secretReference"
+    },
+    "metrics": {
+      "$ref": "#/definitions/secretReference"
+    },
+    "retentionDays": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "incidentRetentionDays": {
+      "description": "Days to keep incident history, or null for never delete (the default). 0 is refused: it is ambiguous between keeping nothing and keeping everything.",
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "autoscaling": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "minReplicas",
+        "maxReplicas"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 3
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 3
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "serviceMesh": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "mtls",
+        "destinationRule"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        },
+        "mtls": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "STRICT"
+              ]
+            }
+          }
+        },
+        "destinationRule": {
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "externalPostgres": {
+      "type": "object",
+      "required": [
+        "archiveTimeoutConfirmed",
+        "maxArchiveTimeoutSeconds"
+      ],
+      "properties": {
+        "archiveTimeoutConfirmed": {
+          "description": "Must be literally true. The chart does not deploy PostgreSQL, so continuous WAL archiving -- which the documented RPO depends on -- can only be configured on the external server. Rendering refuses until an operator states that it has been.",
+          "const": true
+        },
+        "maxArchiveTimeoutSeconds": {
+          "description": "Configuration threshold checked against the live server by helm test. Actual RPO requires measured archive delivery and recovery in an independent failure domain.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        }
+      }
+    },
+    "redis": {
+      "$ref": "#/definitions/secretReference"
+    },
+    "requireExecutionBinding": {
+      "const": true
+    },
+    "rateLimitFailOpen": {
+      "const": false
+    }
+  },
+  "definitions": {
+    "secretReference": {
+      "type": "object",
+      "required": [
+        "existingSecret",
+        "secretKey"
+      ],
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "secretKey": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

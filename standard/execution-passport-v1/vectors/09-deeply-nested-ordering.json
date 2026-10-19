@@ -1,0 +1,24 @@
+{
+  "why": "A canonicaliser that sorts only top-level keys passes every simple vector and fails here.",
+  "passport": {
+    "schema": "sentinel.passport/v1",
+    "execution_id": "exec-1",
+    "tenant_id": "acme",
+    "occurred_at": "2026-03-01T12:00:00+00:00",
+    "agent_id": "finance-agent",
+    "action": "transfer_funds",
+    "decision": "allowed",
+    "action_semantics": {
+      "z": {
+        "b": 1,
+        "a": [
+          {
+            "y": 1,
+            "x": 2
+          }
+        ]
+      }
+    }
+  },
+  "expect_codes": []
+}

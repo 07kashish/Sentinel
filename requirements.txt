@@ -1,0 +1,120 @@
+# Runtime dependencies. Deliberately small.
+#
+# The predecessor's requirements carried langchain, langgraph, openai, web3,
+# eth-account, tiktoken, redis, python-jose and roughly seventy transitive
+# packages. The rewritten tree imports exactly two of them at runtime --
+# fastapi and pydantic -- because the LLM, the attestation gateway and the
+# ledger are reached through PORTS, and the adapters behind those ports speak
+# HTTP over the standard library.
+#
+# That is not a cosmetic cleanup. Every pinned package is dependency-audit
+# surface, container-scan surface and supply-chain surface (OWASP ASI04), and a
+# dependency the code never imports is all cost and no benefit.
+#
+# Anything added here must be imported by `sentinel/`. Test-only tooling belongs
+# in requirements-dev.txt.
+
+fastapi==0.141.1
+pydantic==2.13.4
+
+# Starlette is FastAPI's transitive dependency and is pinned here anyway.
+#
+# `pip-audit` reported SIX distinct advisories against the 0.47.3 that floated
+# in behind `fastapi==0.116.1` -- PYSEC-2026-161, -248, -249, -1942, -2280,
+# -2281 -- and the highest fixed version among them is 1.3.1, so there is no 0.x
+# release that clears them.
+#
+# Six DISTINCT, eight ROWS. pip-audit prints one row per (advisory, fixed
+# version) pair, so an advisory with two fix branches appears twice, and counting
+# rows overstates it. Across all three flagged packages the report was 18 rows
+# and 14 unique advisories -- cryptography 8/7, starlette 8/6, scikit-learn 2/1.
+# Written down because that row count was miscounted twice while writing this
+# up.
+#
+# FastAPI's own constraint is `starlette>=0.46.0` with no upper
+# bound, which means a fresh resolve could land anywhere; leaving that to chance
+# in a security product is the same class of mistake as leaving `redis`
+# undeclared because the import is lazy. Pinned explicitly so the version in the
+# image is the version that was audited.
+starlette==1.6.0
+
+# ASGI server and process manager. Not imported by the application -- the
+# entrypoint is `sentinel.interface.asgi:create_application` -- but required to
+# serve it.
+uvicorn==0.49.0
+gunicorn==23.0.0
+
+# PostgreSQL driver. The engine refuses to fall back to SQLite when a Postgres
+# DSN is configured, so this is required in any live deployment.
+psycopg[binary]==3.3.4
+
+# AES-256-GCM for encryption at rest. Required, not optional: the persistence
+# layer encrypts sensitive columns with per-record data keys wrapped by a KEK,
+# and `EnvelopeCipher` has no fallback path -- a deployment without this cannot
+# read or write those columns at all.
+#
+# Deliberately NOT pgcrypto. Encrypting in the database means the key travels to
+# the database in a statement, so it lands in `pg_stat_statements`, in the query
+# log, and in the backup of both. Encrypting here means the database never sees
+# a key.
+#
+# Upgraded from 42.0.5, which `pip-audit` flagged with SEVEN advisories --
+# PYSEC-2026-35, -1284, -2141, -3553, -3554, GHSA-h4gh-qq45-vh27 and
+# GHSA-537c-gmf6-5ccf -- the highest of which is fixed in 49.0.0. This library
+# both encrypts data at rest and verifies SAML assertion signatures, so it is
+# the last dependency in this file that should be running behind on advisories.
+cryptography==50.0.0
+
+# Hardened XML parsing for SAML assertions. REQUIRED, not optional.
+#
+# `SamlValidator.validate` parses an assertion supplied by an UNAUTHENTICATED
+# caller, and it has to parse before it can verify -- the signature is inside
+# the document. `xml.etree.ElementTree` expands internal entities, so that parse
+# was a pre-authentication denial of service. Measured against the stdlib
+# parser: three nested entities turned ~30 bytes of input into 1000 characters;
+# nine levels of the same construction is the classic "billion laughs" and ends
+# the process before it reaches the signature check.
+#
+# defusedxml is pure Python with no transitive dependencies, which is why it
+# clears the bar this file sets. Rolling our own DOCTYPE rejection was the
+# alternative and was rejected: hand-written parser hardening in a security
+# product is how the next advisory gets written.
+defusedxml==0.7.1
+
+# Redis client, for the shared cache and the distributed token bucket.
+#
+# Imported lazily by `RedisCache.from_url`, so a deployment that uses the
+# in-process cache instead never needs it installed. It is pinned here rather
+# than left undeclared because a lazy import is still a runtime dependency for
+# everyone who does configure Redis, and an undeclared one fails at the first
+# request rather than at build time.
+redis==8.0.1
+
+# Soft prompt-injection classifier. A RUNTIME dependency, not evaluation-only:
+# `SENTINEL_SOFT_PROMPT_DETECT` defaults to true, so the composition root
+# unpickles `evaluation/artifacts/soft_prompt_model.pkl` on every start, and
+# that unpickle reconstructs scikit-learn estimators. Without this line an image
+# built from this file has the artifact but not the code to read it, and
+# detection degrades from ~0.855 to ~0.067 independent English recall.
+#
+# The version is pinned to the one the committed artifact was TRAINED with
+# (see `evaluation/artifacts/soft_prompt_model_card.json`). Unpickling an
+# estimator across a scikit-learn minor version is explicitly unsupported
+# upstream, so this pin and that artifact are a matched pair: retrain the
+# artifact in the same change that moves this pin, never one without the other.
+#
+# MOVED FROM 1.4.0 FOR CVE-2024-5206 / PYSEC-2024-110 (CVSS 4.7).
+# `TfidfVectorizer.stop_words_` retained EVERY token seen during training rather
+# than only the discarded subset, so the fitted estimator carried training data
+# it had no functional use for. Fixed upstream in 1.5.0.
+#
+# THE ARTIFACT WAS RETRAINED IN THIS SAME CHANGE, not merely re-pinned. A .pkl
+# fitted under the vulnerable version can carry the leaked attribute regardless
+# of which version later loads it -- bumping the dependency alone would have
+# left the data sitting in the committed file. That is the matched-pair rule
+# above being honoured rather than quoted.
+scikit-learn==1.9.0
+
+# Operational tracing uses the standard OTLP exporter; no customer payloads.
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0

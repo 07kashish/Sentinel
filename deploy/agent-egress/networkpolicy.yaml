@@ -1,0 +1,73 @@
+# F-11 deployment contract (primary): agent NetworkPolicy fail-closed egress.
+#
+# Intent: enrolled agent workloads cannot reach tools/models/networks except via
+# Sentinel (admission + tool proxy). Bypass-of-Sentinel fails closed at the
+# cluster network layer — this is NOT in-process transparent interception.
+#
+# Mandatory labels on agent pods:
+#   sentinel.io/role=agent
+#   sentinel.io/enrolled=true
+# Mandatory annotation (enforced by admission policy when applied):
+#   sentinel.io/tool-path: sdk | execute | egress-proxy
+#
+# Operator must point sentinelNamespace / sentinelApp to the live Sentinel release.
+# Apply with:
+#   kubectl apply -f deploy/agent-egress/networkpolicy.yaml
+#   kubectl apply -f deploy/agent-egress/admission/validating-admission-policy.yaml
+#   # optional sidecar: deploy/agent-egress/egress-proxy/
+#
+# Default-deny selects role=agent. Allowlist selects role=agent AND enrolled=true.
+# Unenrolled agent-labeled pods therefore have no egress path (fail closed).
+#
+# Residual: processes that never run under this policy / admission binding remain
+# outside the product observation window — that is an operator contract breach.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-agent-default-deny
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  podSelector:
+    matchLabels:
+      sentinel.io/role: agent
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-agent-egress-to-sentinel-only
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  podSelector:
+    matchLabels:
+      sentinel.io/role: agent
+      sentinel.io/enrolled: "true"
+  policyTypes:
+    - Egress
+  egress:
+    # DNS (cluster)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    # Sentinel API / tool proxy only (fail closed for all other egress)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sentinel
+          podSelector:
+            matchLabels:
+              app: sentinel
+      ports:
+        - {protocol: TCP, port: 8000}
+        - {protocol: TCP, port: 80}

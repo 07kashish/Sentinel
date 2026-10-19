@@ -1,0 +1,71 @@
+#!/bin/bash
+# Sentinel brain host bootstrap. Idempotent; logs to /var/log/sentinel-brain-bootstrap.log.
+# Installs the distribution's container runtime and jq. Downloads nothing else.
+set -euo pipefail
+exec > >(tee -a /var/log/sentinel-brain-bootstrap.log) 2>&1
+
+dnf install -y -q docker jq
+systemctl enable --now docker
+
+# The container runs as 10001:10001; the same account owns the CLI's sign-in.
+id sentinel >/dev/null 2>&1 || useradd --uid 10001 --user-group --home-dir /var/lib/sentinel-agy --shell /bin/bash sentinel
+install -d -o sentinel -g sentinel -m 0700 /var/lib/sentinel-agy
+# The OWNER puts their advisor CLI here by hand; nothing is fetched for them.
+install -d -o root -g root -m 0755 /opt/agy
+
+cat > /usr/local/bin/sentinel-brain-start <<'SCRIPT'
+#!/bin/bash
+# Mirror the ECS task definition (image digest, environment, secrets) and run it as the pipeline replica.
+set -euo pipefail
+REGION="${region}"
+FAMILY="${task_family}"
+RUN=/run/sentinel-brain
+install -d -m 0700 "$RUN"
+umask 077
+TD=$(aws ecs describe-task-definition --region "$REGION" --task-definition "$FAMILY" --query 'taskDefinition.containerDefinitions[0]' --output json)
+IMAGE=$(jq -r '.image' <<<"$TD")
+OVERRIDDEN='^(SENTINEL_PIPELINE_WORKERS|GUNICORN_WORKERS|SENTINEL_ADVISOR_.*|SENTINEL_DB_POOL_MAX)$'
+jq -r '.environment[] | "\(.name)=\(.value)"' <<<"$TD" | grep -Ev "$OVERRIDDEN" > "$RUN/env"
+jq -r '.secrets[] | "\(.name) \(.valueFrom)"' <<<"$TD" | while read -r NAME ARN; do
+  [[ "$NAME" =~ $OVERRIDDEN ]] && continue
+  printf '%s=%s\n' "$NAME" "$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$ARN" --query SecretString --output text)" >> "$RUN/env"
+done
+cat >> "$RUN/env" <<OVERRIDES
+SENTINEL_PIPELINE_WORKERS=${pipeline_workers}
+GUNICORN_WORKERS=1
+SENTINEL_DB_POOL_MAX=8
+SENTINEL_ADVISOR_CLI_COMMAND=/opt/agy/agy
+SENTINEL_ADVISOR_CLI_HOME=/var/lib/sentinel-agy
+SENTINEL_ADVISOR_MODEL=${advisor_model}
+OVERRIDES
+REGISTRY=$(cut -d/ -f1 <<<"$IMAGE")
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
+docker pull -q "$IMAGE" >/dev/null
+docker rm -f sentinel-brain >/dev/null 2>&1 || true
+exec docker run --rm --name sentinel-brain --read-only --tmpfs /tmp --tmpfs /app/data:uid=10001,gid=10001 \
+  --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges \
+  --env-file "$RUN/env" \
+  -v /opt/agy:/opt/agy:ro -v /var/lib/sentinel-agy:/var/lib/sentinel-agy \
+  "$IMAGE"
+SCRIPT
+chmod 0755 /usr/local/bin/sentinel-brain-start
+
+cat > /etc/systemd/system/sentinel-brain.service <<'UNIT'
+[Unit]
+Description=Sentinel pipeline replica with the advisor CLI
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+ExecStart=/usr/local/bin/sentinel-brain-start
+ExecStop=/usr/bin/docker stop sentinel-brain
+ExecStopPost=/bin/rm -f /run/sentinel-brain/env
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now sentinel-brain.service
+echo "bootstrap complete"

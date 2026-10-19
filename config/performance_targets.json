@@ -1,0 +1,41 @@
+{
+  "_readme": [
+    "Phase 2 performance targets. CONFIGURABLE, because a target is a deployment",
+    "decision -- an on-prem cluster and a shared SaaS tier do not owe the same",
+    "latency -- and because a number hardcoded in a gate is one nobody can argue",
+    "with when it is wrong.",
+    "",
+    "These are AUTHORIZATION-PATH targets only: the deterministic decision that",
+    "runs synchronously because enforcement requires it. They deliberately do NOT",
+    "cover ingest, detection or correlation, which are asynchronous and whose",
+    "latency a caller never waits on.",
+    "",
+    "A measurement satisfies a target only when the artifact BINDS to the build",
+    "(scripts/release_binding.py). A benchmark from another commit proves nothing",
+    "about this one, and Phase 1 exists because that used to pass."
+  ],
+  "authorization_decision": {
+    "p50_ms": 5.0,
+    "p95_ms": 50.0,
+    "p99_ms": 100.0,
+    "rationale": [
+      "Specification section 79. The gate is in front of every consequential",
+      "agent action, so its latency is added to work a human may be waiting on.",
+      "50 ms at p95 keeps it below the threshold at which an integrator starts",
+      "looking for a way to bypass it -- which is the real failure mode for an",
+      "inline control, not the milliseconds themselves."
+    ],
+    "applies_when": "no external network call is in the decision path"
+  },
+  "environment": {
+    "_note": [
+      "A measurement is only interpretable against the machine that produced it.",
+      "The benchmark records CPU count, platform and Python version into its",
+      "artifact so a p95 from a laptop is never mistaken for a p95 from a",
+      "production node. The gate does NOT infer equivalence between machines --",
+      "it reports what was measured and where."
+    ],
+    "minimum_samples": 2000,
+    "warmup_samples": 200
+  }
+}

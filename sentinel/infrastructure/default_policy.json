@@ -1,0 +1,352 @@
+{
+  "policy_id": "sentinel-default",
+  "version": "1.6.0",
+  "_readme": [
+    "Deterministic policy for realistic agent tool calls. The control path is",
+    "normalise_event -> action_semantics -> these rules; no LLM is consulted.",
+    "Rules read caller-unassertable normalised.* and metadata.semantics fields",
+    "where possible, while keeping requires_verified_identity for self-reported",
+    "risk fields."
+  ],
+  "rules": [
+    {
+      "id": "sensitive-file-access",
+      "description": "Access to a credential or key material path in any path-like field",
+      "field": "normalised.paths",
+      "mode": "contains",
+      "values": [
+        ".env",
+        "id_rsa",
+        "id_ed25519",
+        "/etc/passwd",
+        "/etc/shadow",
+        ".aws/credentials",
+        ".ssh/",
+        ".npmrc",
+        ".pypirc",
+        "kubeconfig",
+        "admin.conf",
+        "wallet.json",
+        "key.pem",
+        "secrets.json",
+        "db_password",
+        "/run/secrets/"
+      ],
+      "severity": 90,
+      "incident_type": "data_exfiltration_attempt",
+      "exclude": [
+        ".example",
+        ".sample",
+        ".template",
+        ".dist",
+        "/docs/",
+        "readme"
+      ],
+      "mitre": [
+        "T1552.001",
+        "T1083"
+      ],
+      "owasp_asi": [
+        "ASI02"
+      ]
+    },
+    {
+      "id": "dangerous-command",
+      "description": "Destructive shell or interpreter execution extracted from tool arguments",
+      "field": "normalised.command_text",
+      "mode": "regex",
+      "values": [
+        "\\brm\\s+-[A-Za-z]*r[A-Za-z]*f[A-Za-z]*\\s+(?:/|~|\\$HOME|[A-Za-z]:\\\\)",
+        "\\bmkfs(?:\\.[A-Za-z0-9]+)?\\b",
+        "\\bdd\\b[^\\n]{0,200}\\bof=/dev/",
+        ":\\s*\\(\\)\\s*\\{\\s*:\\|:\\s*&\\s*\\}\\s*;",
+        "\\bchmod\\s+(?:-R\\s+)?0?777\\b",
+        "\\bcurl\\b[^\\n]{0,300}\\|\\s*(?:sudo\\s+)?(?:sh|bash)\\b",
+        "\\bwget\\b[^\\n]{0,300}\\|\\s*(?:sudo\\s+)?(?:sh|bash)\\b",
+        "\\bbase64\\s+(?:-[A-Za-z]*d[A-Za-z]*|--decode)\\b",
+        "\\bpython(?:3(?:\\.\\d+)?)?\\s+-c\\b",
+        "/dev/tcp/",
+        "\\b(?:nc|ncat|netcat)\\b[^\\n]{0,120}\\s-e\\s",
+        "\\bncat\\b[^\\n]{0,120}\\s--exec\\b",
+        "\\bpowershell(?:\\.exe)?\\b[^\\n]{0,400}\\b(?:DownloadString|DownloadFile|Invoke-WebRequest|Invoke-RestMethod|IEX|iwr|irm|Net\\.WebClient)\\b"
+      ],
+      "severity": 90,
+      "incident_type": "unauthorized_shell_execution",
+      "mitre": [
+        "T1059",
+        "T1059.004",
+        "T1105",
+        "T1485"
+      ],
+      "owasp_asi": [
+        "ASI02",
+        "ASI05"
+      ]
+    },
+    {
+      "id": "risky-command-egress",
+      "description": "Command-line egress to an IP literal, raw port, tunnel, paste, or exfiltration service",
+      "field": "normalised.command_text",
+      "mode": "regex",
+      "values": [
+        "\\b(?:curl|wget|scp|rsync|nc|ncat|webhook)\\b[^\\n]{0,300}\\b(?:https?|ftp|wss?)://(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
+        "\\b(?:curl|wget|scp|rsync|nc|ncat|webhook)\\b[^\\n]{0,300}\\b(?:https?|ftp|wss?)://[^\\s/:]+:\\d{2,5}\\b",
+        "\\b(?:curl|wget|scp|rsync|nc|ncat|webhook)\\b[^\\n]{0,300}\\b(?:pastebin\\.com|ngrok(?:-free)?\\.(?:io|app)|requestbin\\.(?:net|com)|webhook\\.site|transfer\\.sh|\\.onion)\\b"
+      ],
+      "severity": 86,
+      "incident_type": "suspicious_network_egress",
+      "mitre": [
+        "T1041",
+        "T1105"
+      ],
+      "owasp_asi": [
+        "ASI02"
+      ]
+    },
+    {
+      "id": "sql-ddl-or-grant",
+      "description": "SQL DDL or grant operation extracted from arguments or metadata",
+      "field": "normalised.sql_text",
+      "mode": "regex",
+      "values": [
+        "\\b(?:DROP|TRUNCATE|ALTER|GRANT|REVOKE)\\b"
+      ],
+      "severity": 88,
+      "incident_type": "dangerous_database_operation",
+      "mitre": [
+        "T1485",
+        "T1098"
+      ],
+      "owasp_asi": [
+        "ASI04",
+        "ASI05"
+      ]
+    },
+    {
+      "id": "sql-unbounded-mutation",
+      "description": "SQL DELETE or UPDATE without an apparent row filter",
+      "field": "normalised.sql_text",
+      "mode": "regex",
+      "values": [
+        "(?is)\\bDELETE\\s+FROM\\b(?:(?!\\bWHERE\\b).)*$",
+        "(?is)\\bUPDATE\\s+\\S+\\s+SET\\b(?:(?!\\bWHERE\\b).)*$"
+      ],
+      "severity": 86,
+      "incident_type": "dangerous_database_operation",
+      "mitre": [
+        "T1485"
+      ],
+      "owasp_asi": [
+        "ASI04"
+      ]
+    },
+    {
+      "id": "untrusted-destination",
+      "description": "Outbound URL host is a denied, tunnelling, paste, or exfiltration destination",
+      "field": "normalised.urls",
+      "mode": "host_endswith",
+      "values": [
+        "attacker.example",
+        "malicious-site.com",
+        "hacker-c2.net",
+        "pastebin.com",
+        "ngrok.io",
+        "ngrok-free.app",
+        "requestbin.net",
+        "requestbin.com",
+        "webhook.site",
+        "transfer.sh",
+        "onion"
+      ],
+      "severity": 86,
+      "incident_type": "c2_communication_detected",
+      "mitre": [
+        "T1071.001",
+        "T1041"
+      ],
+      "owasp_asi": [
+        "ASI02"
+      ]
+    },
+    {
+      "id": "risky-url-shape",
+      "description": "URL uses an IP literal or raw port often seen in direct exfiltration and tunnels",
+      "field": "normalised.urls",
+      "mode": "regex",
+      "values": [
+        "\\b(?:https?|ftp|wss?)://(?:\\d{1,3}\\.){3}\\d{1,3}(?::\\d{1,5})?\\b",
+        "\\b(?:https?|ftp|wss?)://[^\\s/:]+:\\d{2,5}\\b"
+      ],
+      "severity": 84,
+      "incident_type": "suspicious_network_egress",
+      "mitre": [
+        "T1041",
+        "T1105"
+      ],
+      "owasp_asi": [
+        "ASI02"
+      ]
+    },
+    {
+      "id": "encoded-payload-decoded-dangerous",
+      "description": "One-level decoded payload contains destructive command, SQL DDL, egress, or credential path",
+      "field": "normalised.decoded_texts",
+      "mode": "regex",
+      "values": [
+        "\\brm\\s+-[A-Za-z]*r[A-Za-z]*f[A-Za-z]*\\s+(?:/|~|\\$HOME|[A-Za-z]:\\\\)",
+        "\\b(?:DROP|TRUNCATE|ALTER|GRANT|REVOKE)\\b",
+        "\\b(?:curl|wget)\\b[^\\n]{0,300}\\|\\s*(?:sh|bash)\\b",
+        "/dev/tcp/",
+        "\\b(?:pastebin\\.com|ngrok(?:-free)?\\.(?:io|app)|requestbin\\.(?:net|com)|webhook\\.site|transfer\\.sh|\\.onion)\\b",
+        "\\b(?:\\.aws/credentials|\\.ssh/|id_rsa|id_ed25519|/etc/shadow|kubeconfig)\\b"
+      ],
+      "severity": 95,
+      "incident_type": "encoded_payload_detected",
+      "mitre": [
+        "T1027",
+        "T1059",
+        "T1140"
+      ],
+      "owasp_asi": [
+        "ASI02",
+        "ASI05"
+      ]
+    },
+    {
+      "id": "prompt-injection-in-metadata",
+      "description": "Language-independent instruction override, role token, hidden text, or image exfil marker",
+      "field": "normalised.injection_markers",
+      "mode": "contains",
+      "values": [
+        "override_instruction:",
+        "role_token",
+        "hidden_text:",
+        "markdown_image_exfil"
+      ],
+      "severity": 80,
+      "incident_type": "prompt_injection_attempt",
+      "mitre": [
+        "T1566",
+        "T1562.001"
+      ],
+      "owasp_asi": [
+        "ASI01",
+        "ASI09"
+      ]
+    },
+    {
+      "id": "policy-override-attempt",
+      "description": "Fallback prompt-injection markers in raw folded text",
+      "field": "normalised.raw_texts",
+      "mode": "regex",
+      "values": [
+        "developer\\s+mode",
+        "print\\s+your\\s+system\\s+prompt",
+        "reveal\\s+(?:the\\s+)?(?:secret|api\\s*key|credential|token)",
+        "exfiltrate"
+      ],
+      "severity": 78,
+      "incident_type": "policy_bypass_attempt",
+      "mitre": [
+        "T1562.001"
+      ],
+      "owasp_asi": [
+        "ASI01",
+        "ASI09"
+      ]
+    },
+    {
+      "id": "kubernetes-sensitive-operation",
+      "description": "Kubernetes delete, exec, or patch against namespaces, secrets, cluster roles, or daemonsets",
+      "field": "metadata.semantics.operation",
+      "mode": "regex",
+      "values": [
+        "\\b(?:delete|exec|patch)\\s+(?:namespace|namespaces|secret|secrets|clusterrole|clusterroles|clusterrolebinding|clusterrolebindings|daemonset|daemonsets)\\b"
+      ],
+      "severity": 88,
+      "incident_type": "privileged_platform_operation",
+      "mitre": [
+        "T1611",
+        "T1098",
+        "T1485"
+      ],
+      "owasp_asi": [
+        "ASI04",
+        "ASI05"
+      ]
+    },
+    {
+      "id": "cloud-iam-write",
+      "description": "Cloud IAM write, grant, policy, or credential operation",
+      "field": "metadata.semantics.operation",
+      "mode": "regex",
+      "values": [
+        "^iam:(?:Create|Update|Delete|Attach|Detach|Put|Set|Add|Remove|Pass)"
+      ],
+      "severity": 88,
+      "incident_type": "privileged_platform_operation",
+      "mitre": [
+        "T1078.004",
+        "T1098"
+      ],
+      "owasp_asi": [
+        "ASI04"
+      ]
+    },
+    {
+      "id": "critical-platform-operation",
+      "description": "Deterministically classified critical-tier platform operation",
+      "field": "metadata.semantics.tier",
+      "mode": "contains",
+      "values": [
+        "critical"
+      ],
+      "severity": 86,
+      "incident_type": "privileged_platform_operation",
+      "mitre": [
+        "T1078.004",
+        "T1098",
+        "T1484"
+      ],
+      "owasp_asi": [
+        "ASI04"
+      ]
+    },
+    {
+      "id": "high-impact-platform-operation",
+      "description": "Deterministically classified high-tier platform operation",
+      "field": "metadata.semantics.tier",
+      "mode": "contains",
+      "values": [
+        "high"
+      ],
+      "severity": 72,
+      "incident_type": "high_impact_platform_operation",
+      "mitre": [
+        "T1078.004",
+        "T1485"
+      ],
+      "owasp_asi": [
+        "ASI04"
+      ]
+    },
+    {
+      "id": "caller-asserted-high-risk",
+      "description": "Caller's own riskScore above threshold. Trusted only when the event is signed.",
+      "field": "metadata.riskScore",
+      "mode": "gt",
+      "values": [
+        0.7
+      ],
+      "severity": 75,
+      "incident_type": "preprocessor_flagged",
+      "requires_verified_identity": true,
+      "mitre": [
+        "T1562.001"
+      ],
+      "owasp_asi": [
+        "ASI03"
+      ]
+    }
+  ]
+}

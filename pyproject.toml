@@ -1,0 +1,78 @@
+# Packaging for `sentinel` as `sentinel-agent-trust`.
+#
+# TWO INSTALLS, ONE WHEEL
+# -----------------------
+#   pip install sentinel-agent-trust            the SDK. Standard library only.
+#   pip install "sentinel-agent-trust[server]"  the service, with the runtime pins.
+#
+# The base install has NO dependencies on purpose. A customer installing the
+# SDK into their agent runtime must not receive a web framework, a database
+# driver or a classifier with it, and `scripts/smoke_clean_install.py` proves
+# on every release that importing `sentinel.sdk` loads nothing outside the
+# standard library. The server modules are present in the wheel but import
+# their dependencies lazily at composition time, so they fail with a clear
+# ImportError -- not at `import sentinel.sdk`.
+#
+# `requirements.txt` remains the lockstep source of truth for the runtime pins;
+# the `server` list below is a COPY of those pins and must be kept identical
+# to it (a test compares them). It is duplicated rather than referenced because
+# a `pyproject.toml` that read `requirements.txt` at build time would make the
+# installable metadata depend on a file a wheel does not carry.
+# `requirements.lock` is the hash-pinned resolution of the same file and is
+# what the container image installs from.
+#
+# Optional groups:
+#   sdk        -- kept for callers that already spell it; identical to the base.
+#   server     -- the service runtime.
+#   openai / langchain / anthropic
+#              -- the framework each adapter under `sentinel.sdk.adapters`
+#                 targets. The adapters are duck-typed and do not import the
+#                 framework, so these groups exist for convenience only.
+
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-agent-trust"
+version = "0.1.0"
+description = "Runtime trust for AI agents: a pre-action gate, execution binding and a verifiable Execution Passport."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+sdk = []
+server = [
+    "fastapi==0.141.1",
+    "pydantic==2.13.4",
+    "starlette==1.6.0",
+    "uvicorn==0.49.0",
+    "gunicorn==23.0.0",
+    "psycopg[binary]==3.3.4",
+    "cryptography==50.0.0",
+    "defusedxml==0.7.1",
+    "redis==8.0.1",
+    "scikit-learn==1.9.0",
+    "opentelemetry-sdk==1.44.0",
+    "opentelemetry-exporter-otlp-proto-http==1.44.0",
+]
+openai = ["openai-agents"]
+langchain = ["langchain-core"]
+anthropic = ["anthropic"]
+
+[project.scripts]
+sentinel-mcp-stdio = "sentinel.sdk.mcp_stdio:main"
+sentinel-discover = "sentinel.sdk.discovery:main"
+sentinel-advisor-check = "sentinel.interface.advisor_check:main"
+
+[tool.setuptools.packages.find]
+include = ["sentinel*"]
+
+# The shipped ruleset travels INSIDE the wheel. `config/default_policy.json`
+# is the human-facing copy in a checkout; the two are asserted byte-identical
+# by a test, and `DEFAULT_POLICY_PATH` prefers the checkout copy when one
+# exists so that editing it has the effect an operator expects.
+[tool.setuptools.package-data]
+sentinel = ["infrastructure/default_policy.json", "interface/console/index.html", "interface/console/app.js", "interface/console/app.css"]

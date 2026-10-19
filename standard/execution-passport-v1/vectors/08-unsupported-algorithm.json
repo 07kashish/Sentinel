@@ -1,0 +1,16 @@
+{
+  "why": "Refused rather than guessed at.",
+  "passport": {
+    "schema": "sentinel.passport/v1",
+    "execution_id": "exec-1",
+    "tenant_id": "acme",
+    "occurred_at": "2026-03-01T12:00:00+00:00",
+    "agent_id": "finance-agent",
+    "action": "transfer_funds",
+    "decision": "allowed"
+  },
+  "algorithm": "rsa-pkcs1",
+  "expect_codes": [
+    "unsupported_algorithm"
+  ]
+}

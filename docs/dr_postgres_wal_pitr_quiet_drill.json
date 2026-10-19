@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "status": "measured_continuous_wal_archive_quiet",
+  "precondition": null,
+  "targets": {
+    "rpo_seconds": 300,
+    "rto_seconds": 1800
+  },
+  "workload": {
+    "mode": "quiet",
+    "quiet_detail": {
+      "rows_per_batch": 20,
+      "archive_timeout_seconds": 60,
+      "segments_archived_before_idle": 3,
+      "segments_archived_after_idle": 4,
+      "timeout_forced_switch_with_no_writes": true
+    },
+    "batches": 2,
+    "rows_per_batch": 20,
+    "total_rows_committed": 40,
+    "wal_segments_archived_before_crash": 4,
+    "batch_marks": [
+      {
+        "batch": 1,
+        "last_commit_at": "2026-08-12 12:17:13.194836+00"
+      },
+      {
+        "batch": 2,
+        "last_commit_at": "2026-08-12 12:18:10.383213+00"
+      }
+    ],
+    "last_commit_before_crash": "2026-08-12 12:18:10.383213+00",
+    "crash_mode": "pg_ctl stop -m immediate (no checkpoint, no final archive)",
+    "crash_seconds": 0.1312
+  },
+  "measured": {
+    "experimental_rpo_seconds": 57.1884,
+    "rows_lost_to_unarchived_segment": 20,
+    "last_recoverable_commit": "2026-08-12 12:17:13.194836+00",
+    "latest_recovery_max_batch": 1,
+    "experimental_rto_seconds": 7.8678,
+    "pitr_recovery_seconds": 6.7714,
+    "pitr_target_time": "2026-08-12T12:17:13.194836+00:00",
+    "pitr_target_batch": 1,
+    "pitr_observed_max_batch": 1,
+    "pitr_rows_at_target": 19,
+    "pitr_selected_point_in_time": true,
+    "notes": "Continuous archive_mode=on with a real archive_command; recovery from base backup + archived WAL only, crashed data directory untouched. Single node, local disk: NOT a cross-region failover measurement."
+  },
+  "meets_rpo_target": true,
+  "meets_rto_target": true,
+  "total_drill_seconds": 130.6543,
+  "recorded_at": "2026-08-12T12:19:10.620222+00:00"
+}

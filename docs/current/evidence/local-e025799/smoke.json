@@ -1,0 +1,63 @@
+{
+  "wheel": "sentinel_agent_trust-0.1.0-py3-none-any.whl",
+  "wheel_sha256": "d4c7eb1c82f357689adada8ee94624dfe1b6880bb3bd69b0ff6a290165e6794c",
+  "python": "3.13.14",
+  "verdict": "PASS",
+  "steps": [
+    {
+      "name": "thin.import",
+      "ok": true,
+      "observed": "8 SDK modules imported; installed packages: ['pip', 'sentinel-agent-trust']; non-stdlib modules loaded: none"
+    },
+    {
+      "name": "server.install",
+      "ok": true,
+      "observed": "wheel with the server extra installed into a fresh venv"
+    },
+    {
+      "name": "server.cli.migrate",
+      "ok": true,
+      "observed": "exit 0"
+    },
+    {
+      "name": "server.cli.verify",
+      "ok": true,
+      "observed": "exit 0"
+    },
+    {
+      "name": "server.ready",
+      "ok": true,
+      "observed": "GET /health/ready returned 200"
+    },
+    {
+      "name": "server.live",
+      "ok": true,
+      "observed": "GET /health/live returned 200"
+    },
+    {
+      "name": "server.asset.console",
+      "ok": true,
+      "observed": "GET /console: status=200, expected content=True"
+    },
+    {
+      "name": "server.asset.app.js",
+      "ok": true,
+      "observed": "GET /console/app.js: status=200, expected content=True"
+    },
+    {
+      "name": "server.asset.app.css",
+      "ok": true,
+      "observed": "GET /console/app.css: status=200, expected content=True"
+    },
+    {
+      "name": "server.evaluate",
+      "ok": true,
+      "observed": "POST /v1/protect/evaluate returned 200 with decision='block'"
+    },
+    {
+      "name": "server.unbound_execute_refused",
+      "ok": true,
+      "observed": "POST /v1/tools/execute without an authorization returned 403 (403 expected)"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Run these two shell commands and report only their combined output, nothing else: (1) python --version  (2) git rev-parse --abbrev-ref HEAD

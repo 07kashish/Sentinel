@@ -1,0 +1,21 @@
+{
+  "name": "minimal-required-fields-only",
+  "why": "Only the six required fields. A passport recording what was actually known beats one that could not be written because a field nobody had was mandatory.",
+  "document": {
+    "schema": "sentinel.execution_passport.v1",
+    "execution_id": "exec-7f3a",
+    "tenant_id": "acme",
+    "occurred_at": "2026-09-03T12:00:00+00:00",
+    "agent_id": "agent:infra-writer",
+    "action": "s3:PutObject",
+    "decision": "allow"
+  },
+  "expect": {
+    "defects": [],
+    "tolerate": [
+      "signature_unverified",
+      "policy_unverified"
+    ],
+    "digest": "a63e7d0492115c61ee6deee5e85dcde1500450747767e114a7e0295b92c6f610"
+  }
+}

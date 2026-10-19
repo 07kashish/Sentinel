@@ -1,0 +1,258 @@
+{
+  "policy": "sentinel-default@1.6.0",
+  "corpus": {
+    "total": 34,
+    "malicious": 22,
+    "benign": 12,
+    "known_gaps": 3,
+    "categories": [
+      "benign",
+      "c2",
+      "code_execution",
+      "kubernetes",
+      "prompt_injection",
+      "sensitive_file",
+      "sql",
+      "trust_boundary"
+    ],
+    "caveat": "34 hand-written cases. Sufficient to detect regressions and to characterise known weaknesses. NOT sufficient to claim a detection rate on production traffic."
+  },
+  "confusion_matrix": {
+    "true_positives": 20,
+    "false_positives": 0,
+    "false_negatives": 2,
+    "true_negatives": 12
+  },
+  "precision": 1.0,
+  "recall": 0.909,
+  "f1": 0.952,
+  "false_positive_rate": 0.0,
+  "intervals": {
+    "precision": {
+      "point": 1.0,
+      "lower": 0.8389,
+      "upper": 1.0,
+      "confidence": 0.95,
+      "successes": 20,
+      "trials": 20,
+      "quotable": false,
+      "reading": "20/20 \u2014 too small to quote. The true rate is between 84% and 100% at 95% confidence, which is most of the range. Report the sample, not the rate."
+    },
+    "recall": {
+      "point": 0.9091,
+      "lower": 0.7218,
+      "upper": 0.9747,
+      "confidence": 0.95,
+      "successes": 20,
+      "trials": 22,
+      "quotable": false,
+      "reading": "20/22 \u2014 too small to quote. The true rate is between 72% and 97% at 95% confidence, which is most of the range. Report the sample, not the rate."
+    },
+    "false_positive_rate": {
+      "point": 0.0,
+      "lower": 0.0,
+      "upper": 0.2425,
+      "confidence": 0.95,
+      "successes": 0,
+      "trials": 12,
+      "quotable": false,
+      "reading": "0/12 \u2014 too small to quote. The true rate is between 0% and 24% at 95% confidence, which is most of the range. Report the sample, not the rate."
+    }
+  },
+  "ece": 0.0588,
+  "ece_notes": "ECE from hard 0/1 confidences on DeterministicPolicy \u2014 not a soft probabilistic model. Do not claim calibration improvement vs soft classifiers.",
+  "f1_interval_notes": "no interval: F1 is a harmonic mean of two proportions, not a proportion. Read the precision and recall intervals instead.",
+  "auc": null,
+  "auc_notes": "AUC not computed for hard deterministic policy on this corpus; leave null rather than fabricate.",
+  "recall_by_category": {
+    "c2": {
+      "malicious_cases": 4,
+      "detected": 3,
+      "recall": 0.75
+    },
+    "code_execution": {
+      "malicious_cases": 7,
+      "detected": 7,
+      "recall": 1.0
+    },
+    "kubernetes": {
+      "malicious_cases": 1,
+      "detected": 1,
+      "recall": 1.0
+    },
+    "prompt_injection": {
+      "malicious_cases": 4,
+      "detected": 4,
+      "recall": 1.0
+    },
+    "sensitive_file": {
+      "malicious_cases": 4,
+      "detected": 3,
+      "recall": 0.75
+    },
+    "sql": {
+      "malicious_cases": 1,
+      "detected": 1,
+      "recall": 1.0
+    },
+    "trust_boundary": {
+      "malicious_cases": 1,
+      "detected": 1,
+      "recall": 1.0
+    }
+  },
+  "latency_ms": {
+    "mean": 0.387,
+    "p95": 0.511,
+    "max": 1.599
+  },
+  "missed_cases": [
+    "evade-renamed-secret",
+    "evade-novel-domain"
+  ],
+  "false_alarm_cases": [],
+  "unexpected_misses": [],
+  "same_source": {
+    "total": 42,
+    "precision": 0.95,
+    "recall": 0.905,
+    "f1": 0.927,
+    "true_positives": 19,
+    "false_positives": 1,
+    "false_negatives": 2,
+    "true_negatives": 20,
+    "note": "Synthetic same-source metrics; not a production claim."
+  },
+  "interpretation": "Measured on a small hand-written corpus, NOT production traffic. Recall here is an upper bound: the corpus contains the evasions we already know about. Do not quote these figures as a product detection rate.",
+  "promotion": {
+    "allowed": true,
+    "reasons": [],
+    "metrics": {
+      "policy": "sentinel-default@1.6.0",
+      "corpus": {
+        "total": 34,
+        "malicious": 22,
+        "benign": 12,
+        "known_gaps": 3,
+        "categories": [
+          "benign",
+          "c2",
+          "code_execution",
+          "kubernetes",
+          "prompt_injection",
+          "sensitive_file",
+          "sql",
+          "trust_boundary"
+        ],
+        "caveat": "34 hand-written cases. Sufficient to detect regressions and to characterise known weaknesses. NOT sufficient to claim a detection rate on production traffic."
+      },
+      "confusion_matrix": {
+        "true_positives": 20,
+        "false_positives": 0,
+        "false_negatives": 2,
+        "true_negatives": 12
+      },
+      "precision": 1.0,
+      "recall": 0.909,
+      "f1": 0.952,
+      "false_positive_rate": 0.0,
+      "intervals": {
+        "precision": {
+          "point": 1.0,
+          "lower": 0.8389,
+          "upper": 1.0,
+          "confidence": 0.95,
+          "successes": 20,
+          "trials": 20,
+          "quotable": false,
+          "reading": "20/20 \u2014 too small to quote. The true rate is between 84% and 100% at 95% confidence, which is most of the range. Report the sample, not the rate."
+        },
+        "recall": {
+          "point": 0.9091,
+          "lower": 0.7218,
+          "upper": 0.9747,
+          "confidence": 0.95,
+          "successes": 20,
+          "trials": 22,
+          "quotable": false,
+          "reading": "20/22 \u2014 too small to quote. The true rate is between 72% and 97% at 95% confidence, which is most of the range. Report the sample, not the rate."
+        },
+        "false_positive_rate": {
+          "point": 0.0,
+          "lower": 0.0,
+          "upper": 0.2425,
+          "confidence": 0.95,
+          "successes": 0,
+          "trials": 12,
+          "quotable": false,
+          "reading": "0/12 \u2014 too small to quote. The true rate is between 0% and 24% at 95% confidence, which is most of the range. Report the sample, not the rate."
+        }
+      },
+      "ece": 0.0588,
+      "ece_notes": "ECE from hard 0/1 confidences on DeterministicPolicy \u2014 not a soft probabilistic model. Do not claim calibration improvement vs soft classifiers.",
+      "f1_interval_notes": "no interval: F1 is a harmonic mean of two proportions, not a proportion. Read the precision and recall intervals instead.",
+      "auc": null,
+      "auc_notes": "AUC not computed for hard deterministic policy on this corpus; leave null rather than fabricate.",
+      "recall_by_category": {
+        "c2": {
+          "malicious_cases": 4,
+          "detected": 3,
+          "recall": 0.75
+        },
+        "code_execution": {
+          "malicious_cases": 7,
+          "detected": 7,
+          "recall": 1.0
+        },
+        "kubernetes": {
+          "malicious_cases": 1,
+          "detected": 1,
+          "recall": 1.0
+        },
+        "prompt_injection": {
+          "malicious_cases": 4,
+          "detected": 4,
+          "recall": 1.0
+        },
+        "sensitive_file": {
+          "malicious_cases": 4,
+          "detected": 3,
+          "recall": 0.75
+        },
+        "sql": {
+          "malicious_cases": 1,
+          "detected": 1,
+          "recall": 1.0
+        },
+        "trust_boundary": {
+          "malicious_cases": 1,
+          "detected": 1,
+          "recall": 1.0
+        }
+      },
+      "latency_ms": {
+        "mean": 0.387,
+        "p95": 0.511,
+        "max": 1.599
+      },
+      "missed_cases": [
+        "evade-renamed-secret",
+        "evade-novel-domain"
+      ],
+      "false_alarm_cases": [],
+      "unexpected_misses": [],
+      "same_source": {
+        "total": 42,
+        "precision": 0.95,
+        "recall": 0.905,
+        "f1": 0.927,
+        "true_positives": 19,
+        "false_positives": 1,
+        "false_negatives": 2,
+        "true_negatives": 20,
+        "note": "Synthetic same-source metrics; not a production claim."
+      },
+      "interpretation": "Measured on a small hand-written corpus, NOT production traffic. Recall here is an upper bound: the corpus contains the evasions we already know about. Do not quote these figures as a product detection rate."
+    }
+  }
+}

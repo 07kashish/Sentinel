@@ -1,0 +1,1380 @@
+name: CI
+# MINUTES ARE THE BUDGET. This is a private repository on the free plan, which
+# includes 2,000 Linux minutes a month and bills nothing beyond them because
+# the spending limit is zero -- past the allowance GitHub simply refuses to
+# start jobs ("recent account payments have failed or your spending limit
+# needs to be increased"), which is what happened in September 2026: 17 jobs,
+# ~40 minutes and ~25 rounded-up job-minutes per run, 28 runs in a month.
+#
+# So the workflow runs in two sizes. A pull request runs the GATE: the suite on
+# both engines, types, security, verification, licences, the image build and
+# the deployment manifests (~20 minutes). A push to main, the weekly schedule
+# and a manual dispatch run EVERYTHING, including the live-service jobs, the
+# kind smoke, the guard-mutation and dynamic-security runs that mostly repeat
+# what the suite already proves against real services (~40 minutes). Budget:
+# ~65 minutes per merged change, which is 30 changes a month inside the
+# allowance instead of 12 (the previous figure, after which CI silently died
+# until the cycle reset).
+on:
+  push: {branches: [main]}
+  pull_request: {branches: [main]}
+  schedule:
+    - cron: "17 3 * * 1" # Mondays 03:17 UTC: the full set, once a week, unprompted
+  workflow_dispatch:
+    inputs:
+      publish_image:
+        # Signing requires PUSHING, because a cosign signature is stored beside
+        # the image in the registry. So publishing is an explicit choice rather
+        # than something merging a workflow file turns on.
+        description: "Build, push and sign the container image to ghcr.io"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  # ── The suite, on both database engines ──────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check sentinel tests_arch
+      - name: Empty module integrity gate
+        run: python scripts/check_empty_modules.py
+      # The corpus is fetched from `datasets-server.huggingface.co` and cached
+      # under `evaluation/.cache`, which `benchmark.py` says is deliberately not
+      # committed. Caching it across runs means only the first build after a
+      # corpus change touches the network at all.
+      - name: Cache the benchmark corpus
+        uses: actions/cache@v4
+        with:
+          path: evaluation/.cache
+          key: benchmark-corpus-${{ hashFiles('evaluation/benchmark.py') }}
+          restore-keys: benchmark-corpus-
+
+      - name: Regenerate the independent-English soft benchmark
+        # `test_independent_english_soft_benchmark_meets_promotion_floor` asserts
+        # `evaluation/results/benchmark_test_english_soft.json` exists -- and
+        # `evaluation/results/` is in .gitignore, so in CI it never did. The test
+        # failed on every run with "regenerate with: ..." and the promotion floor
+        # it exists to enforce has therefore never been checked here.
+        #
+        # Regenerating beats committing the artifact: the floor is a claim about
+        # the CURRENT model, and a committed JSON keeps passing after the model
+        # changes underneath it. ~90s warm.
+        #
+        # WHY THIS STEP IS ALLOWED TO GIVE UP.
+        # The corpus comes from a third-party service, and the first run of this
+        # step in CI died on `urllib.error.HTTPError: HTTP Error 500` from that
+        # service. Failing the build there would mean every merge in this
+        # repository depends on HuggingFace's uptime -- a worse property than the
+        # one being fixed, and not a statement about this codebase at all.
+        #
+        # So: three attempts, and if the corpus is genuinely unreachable the step
+        # emits a warning and continues. The promotion-floor test then reports
+        # UNVERIFIED rather than passing -- it does NOT quietly go green. That
+        # matches the convention `tests_arch/conftest.py` already uses for a
+        # missing PostgreSQL: "Skipping is reported, never silent."
+        run: |
+          for attempt in 1 2 3; do
+            if python evaluation/run_benchmark.py --test --english --soft; then
+              exit 0
+            fi
+            echo "attempt ${attempt} failed" >&2
+            sleep 15
+          done
+          echo "::warning title=Promotion floor UNVERIFIED::benchmark corpus unreachable after 3 attempts; the independent-English promotion floor was NOT checked in this run"
+
+      - name: Detection evaluation gate
+        # Fails the build on any regression not marked a known gap.
+        #
+        # BEFORE the suite, not after it. `test_metric_intervals.py` and
+        # `test_research_page.py` read `evaluation/metrics.json` and assert on
+        # THIS build's numbers; run afterwards, they either read a stale copy
+        # or find no file at all -- which is what happened on every run of
+        # this branch until now.
+        run: python evaluation/metrics.py --json evaluation/metrics.json
+      - name: Suite (SQLite and PostgreSQL)
+        # `tests_arch/conftest.py` parametrises the SQL, chaos and concurrency
+        # suites over both engines using an embedded PostgreSQL, running as a
+        # NON-superuser role so FORCE row-level security actually binds.
+        run: python scripts/current_test_evidence.py --out test-evidence/run.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-test-evidence
+          path: test-evidence/
+      - name: Measure the authorization decision
+        # Phase 2. The only latency a caller waits on, and the one section 79
+        # names. Stamped in this job because provenance must be written where
+        # the artifact was produced.
+        run: |
+          python scripts/run_authorization_bench.py
+          python scripts/release_binding.py stamp docs/authorization_bench.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: authorization-bench
+          path: |
+            docs/authorization_bench.json
+            docs/authorization_bench.json.provenance.json
+      - name: Stamp provenance onto the detection metrics
+        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
+        # after producing it. Stamping anywhere later would let a sidecar claim
+        # a build the artifact did not come from, which is the forgery this
+        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
+        # the readiness bundle -- never PASS.
+        run: python scripts/release_binding.py stamp evaluation/metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: detection-metrics
+          path: |
+            evaluation/metrics.json
+            evaluation/metrics.json.provenance.json
+
+  # ── PostgreSQL only, reported separately ─────────────────────────────────
+  #
+  # The `test` job already covers PostgreSQL. This runs the same suites with the
+  # SQLite parametrisation deselected, so a PostgreSQL-specific regression is
+  # attributed to PostgreSQL in the checks list rather than hidden inside a
+  # mixed run. That distinction has already earned its keep: `SELECT ... FOR
+  # UPDATE` cannot lock a ledger head row that does not exist, so concurrent
+  # appends all computed the same predecessor -- correct on SQLite, broken on
+  # PostgreSQL, and invisible until the suites ran on both.
+  live-postgres:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: PostgreSQL parametrisation only
+        run: >-
+          pytest -q -k "postgres"
+          tests_arch/test_sql_infrastructure.py
+          tests_arch/test_execution_chaos.py
+          tests_arch/test_execution_concurrency.py
+
+  # ── Real postgres:16 service (not only embedded pgserver) ────────────────
+  live-postgres-service:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SENTINEL_TEST_POSTGRES_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Existing postgres suites against postgres:16
+        run: >-
+          pytest -q -k "postgres"
+          tests_arch/test_sql_infrastructure.py
+          tests_arch/test_execution_chaos.py
+          tests_arch/test_execution_concurrency.py
+
+  # ── Real Redis:7 (not fakeredis alone) ───────────────────────────────────
+  live-redis:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      SENTINEL_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Live Redis adapter tests (skip fakeredis-only path)
+        run: >-
+          pytest -q
+          tests_arch/test_persistence_storage_cache.py
+          -k "live_redis"
+
+  # ── MinIO S3-compatible round-trip ───────────────────────────────────────
+  live-minio:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SENTINEL_TEST_S3_ENDPOINT: http://127.0.0.1:9000
+      SENTINEL_TEST_S3_ACCESS_KEY: minioadmin
+      SENTINEL_TEST_S3_SECRET_KEY: minioadmin
+      SENTINEL_TEST_S3_BUCKET: sentinel-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Start MinIO and create bucket
+        # THE BUCKET IS A DIRECTORY, NOT AN `mc` INVOCATION.
+        # This job used to create it with two `minio/mc` containers pinned to
+        # RELEASE.2024-11-17T19-35-38Z. That tag has been DELETED upstream, so
+        # the job died on
+        #   docker: Error response from daemon: manifest for
+        #   minio/mc:RELEASE.2024-11-17T19-35-38Z not found: manifest unknown
+        # -- an external registry change, nothing to do with this repository,
+        # and unfixable by anything in it. Un-pinning would swap a hard failure
+        # for a silent supply-chain risk, which is a worse trade in a security
+        # product.
+        #
+        # MinIO's filesystem backend maps a bucket to a top-level directory in
+        # its data volume, so pre-creating the directory removes the second
+        # image, its tag, and its registry availability from this job's
+        # dependency surface entirely. `scripts/_minio_harness.py` creates its
+        # bucket the same way, and the same test passes against it locally.
+        #
+        # 2026-10: THE SERVER IMAGE ITSELF IS NOW GONE. MinIO withdrew its
+        # public images; this digest answers `unauthorized` on quay.io and on
+        # Docker Hub, with a valid anonymous token. So the pull is attempted
+        # first, and when it is refused the job says so in a warning and the
+        # round-trip step is SKIPPED BY NAME rather than failing every run for
+        # a reason nothing in this repository can change. The skip is loud on
+        # purpose: until another signature-verifying S3 server is pinned here,
+        # the S3 object store is exercised only against real S3 (the proof
+        # stack) and by the request-signing unit tests.
+        id: minio
+        run: |
+          IMAGE='quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z@sha256:1dce27c494a16bae114774f1cec295493f3613142713130c2d22dd5696be6ad3'
+          if ! docker pull -q "$IMAGE"; then
+            echo "::warning title=Live S3 round-trip NOT RUN::the pinned MinIO image is no longer published; tests_arch/test_persistence_storage_cache.py -k live_minio was skipped"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          mkdir -p /tmp/minio-data/sentinel-ci
+          docker run -d --name minio -p 9000:9000 \
+            -v /tmp/minio-data:/data \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z@sha256:1dce27c494a16bae114774f1cec295493f3613142713130c2d22dd5696be6ad3 server /data
+          # 60 attempts, and stderr suppressed inside the loop: the previous
+          # version printed "curl: (56) Recv failure: Connection reset by peer"
+          # on the first attempt, which looked like the failure but was just the
+          # server not yet listening.
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null 2>&1; then
+              echo "minio healthy after ${attempt} attempt(s)"
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:9000/minio/health/live
+      - name: Live MinIO round-trip
+        if: steps.minio.outputs.available == 'true'
+        run: pytest -q tests_arch/test_persistence_storage_cache.py -k "live_minio"
+
+  # ── kind + Helm install + health probes ──────────────────────────────────
+  kind-helm-smoke:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image for kind
+        run: docker build -t sentinel:kind .
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: sentinel-ci
+      - name: Load image into kind
+        run: kind load docker-image sentinel:kind --name sentinel-ci
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          # PINNED. The action was pinned; the TOOL it installs was not, so it
+          # tracked whatever Helm was latest -- and a Helm release removed
+          # `--skip-schema-validation`, breaking this job with
+          # `Error: unknown flag` on a commit that changed no Kubernetes code.
+          #
+          # 3.16.3 is the version docs/READINESS.md records as verified against
+          # this chart, and `--skip-schema-validation` exists from 3.16.0.
+          #
+          # This repository already pins gitleaks and trivy by image digest.
+          # Leaving the Helm binary floating was the inconsistency.
+          version: v3.16.3
+      - name: Install Postgres + secrets + migrate + Helm
+        run: |
+          set -euo pipefail
+          NS=sentinel-ci
+          kubectl create namespace "$NS"
+          kubectl -n "$NS" apply -f - <<'EOF'
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata: {name: postgres}
+          spec:
+            replicas: 1
+            selector: {matchLabels: {app: postgres}}
+            template:
+              metadata: {labels: {app: postgres}}
+              spec:
+                # postgres:16 runs as uid/gid 999. An emptyDir mounts root-owned
+                # by default, so without fsGroup the archive_command below would
+                # fail on every segment -- and the hook only reads `SHOW`
+                # settings, so it would still report success. That is precisely
+                # the shape of gate this repository keeps finding: configured,
+                # green, doing nothing.
+                securityContext:
+                  fsGroup: 999
+                containers:
+                  - name: postgres
+                    image: postgres:16
+                    # CONTINUOUS ARCHIVING, ON PURPOSE.
+                    # The chart ships a `helm test` hook that asks the running
+                    # server whether WAL is actually being archived. A bare
+                    # postgres:16 answers "no", so wiring the hook into CI
+                    # without this would produce a permanently-red gate -- the
+                    # exact failure class this repository has now hit five
+                    # times. These flags mirror docker-compose.yml so the hook
+                    # verifies the configuration the project actually ships.
+                    args:
+                      - postgres
+                      - -c
+                      - wal_level=replica
+                      - -c
+                      - archive_mode=on
+                      - -c
+                      - archive_timeout=60s
+                      - -c
+                      - archive_command=test ! -f /tmp/wal-archive/%f && cp %p /tmp/wal-archive/%f
+                    env:
+                      - {name: POSTGRES_PASSWORD, value: postgres}
+                      - {name: POSTGRES_USER, value: postgres}
+                      - {name: POSTGRES_DB, value: sentinel}
+                    ports: [{containerPort: 5432}]
+                    volumeMounts:
+                      - {name: wal-archive, mountPath: /tmp/wal-archive}
+                    readinessProbe:
+                      exec: {command: ["pg_isready", "-U", "postgres"]}
+                      periodSeconds: 2
+                volumes:
+                  - {name: wal-archive, emptyDir: {}}
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata: {name: postgres}
+          spec:
+            selector: {app: postgres}
+            ports: [{port: 5432, targetPort: 5432}]
+          EOF
+          kubectl -n "$NS" rollout status deploy/postgres --timeout=180s
+          DBURL='postgresql://postgres:postgres@postgres:5432/sentinel'
+          kubectl -n "$NS" create secret generic sentinel-db --from-literal=url="$DBURL"
+          kubectl -n "$NS" create secret generic sentinel-auth \
+            --from-literal=apiKeys='ci:ci-kind-key-material-32charactersxx:admin'
+          kubectl -n "$NS" create secret generic sentinel-metrics \
+            --from-literal=token='ci-metrics-token-32-characters-xx'
+          # The chart seals evidence bodies under this key and the pod cannot be
+          # created without the secret (CreateContainerConfigError: secret
+          # "sentinel-data-key" not found -- which is how this job failed once
+          # the chart started requiring it). 32 random bytes, generated here.
+          kubectl -n "$NS" create secret generic sentinel-data-key \
+            --from-literal=key="$(head -c 32 /dev/urandom | base64)"
+          # A real shared Redis is required by the production control stores.
+          kubectl -n "$NS" create deployment redis --image=redis:7.4.2-alpine
+          kubectl -n "$NS" expose deployment redis --port=6379
+          kubectl -n "$NS" rollout status deploy/redis --timeout=180s
+          kubectl -n "$NS" create secret generic sentinel-redis \
+            --from-literal=redisUrl='redis://redis:6379/0'
+          # Schema migrate is a deployment step, never boot.
+          kubectl -n "$NS" run migrate --rm -i --restart=Never \
+            --image=sentinel:kind --image-pull-policy=Never \
+            --env="SENTINEL_DATABASE_URL=$DBURL" \
+            --env="SENTINEL_ENV=development" \
+            --env="SENTINEL_API_KEYS=ci:ci-kind-key-material-32charactersxx:admin" \
+            --command -- python -m sentinel.interface.cli migrate
+          # Kind smoke is single-node without Istio. Production chart schema
+          # requires networkPolicy/serviceMesh enabled + replicaCount>=3; we
+          # intentionally --skip-schema-validation here so health probes can run.
+          # deployment-validation job still enforces schema on default values.
+          cat > /tmp/kind-values.yaml <<'EOF'
+          replicaCount: 1
+          image: {repository: sentinel, tag: kind, digest: "", pullPolicy: Never}
+          postgres: {existingSecret: sentinel-db, secretKey: url}
+          # Production requirements. Without these the chart refuses to render
+          # (corsOrigins) or the pod refuses to start (rate limiter decision),
+          # because the deployment runs SENTINEL_ENV=production and production
+          # is not a label. Omitting them is what made this job fail with
+          # `Deployment/sentinel not ready. status: InProgress, Available: 0/1`.
+          corsOrigins: "https://console.ci.invalid"
+          rateLimitFailOpen: false
+          auth: {existingSecret: sentinel-auth, secretKey: apiKeys}
+          metrics: {existingSecret: sentinel-metrics, secretKey: token}
+          redis: {existingSecret: sentinel-redis, secretKey: redisUrl}
+          otel: {endpoint: ""}
+          egressProxy:
+            httpsProxy: ""
+            noProxy: ".svc,.cluster.local,postgres"
+            namespace: sentinel-ci
+            podLabels: {app: sentinel}
+            port: 80
+          networkPolicy: {enabled: false}
+          serviceMesh: {enabled: false}
+          autoscaling: {enabled: false}
+          podDisruptionBudget: {enabled: false}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          EOF
+          helm upgrade --install sentinel deploy/helm/sentinel \
+            --namespace "$NS" -f /tmp/kind-values.yaml \
+            --skip-schema-validation \
+            --wait --timeout 240s
+          kubectl -n "$NS" wait --for=condition=available deploy/sentinel --timeout=180s
+
+      - name: Run the chart's postgres-archive release test
+        # THE HOOK EXISTED AND HAD NEVER RUN ANYWHERE.
+        # `templates/tests/postgres-archive-check.yaml` carries
+        # `helm.sh/hook: test`, which means `helm upgrade --wait` does NOT
+        # install it -- only `helm test` does, and nothing invoked `helm test`.
+        # docs/PRODUCTION_READINESS_REPORT.md recorded it as blocked on cluster
+        # access; it was not. This job has had real docker, kind, helm and
+        # kubectl all along. It was a wiring gap, and this is the wire.
+        #
+        # The hook asks the RUNNING server whether WAL is actually being
+        # archived, which is why the postgres Deployment above now sets
+        # archive_mode/wal_level/archive_timeout/archive_command. Without those
+        # this step would be permanently red -- and shipping a gate that can
+        # never pass is the failure class this repository has hit five times.
+        run: |
+          set -euo pipefail
+          NS=sentinel-ci
+
+          # `helm test` exits non-zero when the hook pod fails, so `set -e`
+          # alone would fail the job. Capture the status explicitly so the pod
+          # LOGS can be printed either way -- a red gate whose output nobody can
+          # see is only marginally better than no gate.
+          status=0
+          helm test sentinel -n "$NS" --timeout 180s --logs || status=$?
+
+          echo "--- release-test pod ---"
+          kubectl -n "$NS" get pods -l app.kubernetes.io/component=release-test             -o wide || true
+
+          # THE HOOK MUST HAVE ACTUALLY EXISTED.
+          # `helm test` reports success for a release with no test hooks at all,
+          # so a green exit code alone would be exactly the "gate that executes
+          # nothing" this project keeps finding. Assert the pod was created and
+          # that it reported the string it prints only on success.
+          #
+          # `hook-delete-policy: hook-succeeded` removes the pod once it passes,
+          # so the pod may legitimately be gone by now -- the authority is the
+          # captured output, which is why --logs is passed above.
+          echo "--- helm test exit status: ${status} ---"
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=Postgres archive release test FAILED::the chart's helm test hook reported a misconfigured archive" >&2
+            kubectl -n "$NS" describe pod -l app.kubernetes.io/component=release-test || true
+            exit 1
+          fi
+          echo "postgres-archive release test passed"
+
+      - name: The release test must not be able to pass vacuously
+        # A second, deliberately adversarial check on the step above.
+        #
+        # If someone deletes the hook template, `helm test` still exits 0 --
+        # there is simply nothing to run -- and the job above would go green
+        # while verifying nothing. So this asserts the release actually SHIPS a
+        # test hook, by rendering the chart and looking for the annotation.
+        # Cheap, and it closes the one way the gate above could rot into a no-op.
+        run: |
+          set -euo pipefail
+          hooks=$(helm template sentinel deploy/helm/sentinel             -f /tmp/kind-values.yaml --skip-schema-validation             | grep -c 'helm.sh/hook: test' || true)
+          echo "test hooks declared by the chart: ${hooks}"
+          if [ "${hooks}" -lt 1 ]; then
+            echo "::error title=No release test hooks::helm test would pass vacuously" >&2
+            exit 1
+          fi
+          echo "chart declares ${hooks} test hook(s); helm test had something to run"
+
+      - name: Probe /health/live and /health/ready
+        run: |
+          set -euo pipefail
+          kubectl -n sentinel-ci port-forward svc/sentinel 18080:80 &
+          pf=$!
+          trap 'kill $pf' EXIT
+          ready=0
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:18080/health/live >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = "1"
+          curl -fsS http://127.0.0.1:18080/health/live
+          curl -fsS http://127.0.0.1:18080/health/ready
+          echo "kind health probes passed"
+
+      - name: Why the cluster failed
+        # ONLY ON FAILURE, and it exists because a failure here said nothing.
+        #
+        # This job failed once with forty identical `curl: (7) Couldn't connect`
+        # lines and no other information. The deployment had reported
+        # `condition met`, the migration had reported `schema at version 17`,
+        # and the port-forward had handled one connection before dying -- so the
+        # pod started and then went away, and the log could not say why.
+        #
+        # Diagnosing it took reading four other runs to establish that the same
+        # commit passed this job minutes earlier. That is archaeology, not
+        # evidence, and next time the answer should be in the log that failed.
+        if: failure()
+        run: |
+          NS=sentinel-ci
+          echo "── pods ───────────────────────────────────────────────"
+          kubectl -n "$NS" get pods -o wide || true
+          echo "── events (most recent last) ──────────────────────────"
+          kubectl -n "$NS" get events --sort-by=.lastTimestamp | tail -30 || true
+          echo "── sentinel describe ──────────────────────────────────"
+          kubectl -n "$NS" describe deploy/sentinel || true
+          echo "── sentinel logs (current) ────────────────────────────"
+          kubectl -n "$NS" logs deploy/sentinel --tail=100 || true
+          echo "── sentinel logs (previous container, if it restarted) ─"
+          kubectl -n "$NS" logs deploy/sentinel --previous --tail=100 || true
+
+  # ── Verification that is not example-based ───────────────────────────────
+  #
+  # Split out because these answer a different question from the suite. The
+  # suite asks "does it work"; these ask "can the tests tell if it stops
+  # working" and "is any bad state reachable at all".
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Property-based invariants
+        run: pytest -q tests_arch/test_execution_properties.py
+      - name: Exhaustive bounded model checking
+        # Enumerates every reachable state under an adversarial environment and
+        # checks the invariants in all of them. Within the bound this is a proof
+        # by exhaustion, not a sample.
+        run: pytest -q tests_arch/test_execution_model.py
+      - name: Mutation testing
+        # A systematic AST campaign plus twelve hand-written guard mutations.
+        # An unexplained surviving mutant fails the build, so the suite cannot
+        # quietly lose the ability to detect a broken guard.
+        run: >-
+          pytest -q
+          tests_arch/test_execution_mutation.py
+          tests_arch/test_execution_mutation_campaign.py
+      - name: Deployment configuration alignment
+        run: python scripts/check_config_alignment.py
+      - name: Architecture fitness rules
+        # Dependencies point inward; the domain imports nothing but itself and
+        # the standard library; no cycles; no module-level mutable state.
+        run: pytest -q tests_arch/test_architecture_rules.py
+
+  # ── Are the guards themselves real? ──────────────────────────────────────
+  #
+  # Every serious defect in this release machinery was a check that reported
+  # success no matter what. Reading the tests did not reveal them. This job
+  # breaks each protected property on purpose and requires its guard to FAIL.
+  #
+  # Its own job, not a step inside another, because it EDITS SOURCE FILES and
+  # restores them. Isolating it means a crashed run cannot leave a mutated
+  # working tree behind for a later step to test and report on.
+  guard-mutation:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Prove every registered guard can fail
+        run: PYTHONPATH=. python scripts/verify_guards.py
+      - name: No invisible characters in source
+        # A heredoc once turned an escape into a literal backspace inside a
+        # regex, producing a pattern that matched nothing while reading
+        # correctly in every editor.
+        run: pytest -q tests_arch/test_source_hygiene.py
+
+  # ── Supply chain and static analysis ─────────────────────────────────────
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Secret history scan
+        run: >-
+          docker run --rm -v "$PWD:/repo"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git --redact --no-banner --config /repo/.gitleaks.toml --gitleaks-ignore-path /repo/.gitleaksignore /repo
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install bandit pip-audit
+      - name: Static security scan
+        # `-c bandit.yaml` carries exactly one documented skip, B608, because
+        # every statement in this package is an f-string (the placeholder token
+        # differs per dialect) and the rule fired 99 times without once finding
+        # caller data in a query. It is replaced by a STRICTER AST check,
+        # `tests_arch/test_sql_is_never_built_from_data.py`, which allowlists
+        # what may be interpolated instead of flagging that anything is.
+        # The skip list is itself asserted to be exactly [B608] by that module,
+        # so it cannot grow into a blanket off-switch.
+        run: bandit -c bandit.yaml -r sentinel -ll
+      - name: Dependency vulnerabilities
+        # BLOCKING. This previously ran with `|| true`, so pip-audit reported
+        # advisories and the build passed anyway -- an audit gate that could not
+        # fail. Exceptions must be recorded, with a reason and a review date, in
+        # security/pip-audit-ignore.txt rather than swallowed here.
+        run: |
+          IGNORES=$(grep -vE '^\s*(#|$)' security/pip-audit-ignore.txt \
+                    | awk '{print "--ignore-vuln", $1}' | tr '\n' ' ')
+          echo "pip-audit exceptions in force: ${IGNORES:-none}"
+          pip-audit -r requirements.txt $IGNORES
+
+  # ── Release hygiene ──────────────────────────────────────────────────────
+  #
+  # What SHIPS is checked, not what is in the tree. The wheel and sdist are
+  # built the way a release builds them, every member is checked against an
+  # allowlist, the artifacts and the tracked tree are scanned for secret-shaped
+  # content (findings are reported by path, rule and fingerprint, never by
+  # value), the hash-pinned lock is regenerated and diffed against the
+  # committed one, and the wheel is installed into fresh virtual environments:
+  # once bare (the SDK must load nothing outside the standard library) and
+  # once with the server extra (migrate, verify, serve, evaluate, refuse an
+  # unbound execution). Then RELEASE_STATUS is regenerated against the built
+  # artifacts and stamped with this build's provenance.
+  release-hygiene:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      # `build` is pinned in requirements-dev.txt (the suite builds a real wheel);
+      # naming a second version here made pip refuse the install outright
+      # ("Cannot install build==1.2.2 and build==1.6.1"), which failed this job
+      # on every run once that pin landed. One pin, in one place.
+      - run: pip install -r requirements-dev.txt uv==0.9.5
+      - name: Build the wheel and sdist
+        run: python -m build --outdir dist .
+      - name: Package the Helm chart
+        uses: azure/setup-helm@v4.3.0
+      - run: helm package deploy/helm/sentinel --destination dist
+      - name: Allowlist and secret scan of what ships
+        run: >-
+          python scripts/scan_release_for_secrets.py --tree
+          --artifact dist/*.whl --artifact dist/*.tar.gz --artifact dist/sentinel-*.tgz
+          --json dist/secret-scan.json
+      - name: The lock matches the pins
+        # A lock that drifted from requirements.txt would install audited
+        # hashes of the WRONG versions. Regenerate and compare, ignoring the
+        # command-line comment uv writes in its header.
+        #
+        # SEEDED WITH THE COMMITTED LOCK. Compiling into an empty file resolves
+        # every INDIRECT dependency to whatever was published this morning, so
+        # the check failed whenever anyone upstream cut a release
+        # (charset-normalizer 3.5.1 -> 3.5.2, idna 3.19 -> 3.20) with nothing
+        # in this repository having changed. uv keeps the pins already in its
+        # output file when they still satisfy the input, so seeding makes the
+        # diff mean what the step's name says: requirements.txt and the lock
+        # disagree. A changed pin in requirements.txt still fails it (checked).
+        run: |
+          cp requirements.lock /tmp/requirements.lock
+          uv pip compile --generate-hashes --universal --python-version 3.12 \
+            requirements.txt -o /tmp/requirements.lock --quiet
+          diff <(grep -v '^#' requirements.lock) <(grep -v '^#' /tmp/requirements.lock)
+      - name: Clean-install smoke (thin SDK, then server)
+        run: python scripts/smoke_clean_install.py --wheel dist/*.whl --json dist/smoke.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: current-test-evidence
+          path: test-evidence/
+      - name: Regenerate and stamp the release status
+        run: |
+          python scripts/build_current_status.py --out dist/current --test-evidence test-evidence/run.json \
+            --artifact dist/*.whl --artifact dist/*.tar.gz --artifact requirements.lock
+          python scripts/release_binding.py stamp dist/current/RELEASE_STATUS.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-hygiene
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.tgz
+            dist/secret-scan.json
+            dist/smoke.json
+            dist/current/
+
+  # ── Image signing ────────────────────────────────────────────────────────
+  #
+  # KEYLESS, which is why this is now possible at all. `run_release_gates.py`
+  # listed artifact_signing under NO_RUNNER because it "needs a signing key
+  # this runner does not hold" -- true of key-based signing and not of
+  # Sigstore, where there is no key. The job proves its identity with a GitHub
+  # OIDC token and the signature lands in the public Rekor log.
+  #
+  # OPT-IN, AND THAT IS DELIBERATE.
+  #
+  # Signing requires PUSHING the image, because a cosign signature is stored as
+  # an OCI artifact beside it in the registry. Pushing publishes something, so
+  # this job does nothing until the repository sets the `SENTINEL_PUBLISH_IMAGES`
+  # variable to `true` (Settings -> Variables) or somebody dispatches the
+  # workflow with publish_image checked. Merging this file changes no
+  # visibility on its own.
+  #
+  # IT SIGNS AND THEN VERIFIES, IN THE SAME JOB.
+  #
+  # A signing step whose output nobody checks is a signing step that can
+  # silently produce an unverifiable signature -- and the failure surfaces
+  # later, to whoever is trying to deploy, as an image that cannot be
+  # validated. So the verification runs here, against a PINNED identity and
+  # issuer.
+  sign-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [docker]
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.publish_image == true ||
+      vars.SENTINEL_PUBLISH_IMAGES == 'true'
+    permissions:
+      contents: read
+      # Push the image and its signature.
+      packages: write
+      # THE OIDC TOKEN. This is the whole mechanism: without `id-token: write`
+      # the job has no verifiable identity and cosign falls back to asking for
+      # a key it does not have.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: sigstore/cosign-installer@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push, capturing the DIGEST
+        id: build
+        # ARM64 as well as amd64: the ecs Terraform module runs Fargate on
+        # ARM64 and a task definition claiming ARM64 with an amd64-only image
+        # fails with an exec format error that never mentions architecture.
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          provenance: true
+          sbom: true
+
+      - name: Sign the image by digest
+        # BY DIGEST, never by tag. Signing a tag signs whatever the tag names
+        # at that moment, and a tag can be repointed afterwards -- so the
+        # signature would attest to something other than what was reviewed.
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "ghcr.io/${{ github.repository }}@${DIGEST}"
+
+      - name: Attach the SBOM as an attestation
+        # The SBOM travels WITH the image rather than as a build artifact
+        # somebody has to correlate by hand. An SBOM in a CI artifact bucket is
+        # an SBOM nobody looks up when they need it.
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          if [ -f docs/sentinel.cdx.json ]; then
+            cosign attest --yes \
+              --predicate docs/sentinel.cdx.json \
+              --type cyclonedx \
+              "ghcr.io/${{ github.repository }}@${DIGEST}"
+          else
+            echo "no SBOM at docs/sentinel.cdx.json; NOT attaching an empty one"
+            exit 1
+          fi
+
+      - name: Verify what was just signed
+        # The load-bearing step. Pins BOTH the identity and the issuer: cosign
+        # without them verifies that somebody signed the image, which passes
+        # for an attacker who signed their own, and prints a tick doing it.
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          PYTHONPATH=. python scripts/verify_image_signature.py \
+            "ghcr.io/${{ github.repository }}@${DIGEST}" \
+            --repository "${{ github.repository }}" \
+            --evidence release/image-signature.json
+          cat release/image-signature.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-signature
+          path: release/image-signature.json
+
+  # ── Container ────────────────────────────────────────────────────────────
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t sentinel:ci .
+      - name: Smoke-test the built image
+        # The image must actually serve. A build that succeeds and an entrypoint
+        # that does not start is the failure this catches -- and it is exactly
+        # what happened when the Dockerfile still named a module that had been
+        # deleted.
+        #
+        # MIGRATE FIRST, IN THE SAME IMAGE, AGAINST THE SAME VOLUME.
+        # `sentinel/interface/asgi.py` says it outright: "The schema is NOT
+        # migrated here ... applying the migration is a deployment step, because
+        # a migration that runs at boot on every replica is one that cannot be
+        # restarted during an incident." `build_container` calls `verify(pool)`,
+        # which refuses to serve an unverified schema. So starting this image
+        # against an empty volume exits with SchemaOutOfDate before it ever
+        # binds a port, and the health loop below simply watches it fail for
+        # sixty seconds and reports "image never became healthy" -- which reads
+        # as a broken image rather than a missing deployment step.
+        #
+        # Running migrate as a separate container is deliberate: it exercises
+        # the SHIPPED entrypoint below unmodified, rather than smoke-testing a
+        # command line that no deployment uses.
+        run: |
+          docker volume create sentinel-ci-data
+          docker run --rm -v sentinel-ci-data:/app/data \
+            -e SENTINEL_ENV=development \
+            -e SENTINEL_DB_PATH=/app/data/ci.db \
+            -e SENTINEL_API_KEYS=ci:ci-smoke-key-material-32characters:admin \
+            sentinel:ci python -m sentinel.interface.cli migrate
+          docker run -d --name sentinel-ci -p 8000:8000 \
+            -v sentinel-ci-data:/app/data \
+            -e SENTINEL_ENV=development \
+            -e SENTINEL_DB_PATH=/app/data/ci.db \
+            -e SENTINEL_API_KEYS=ci:ci-smoke-key-material-32characters:admin \
+            sentinel:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health/live > /dev/null; then
+              echo "image serves /health/live"; exit 0
+            fi
+            sleep 2
+          done
+          echo "image never became healthy"; docker logs sentinel-ci; exit 1
+      - name: Container vulnerability, secret and misconfiguration gate
+        # Unfixed HIGH/CRITICAL findings still block release. Raw JSON may hold
+        # secret matches: write privately and publish only sanitized gate evidence.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: sentinel:ci
+          format: json
+          output: /tmp/sentinel-private-trivy.json
+          scanners: vuln,secret,misconfig
+          ignore-unfixed: false
+          exit-code: "0"
+      - name: Fail closed on image scan evidence
+        run: |
+          python scripts/build_and_scan_image.py --scan-report /tmp/sentinel-private-trivy.json \
+            --image-id "$(docker image inspect sentinel:ci --format '{{.Id}}')"
+      - name: Remove raw secret scan output
+        if: always()
+        run: rm -f /tmp/sentinel-private-trivy.json
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Generate CycloneDX SBOM
+        run: |
+          pip install cyclonedx-bom==7.3.0
+          cyclonedx-py requirements requirements.txt --output-reproducible \
+            --output-format JSON --output-file sentinel.cdx.json
+      - name: Stamp provenance onto the SBOM
+        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
+        # after producing it. Stamping anywhere later would let a sidecar claim
+        # a build the artifact did not come from, which is the forgery this
+        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
+        # the readiness bundle -- never PASS.
+        run: python scripts/release_binding.py stamp sentinel.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-cyclonedx-sbom
+          path: |
+            sentinel.cdx.json
+            sentinel.cdx.json.provenance.json
+          if-no-files-found: error
+
+  # ── Deployment manifests ─────────────────────────────────────────────────
+  deployment-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          # PINNED. The action was pinned; the TOOL it installs was not, so it
+          # tracked whatever Helm was latest -- and a Helm release removed
+          # `--skip-schema-validation`, breaking this job with
+          # `Error: unknown flag` on a commit that changed no Kubernetes code.
+          #
+          # 3.16.3 is the version docs/READINESS.md records as verified against
+          # this chart, and `--skip-schema-validation` exists from 3.16.0.
+          #
+          # This repository already pins gitleaks and trivy by image digest.
+          # Leaving the Helm binary floating was the inconsistency.
+          version: v3.16.3
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.24.x"}
+      - name: Render and lint Helm chart
+        run: |
+          # externalPostgres.archiveTimeoutConfirmed must be set explicitly: the
+          # schema refuses to render while it is false, because this chart cannot
+          # configure WAL archiving on a database it does not deploy. CI is an
+          # operator like any other and has to make the acknowledgement out loud.
+          ACK="--set externalPostgres.archiveTimeoutConfirmed=true"
+          # corsOrigins is `required` for the same reason: the chart runs
+          # SENTINEL_ENV=production, and production refuses a wildcard CORS
+          # origin on a credentialed API. There is no default that is correct
+          # for everyone, so CI states one like any other operator.
+          ACK="$ACK --set corsOrigins=https://console.ci.invalid"
+          helm lint deploy/helm/sentinel --strict $ACK
+          helm template sentinel deploy/helm/sentinel $ACK > /tmp/sentinel-rendered.yaml
+      - name: The archiving acknowledgement must actually be enforced
+        run: |
+          # A gate nobody can fail is not a gate. This asserts the default
+          # renders are REFUSED, so the check above is meaningful.
+          #
+          # corsOrigins IS supplied here, deliberately. It is `required` too, so
+          # a bare `helm template` now fails for two independent reasons and
+          # this check would pass while proving nothing about the archiving
+          # acknowledgement -- a gate that reports the right answer for the
+          # wrong reason. Supplying everything EXCEPT the acknowledgement is
+          # what isolates it.
+          if helm template sentinel deploy/helm/sentinel \
+               --set corsOrigins=https://console.ci.invalid >/dev/null 2>&1; then
+            echo "FAIL: chart rendered without externalPostgres.archiveTimeoutConfirmed=true" >&2
+            exit 1
+          fi
+          echo "OK: chart refuses to render without the archiving acknowledgement"
+
+          # And the mirror image, so the corsOrigins guard is proven too rather
+          # than merely assumed from the fact that the render above succeeded.
+          if helm template sentinel deploy/helm/sentinel \
+               --set externalPostgres.archiveTimeoutConfirmed=true >/dev/null 2>&1; then
+            echo "FAIL: chart rendered without corsOrigins" >&2
+            exit 1
+          fi
+          echo "OK: chart refuses to render without corsOrigins"
+      - name: Validate Kubernetes OpenAPI contracts
+        # CUSTOM RESOURCES NEED A SCHEMA SOURCE, NOT A WAIVER.
+        # The rendered chart contains Istio types -- `PeerAuthentication`
+        # (STRICT mTLS) and `DestinationRule` -- because `serviceMesh.enabled`
+        # defaults to true. kubeconform ships only upstream Kubernetes schemas,
+        # so it reported
+        #   PeerAuthentication sentinel-strict-mtls failed validation:
+        #   could not find schema for PeerAuthentication
+        # and exited 1 on every run.
+        #
+        # The tempting fix is `-ignore-missing-schemas`, and it is the wrong
+        # one: it would silence these two AND every future typo in any CRD,
+        # including the mTLS policy itself. A manifest that silently validates
+        # because nothing knows how to check it is the shape of defect this
+        # repository keeps retracting.
+        #
+        # So point kubeconform at the CRD catalogue instead. `-schema-location
+        # default` must be listed explicitly -- naming any location replaces the
+        # built-in default rather than adding to it, so omitting it would stop
+        # core types being validated at all.
+        run: |
+          go install github.com/yannh/kubeconform/cmd/kubeconform@e65429b1e5990dd019ebb7b5642dcd22a3e9cd13
+          CRD='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          "$(go env GOPATH)/bin/kubeconform" -strict -summary \
+            -schema-location default -schema-location "$CRD" \
+            deploy/k8s/sentinel.yaml
+          "$(go env GOPATH)/bin/kubeconform" -strict -summary \
+            -schema-location default -schema-location "$CRD" \
+            /tmp/sentinel-rendered.yaml
+      - name: Probe paths must exist on the application
+        # A liveness probe pointing at a route the app does not serve makes
+        # every pod fail its health check on first deploy. The manifests named
+        # /health while the application serves /health/live, which no manifest
+        # linter can detect -- so it is asserted here against the real router.
+        env:
+          SENTINEL_DB_PATH: /tmp/probe.db
+          SENTINEL_API_KEYS: ci:ci-probe-key-material-32characters:admin
+        run: |
+          python -m pip install -r requirements.txt
+          # Migrate FIRST. `build_container` calls `verify(pool)`, which refuses
+          # to serve against an unverified schema -- deliberately, and correctly.
+          # Without this line the step below always died with
+          #   SchemaOutOfDate: database schema is at version 0, this build requires N
+          # on a fresh runner, so the probe-path assertion it exists to make has
+          # never actually run. The step was failing for a reason that had
+          # nothing to do with probe paths, which is the worst kind of red build:
+          # it looks like the thing it is named after is broken.
+          python -m sentinel.interface.cli migrate
+          python - <<'PY'
+          import os, re, pathlib, sys
+          from sentinel.interface.http import create_app
+          from sentinel.composition.container import build_container
+          from sentinel.composition.settings import Settings
+
+          settings = Settings.from_environment(dict(os.environ))
+          container = build_container(settings)
+          served = {r.path for r in create_app(container).routes}
+          container.close()
+
+          declared = set()
+          for manifest in pathlib.Path("deploy").rglob("*.yaml"):
+              declared |= set(re.findall(r"path:\s*(/health[\w/]*)", manifest.read_text()))
+
+          missing = sorted(p for p in declared if p not in served)
+          print("probe paths in manifests:", sorted(declared))
+          print("routes served:", sorted(p for p in served if p.startswith("/health")))
+          if missing:
+              sys.exit(f"manifests probe routes the app does not serve: {missing}")
+          PY
+
+  # ── Schema-driven security fuzzing against the running API ───────────────
+  dynamic-api-security:
+    # Full set only (push to main, schedule, dispatch): see the budget note at the top.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SENTINEL_ENV: development
+      SENTINEL_API_KEYS: ci:ci-dast-key-material-32characters:admin
+      SENTINEL_DB_PATH: /tmp/sentinel-dast.db
+      # WITHOUT THIS, THIS JOB HAS NEVER ONCE FUZZED ANYTHING.
+      # `expose_api_docs` defaults to FALSE -- `/docs`, `/redoc` and
+      # `/openapi.json` are off unless an operator asks for them, deliberately,
+      # because they were previously always on and unauthenticated. So
+      # `/openapi.json` answered 404, `--wait-for-schema 30` waited its full
+      # thirty seconds for a schema that was never going to appear, and the job
+      # failed at ~30s having tested zero operations. Measured: 404 without this
+      # variable, 200 and 18,124 bytes with it. CI is an operator and has to ask
+      # out loud, exactly as it does for the Helm archiving acknowledgement.
+      SENTINEL_EXPOSE_API_DOCS: "true"
+      # `/metrics/prometheus` answers 503 "metrics token is not configured" when
+      # no token is set, and `not_a_server_error` counts every 5xx as a server
+      # error -- so that one endpoint failed the check on every run for a
+      # configuration reason rather than a code one. Configure it, as a real
+      # deployment must, rather than removing the endpoint from the fuzz.
+      SENTINEL_METRICS_TOKEN: ci-dast-metrics-token-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt schemathesis==4.23.0
+      - name: Apply the schema
+        # Migration is a deployment step, not a startup step: the application
+        # verifies the version and refuses to serve against an unexpected one,
+        # but never migrates on boot.
+        run: python -m sentinel.interface.cli migrate
+      - name: Start the API and fuzz it from its own schema
+        run: |
+          python -m uvicorn "sentinel.interface.asgi:create_application" \
+            --factory --host 127.0.0.1 --port 8000 &
+          server_pid=$!
+          trap 'kill $server_pid' EXIT
+          schemathesis run http://127.0.0.1:8000/openapi.json \
+            --wait-for-schema 30 \
+            --header "Authorization: Bearer ci-dast-key-material-32characters" \
+            --checks not_a_server_error,ignored_auth \
+            --phases examples,coverage,fuzzing \
+            --mode all \
+            --max-examples 5 \
+            --rate-limit 5/s \
+            --generation-database :memory: \
+            --max-response-time 3 \
+            --suppress-health-check=filter_too_much
+          # filter_too_much is the fuzzer complaining that it could not generate
+          # enough VALID examples for three tightly constrained operations
+          # (approve/decide/revoke: an enum plus a required reason), and it is
+          # random: the same commit passed on 2026-10-11 and failed on the
+          # 2026-10-12 schedule with 2,625 cases passed and zero findings. A
+          # gate that fails on the generator's luck is noise; the checks that
+          # matter (no 5xx, auth not ignored) still run on every example.
+
+  types:
+    # Section 10 requires a type-check gate. It is scoped to `sentinel/domain`
+    # because that is what can be ENFORCED today: the domain is clean at zero
+    # mypy errors, while the rest of the tree carries 68 across four layers.
+    #
+    # A gate over the whole tree would have to be non-blocking to pass, and a
+    # non-blocking gate is one that executes nothing. Scoping it to the layer
+    # that already passes makes it a real gate from the first run, protecting
+    # the layer where the security rules actually live -- and the scope is a
+    # ratchet: each layer joins the list as it is cleaned.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt && pip install mypy==2.1.0
+      - name: Type check the domain (BLOCKING)
+        run: mypy sentinel/domain --ignore-missing-imports
+      - name: Type debt in the remaining layers (report only)
+        # Reported, never gated, and deliberately not summed into a single
+        # number: a total invites someone to "reduce it" by deleting a file.
+        if: always()
+        run: |
+          for pkg in application infrastructure composition interface; do
+            count=$(mypy "sentinel/$pkg" --ignore-missing-imports 2>&1 \
+              | grep -cE ': error:' || true)
+            echo "sentinel/$pkg: $count typing errors (tracked debt, not gated)"
+          done
+
+  license-scan:
+    # Section 10. Sentinel ships PROPRIETARY (see LICENSE), so a copyleft
+    # dependency is a licence-compatibility problem, not a style preference.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt && pip install pip-licenses==5.0.0
+      - name: Inventory dependency licences
+        run: pip-licenses --format=json --output-file=licenses.json
+      - name: Stamp provenance onto the licence inventory
+        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
+        # after producing it. Stamping anywhere later would let a sidecar claim
+        # a build the artifact did not come from, which is the forgery this
+        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
+        # the readiness bundle -- never PASS.
+        run: python scripts/release_binding.py stamp licenses.json
+      - name: Fail on strong copyleft
+        # GPL/AGPL family only. Weak copyleft (LGPL, MPL) is permitted when
+        # dynamically linked and is not auto-failed here; that is a judgement
+        # for a human, and encoding it as a hard gate would produce either
+        # false failures or an ignored gate.
+        run: |
+          python - <<'PY'
+          import json, sys
+          blocked = ("GPL", "AGPL")
+          allowed_substrings = ("LGPL",)
+          found = []
+          for pkg in json.load(open("licenses.json")):
+              name = pkg.get("License", "") or ""
+              if any(b in name.upper() for b in blocked) and not any(
+                  a in name.upper() for a in allowed_substrings
+              ):
+                  found.append(f"{pkg['Name']} {pkg['Version']}: {name}")
+          if found:
+              sys.stderr.write(
+                  "strong copyleft dependencies are incompatible with the "
+                  "proprietary LICENSE:\n" + "\n".join(found) + "\n"
+              )
+              raise SystemExit(1)
+          print("no strong-copyleft dependencies")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-licenses
+          path: |
+            licenses.json
+            licenses.json.provenance.json
+
+  release-evidence:
+    # Section 8. One generated source of readiness truth, assembled from the
+    # artifacts other jobs actually produced.
+    #
+    # It runs with `if: always()` and does NOT require the other jobs to have
+    # succeeded, because its value is highest exactly when something failed: a
+    # bundle that only appears on a green build cannot tell you what was
+    # unverified on a red one.
+    needs: [test, security, docker, verification]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with: {path: artifacts}
+        continue-on-error: true
+      - name: Assemble release evidence
+        run: python scripts/build_release_evidence.py --artifacts artifacts --out release
+      - name: Show the readiness summary in the job log
+        run: cat release/readiness.md
+      - uses: actions/upload-artifact@v4
+        with: {name: sentinel-release-evidence, path: release/}
+
+  provenance:
+    # Section 12: SBOM, build provenance, artifact signing, image digest,
+    # release manifest.
+    #
+    # WHAT IS SIGNED, AND WHY IT IS NOT THE IMAGE
+    # ---------------------------------------------
+    # Signing the container proves the container came from this pipeline. It
+    # proves nothing about the SBOM, the licence inventory, the detection
+    # metrics or the readiness bundle -- which are the artifacts a customer's
+    # security team actually reads.
+    #
+    # So the signed object is a MANIFEST naming every released artifact and its
+    # SHA-256. Signing that binds them together: swapping the SBOM for a
+    # cleaner one now requires breaking a signature, not replacing a file. The
+    # image digest is one entry in it.
+    #
+    # `cosign sign-blob` is used rather than `cosign sign` because this pipeline
+    # does not push to a registry, and there is therefore no image reference to
+    # sign. Signing a blob is the honest operation for what this build actually
+    # produces; claiming registry attestation without a registry would not be.
+    needs: [test, security, docker, verification, license-scan]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Keyless signing and SLSA attestation both need an OIDC token. Scoped to
+      # this job only -- the workflow default stays `contents: read`.
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with: {path: artifacts}
+        continue-on-error: true
+
+      - name: Record the image digest
+        # The digest of the image this commit produces. Rebuilt here rather
+        # than trusted from another job: a digest passed between jobs as a
+        # string is a digest anything could have written.
+        id: image
+        run: |
+          docker build -q -t sentinel:provenance . > /dev/null
+          digest=$(docker image inspect sentinel:provenance --format '{{index .Id}}')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "image digest: $digest"
+
+      - name: Build the release manifest
+        run: |
+          python scripts/build_provenance.py \
+            --artifacts artifacts \
+            --image-digest "${{ steps.image.outputs.digest }}" \
+            --out release/manifest.json
+          cat release/manifest.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Sign the manifest (keyless)
+        # Keyless: the signing identity is this workflow's OIDC token, recorded
+        # in Rekor. There is no private key to store, rotate or leak, and the
+        # signature is verifiable against the repository and workflow that
+        # produced it rather than against a secret somebody held.
+        #
+        # NOTHING MAY MODIFY manifest.json AFTER THIS POINT. An earlier version
+        # of this job flipped a `signed: true` field in the manifest after
+        # signing it, which changed the signed bytes; `verify-blob` then failed
+        # with "invalid signature when validating ASN.1 encoded signature". The
+        # verification step below is what caught it, and without that step the
+        # build would have published a signature that did not match its own
+        # artifact -- which is worse than publishing no signature at all.
+        run: |
+          cosign sign-blob --yes             --output-signature release/manifest.sig             --output-certificate release/manifest.pem             release/manifest.json
+          sha256sum release/manifest.json > release/manifest.json.sha256
+          echo "signed bytes: $(cat release/manifest.json.sha256)"
+
+      - name: Verify the signature we just made
+        # A signing step that never verifies is a signing step nobody has
+        # checked. This fails the job if the signature does not validate
+        # against the identity that produced it.
+        run: |
+          cosign verify-blob \
+            --certificate release/manifest.pem \
+            --signature release/manifest.sig \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            release/manifest.json
+
+      - name: SLSA build provenance attestation (best effort)
+        # NOT BLOCKING, and the reason is a platform limit rather than a
+        # judgement call:
+        #
+        #   Failed to persist attestation: Feature not available for
+        #   user-owned private repositories.
+        #
+        # `actions/attest-build-provenance` writes to GitHub's attestation
+        # store, which is unavailable on this repository's plan -- the same
+        # constraint that blocks branch protection (see
+        # docs/BRANCH_PROTECTION.md). No code change can satisfy it.
+        #
+        # Failing the build on it would mean a permanently red pipeline that
+        # everybody learns to ignore, which costs more than the attestation is
+        # worth here. The COSIGN SIGNATURE ABOVE IS BLOCKING AND DOES WORK --
+        # it is verified in the previous step and is the actual attestation
+        # this build relies on. SLSA provenance is additive.
+        id: slsa
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/manifest.json
+
+      - name: Record whether SLSA attestation was persisted
+        # Written to disk so `build_release_evidence.py` reports what actually
+        # happened rather than assuming. An unavailable attestation must show
+        # up as unavailable, not as silence.
+        run: |
+          if [ "${{ steps.slsa.outcome }}" = "success" ]; then
+            echo '{"slsa_attestation":"PERSISTED"}' > release/slsa-status.json
+            echo "SLSA attestation persisted"
+          else
+            echo '{"slsa_attestation":"UNAVAILABLE","reason":"GitHub attestation store is not available for user-owned private repositories; the cosign signature in manifest.sig is the attestation this build relies on"}' > release/slsa-status.json
+            echo "::warning title=SLSA attestation unavailable::GitHub attestation store requires a public repository or a different plan. The cosign signature is unaffected and verified."
+          fi
+          cat release/slsa-status.json
+
+      - name: Publish the signed manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-provenance
+          path: |
+            release/manifest.json
+            release/manifest.sig
+            release/manifest.pem
+            release/slsa-status.json

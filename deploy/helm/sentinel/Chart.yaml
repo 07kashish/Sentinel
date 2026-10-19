@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sentinel
+description: Sentinel SOC - AI agent security monitoring
+type: application
+version: 0.3.0
+appVersion: "2.0.0"

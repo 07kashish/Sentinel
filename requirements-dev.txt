@@ -1,0 +1,49 @@
+# Test and lint tooling. Never installed into the runtime image.
+-r requirements.txt
+
+pytest==9.1.1
+
+# Local packaging tests must build the real wheel instead of skipping.
+build==1.6.1
+setuptools==84.0.0
+
+# Starlette's TestClient is built on httpx. Test-only: the application
+# itself makes no outbound HTTP calls through it -- the adapters use the
+# standard library, which is why httpx is not a runtime dependency.
+httpx==0.28.1
+
+# Property-based testing. `tests_arch/test_execution_properties.py` states rules
+# as universally quantified claims rather than examples, and shrinks any
+# counterexample to its minimal form.
+hypothesis==6.161.4
+
+ruff==0.12.10
+
+# An embedded PostgreSQL server, so the SQL, chaos and concurrency suites run on
+# BOTH engines. This is not optional tooling: the predecessor's most subtle
+# defect was invisible on SQLite and fatal on PostgreSQL, and a suite that runs
+# on one engine cannot see that class of bug.
+# macOS: use a same-major local PostgreSQL installation and set
+# SENTINEL_TEST_PG_BIN plus SENTINEL_TEST_POSTGRES_DSN; see docs/current/TOPOLOGY.md.
+pgserver==0.1.4; sys_platform != "darwin"
+
+# A faithful in-memory reimplementation of the Redis command set, used to verify
+# the cache adapter's logic and the atomicity of its token-bucket script.
+fakeredis==2.36.2
+# fakeredis needs a Lua interpreter to execute EVAL. Without it the token-bucket
+# script is untestable, and an untested atomic script is not an atomic script.
+lupa==2.5
+
+# Parses `deploy/alerts/*.yml` in `tests_arch/test_alert_rules.py`, which checks
+# that every metric name an alerting rule selects is one the code actually
+# exposes. Declared rather than guarded with `importorskip` on purpose: a rule
+# whose PromQL no longer matches the exposition fires never, and a test that
+# skips itself in CI reports that same silence as success.
+PyYAML==6.0.2
+
+# Validates `deploy/helm/sentinel/values.schema.json` the way Helm does, in
+# `tests_arch/test_helm_postgres_archive.py`. The chart uses its schema as a
+# refusal mechanism (replicaCount >= 3, no `latest` tag, the WAL-archiving
+# acknowledgement), so the schema is load-bearing and needs its own tests --
+# and there is no `helm` binary in this environment to lint it with.
+jsonschema==4.23.0

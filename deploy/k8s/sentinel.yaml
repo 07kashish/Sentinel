@@ -1,0 +1,264 @@
+# Production baseline. Secrets are supplied out of band and never embedded.
+#
+# Required Secret keys:
+#   sentinel-secrets: databaseUrl, apiKeys, redisUrl, dataKey (base64, 32 bytes)
+#   sentinel-metrics: token
+#
+# The cluster must provide labelled PostgreSQL, Redis, telemetry, ingress and
+# egress-gateway workloads matching the NetworkPolicy selectors below.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sentinel
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentinel
+  namespace: sentinel
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentinel
+  namespace: sentinel
+  labels: {app: sentinel, app.kubernetes.io/name: sentinel}
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 1, maxSurge: 1}
+  selector:
+    matchLabels: {app: sentinel}
+  template:
+    metadata:
+      labels: {app: sentinel, app.kubernetes.io/name: sentinel}
+    spec:
+      serviceAccountName: sentinel
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app: sentinel}}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: {matchLabels: {app: sentinel}}
+      containers:
+        - name: sentinel
+          image: sentinel:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - {name: http, containerPort: 8000, protocol: TCP}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          env:
+            # SENTINEL_ENV IS THE ONLY VARIABLE THE APPLICATION READS.
+            #
+            # This line used to be `SENTINEL_MODE: live`. Nothing in `sentinel/`
+            # has ever read SENTINEL_MODE -- `Settings.from_environment` reads
+            # SENTINEL_ENV and defaults it to "development". So this manifest
+            # set a variable with no reader and left the real one unset, and
+            # every deployment from it ran with DEVELOPMENT safeguards.
+            #
+            # Demonstrated by feeding this manifest's exact environment to
+            # Settings: environment="development", is_production=False, and a
+            # five-character API key was ACCEPTED against a production floor of
+            # 32. Also silently permitted: SQLite, allow-all CORS, a per-replica
+            # rate limiter with no Redis, and unauthenticated /docs.
+            #
+            # `production` is not a label here. It is what switches those checks
+            # on, and `Settings` REFUSES TO START if any of them is unsatisfied.
+            - {name: SENTINEL_ENV, value: production}
+            - {name: SENTINEL_PROTECT_ENFORCE, value: "true"}
+            - {name: GUNICORN_WORKERS, value: "1"}
+            - name: SENTINEL_REDIS_URL
+              valueFrom:
+                secretKeyRef: {name: sentinel-secrets, key: redisUrl}
+            # WHAT PRODUCTION DEMANDS, SUPPLIED.
+            #
+            # Setting SENTINEL_ENV=production without these two is what produced
+            # a crash-looping pod (`Available: 0/1`): Settings refused to start,
+            # correctly, because the manifest had been switched to production
+            # without being given the configuration production requires.
+            # Turning the checks on and not satisfying them is only half a fix.
+            #
+            # REPLACE the origin below with the exact browser origins that may
+            # call this API. A wildcard is refused outright -- on a credentialed
+            # API it lets any site call this service as the user.
+            - {name: SENTINEL_CORS_ORIGINS, value: "https://console.example.com"}
+            # false = fail CLOSED when the rate limiter's store is unreachable.
+            # Losing the limit is worse than losing availability for a security
+            # service, but it is a real trade-off, which is why the application
+            # refuses to guess it and this is stated rather than omitted.
+            - {name: SENTINEL_RATE_LIMIT_FAIL_OPEN, value: "false"}
+            # See docs/EXECUTION_TRUST_ARCHITECTURE.md before setting this true.
+            - {name: SENTINEL_REQUIRE_EXECUTION_BINDING, value: "true"}
+            - name: SENTINEL_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: sentinel-secrets, key: databaseUrl}
+            - name: SENTINEL_DATA_KEY_K1
+              valueFrom:
+                secretKeyRef: {name: sentinel-secrets, key: dataKey}
+            - {name: SENTINEL_ACTIVE_KEY_ID, value: "k1"}
+            - name: SENTINEL_API_KEYS
+              valueFrom:
+                secretKeyRef: {name: sentinel-secrets, key: apiKeys}
+            - {name: SENTINEL_METRICS_TOKEN_FILE, value: /var/run/secrets/sentinel-metrics/token}
+            - {name: SENTINEL_OTLP_ENDPOINT, value: "https://otel-collector.observability.svc.cluster.local:4318/v1/traces"}
+            # Configure explicit target-network paths before enabling adapters.
+          resources:
+            requests: {cpu: 250m, memory: 256Mi, ephemeral-storage: 128Mi}
+            limits: {cpu: "1", memory: 1Gi, ephemeral-storage: 1Gi}
+          startupProbe:
+            httpGet: {path: /health/live, port: http, scheme: HTTP}
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /health/live, port: http, scheme: HTTP}
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http, scheme: HTTP}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: metrics-token, mountPath: /var/run/secrets/sentinel-metrics, readOnly: true}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 1Gi}
+        - name: metrics-token
+          secret:
+            secretName: sentinel-metrics
+            defaultMode: 0440
+            items: [{key: token, path: token}]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentinel
+  namespace: sentinel
+  labels: {app: sentinel}
+spec:
+  type: ClusterIP
+  selector: {app: sentinel}
+  ports:
+    - {name: http, port: 80, targetPort: http, protocol: TCP}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: sentinel, namespace: sentinel}
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector: {matchLabels: {app: sentinel}}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: sentinel, namespace: sentinel}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: sentinel}
+  minReplicas: 3
+  maxReplicas: 12
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - {type: Percent, value: 100, periodSeconds: 60}
+        - {type: Pods, value: 4, periodSeconds: 60}
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - {type: Percent, value: 25, periodSeconds: 60}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: 70}
+    - type: Resource
+      resource:
+        name: memory
+        target: {type: Utilization, averageUtilization: 80}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: sentinel-ingress, namespace: sentinel}
+spec:
+  podSelector: {matchLabels: {app: sentinel}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress-nginx}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: observability}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: sentinel-egress, namespace: sentinel}
+spec:
+  podSelector: {matchLabels: {app: sentinel}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app: postgres}}
+      ports: [{protocol: TCP, port: 5432}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - podSelector: {matchLabels: {app: redis}}
+      ports: [{protocol: TCP, port: 6379}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: observability}
+          podSelector:
+            matchLabels: {app: otel-collector}
+      ports: [{protocol: TCP, port: 4318}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: sentinel-egress}
+          podSelector:
+            matchLabels: {app: egress-gateway}
+      ports: [{protocol: TCP, port: 8080}]
+---
+# Default deny both directions for application pods. Kubernetes unions policy
+# allows, so document order does not affect the explicit rules above.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: sentinel-default-deny, namespace: sentinel}
+spec:
+  podSelector: {matchLabels: {app: sentinel}}
+  policyTypes: [Ingress, Egress]

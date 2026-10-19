@@ -1,0 +1,36 @@
+{
+  "schema": "sentinel.deployed-journey/v1",
+  "passed": true,
+  "checks": {
+    "kubernetes_version": "v1.37.0",
+    "image_id": "sha256:5da13932d862b6e4aa6081b58bbd9e171efb088afa3bec2125fd3b57188a0a7a",
+    "sentinel_pods": 2,
+    "admission_refuses_agent_write_despite_edit_grant": true,
+    "admission_refuses_unstamped_executor_write": true,
+    "cni_blocks_agent_pod_from_api_server": true,
+    "api_key_refused_on_agent_path": true,
+    "pod_token_cannot_speak_for_another_agent": true,
+    "pod_bound_token_accepted_as_agent_identity": true,
+    "approved_change_applied_stamped_and_attributed": true,
+    "replay_refused_across_pods": true,
+    "receipt_committed_and_bundle_verified_offline": 1,
+    "workflow_metrics": {
+      "approvals": 1,
+      "succeeded": 1,
+      "refused": 1
+    }
+  },
+  "started_at": "2026-09-20T07:37:58.742750+00:00",
+  "completed_at": "2026-09-20T07:38:45.123618+00:00",
+  "harness_sha256": "475146b23e31cd296c1979ffe4a11d8dcaf98ad97762f490c49d8a6b654a2f9a",
+  "scope": "local disposable kind, one node, synthetic credentials, a ConfigMap flag change",
+  "unverified": [
+    "cloud cluster",
+    "customer identity provider",
+    "TLS or mesh between agent and Sentinel",
+    "independent failure domain",
+    "load and soak",
+    "external assessment",
+    "a customer"
+  ]
+}

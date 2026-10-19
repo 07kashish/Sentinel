@@ -1,0 +1,158 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+
+reports/
+evaluation/.cache/
+evaluation/results/
+
+# VCS / local tooling
+.venv/
+venv/
+.env.*
+!.env.example
+*.log
+# Captured strace traces are TEST FIXTURES, not logs: every parser test reads
+# them, and the release-packaging gate asserts they ship. Un-ignored by name.
+!tests_arch/fixtures/*.log
+.coverage
+htmlcov/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
+*.swp
+_write_*.py
+_phase0_*.py
+_bootstrap_*.py
+evaluation/metrics_phase_run.json
+evaluation/metrics.json
+
+# ── Local infrastructure scratch state ───────────────────────────────────────
+#
+# MinIO writes `.minio.sys/` into whatever directory it is pointed at, so a live
+# object-store test or a DR drill started from the repository root leaves a few
+# megabytes of bucket internals behind — 52 files and 3.3 MB of
+# `.minio.sys/tmp/.trash/*/xl.meta.bkp` in the case that prompted these lines.
+# It is server state, not source, and `git add -A` would happily commit it.
+#
+# The drills and harnesses in `scripts/` write to a temporary directory by
+# default and never here; these patterns exist for the times someone runs the
+# binary by hand from the repo root, which is the normal way to reproduce a
+# measurement.
+sentinel_minio_data/
+*_minio_data/
+minio_data/
+pgdata/
+sentinel_pgdata_*/
+sentinel_wal_pitr_*/
+
+# Generated release evidence. Produced by scripts/build_release_evidence.py and
+# scripts/build_provenance.py, published by CI as artifacts.
+#
+# NOT committed, deliberately: a generated file under version control drifts
+# from the artifacts it claims to summarise, and this repository has already
+# fixed that exact defect once, where a DR drill rewrote its own committed
+# evidence on every test run.
+# `release/*` and not `release/`: git cannot re-include anything whose PARENT
+# DIRECTORY is excluded, so excluding the directory itself would make the
+# negation below silently do nothing -- which is exactly what happened on the
+# first attempt, and the baseline was committed nowhere.
+release/*
+
+# ...EXCEPT the Phase 0 baselines, which are the opposite case.
+#
+# The rule above exists because a GENERATED summary drifts from the artifacts it
+# claims to describe -- readiness.json is rewritten on every build, so a
+# committed copy is a lie waiting to happen.
+#
+# A baseline is not regenerated. `build_baseline_manifest.py` REFUSES to
+# overwrite one, so a committed baseline cannot drift: it is a point-in-time
+# record of what the repository was before a body of work, keyed by the commit
+# it describes and bound to a digest of that source tree. Its entire value is
+# persisting, and an ignored baseline is one that vanishes with the working
+# directory that produced it.
+!release/baseline/
+!release/baseline/**
+
+# macOS metadata (FAT/exFAT volumes)
+._*
+.DS_Store
+.schemathesis/
+logs/
+
+# Release provenance sidecars are BUILD OUTPUT, never source.
+#
+# A sidecar binds an artifact to a source-tree digest, and that digest changes
+# with the next commit -- so a committed sidecar is stale the moment it lands
+# and every gate it covers reports `wrong_tree`. They are written by the CI job
+# that produces the artifact and live only for that run.
+*.provenance.json
+
+# Local IDE/agent scratch: machine-specific absolute paths, never portable.
+.claude/
+
+# Generated MEASUREMENTS. Same rule as `release/*` above, for the same reason,
+# and the reason is now demonstrated rather than argued.
+#
+# These are produced by a script, bound to the commit that produced them, and
+# read by `build_release_evidence` as that commit's evidence. Committing one
+# moves HEAD PAST its own binding, so the artifact reports "produced from a
+# different commit" the moment it lands -- and the readiness report goes from
+# 15 pass to 0 in the act of recording the 15.
+#
+# Worse, `*.provenance.json` is ignored, so a committed artifact arrives at
+# somebody else's checkout with no sidecar at all. It can never be evidence
+# there. It can only be MISTAKEN for evidence, which is the failure this whole
+# mechanism exists to prevent.
+#
+# Every document that references them cites the COMMAND that regenerates them,
+# not a link to the file, so nothing breaks by their absence. CI produces them
+# fresh in the job at the checked-out commit and uploads them as artifacts,
+# which is where they belong.
+docs/authorization_bench.json
+docs/sentinel.cdx.json
+docs/licenses.json
+docs/attack_surface.json
+evaluation/metrics.json
+
+# Generated soak measurements. Same rule as the other artifacts above.
+docs/observability_soak*.json
+
+# Terraform working directories. `terraform init` downloads provider binaries
+# here -- the AWS provider alone is over 600 MB, well past any sane limit for a
+# repository, and it is re-fetched by `init` on any machine that needs it.
+#
+# The lock file IS committed: it pins provider versions, which is supply-chain
+# state and belongs under review.
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+
+# Written by scripts/verify_guards.py before each mutation so a killed run
+# can be recovered from. Never committed: it holds a snapshot of a source
+# file mid-experiment.
+.verify_guards_journal/
+
+# THREE GENERATED FILES THE TEST SUITE READS AS FIXTURES. Ignoring them meant
+# a fresh checkout -- CI included -- failed 24 tests with FileNotFoundError
+# before any assertion ran, and had done so on every run this branch ever had.
+# The readiness ledger, the SBOM and the detection metrics are regenerated by
+# their scripts and gates; the committed copies are the last generated state,
+# so a clone can run the suite. Their provenance sidecars stay ignored: a
+# sidecar binds to the commit that produced it and would be stale on arrival.
+!release/gap_ledger.json
+!docs/sentinel.cdx.json
+!evaluation/metrics.json
+.sentinel-trial/

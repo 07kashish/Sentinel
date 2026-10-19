@@ -1,0 +1,90 @@
+[
+  {
+    "test": "tests_arch.test_detonation_tracing.test_a_live_traced_detonation_observes_a_real_payload",
+    "reason": "needs docker and the sentinel/detonate-trace:test image on PATH. Skipped rather than faked: a live-run test that silently substituted a mock would report the container path as verified when nothing ran. The path IS verified, just not from here. On the development machine Docker lives inside WSL and is not on the Windows PATH, so this skips -- but the run was performed by hand and its output is committed as tests_arch/fixtures/strace_live_detonation.log, which every test above parses. That fixture is the evidence; this test is the regression guard for a host that can run it."
+  },
+  {
+    "test": "tests_arch.test_migrations.test_row_level_security_is_on_after_a_fresh_migration[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  },
+  {
+    "test": "tests_arch.test_persistence_benchmarks.test_partition_pruning_happens[sqlite]",
+    "reason": "SQLite has no declarative partitioning; see schema.py"
+  },
+  {
+    "test": "tests_arch.test_persistence_benchmarks.test_partitions_can_be_created_and_dropped_in_constant_time[sqlite]",
+    "reason": "SQLite has no declarative partitioning"
+  },
+  {
+    "test": "tests_arch.test_persistence_benchmarks.test_isolation_levels_are_actually_applied[sqlite]",
+    "reason": "SQLite has one isolation level"
+  },
+  {
+    "test": "tests_arch.test_persistence_benchmarks.test_a_blocked_writer_fails_fast_rather_than_queueing[sqlite]",
+    "reason": "SQLite serialises writers with a busy timeout instead"
+  },
+  {
+    "test": "tests_arch.test_persistence_benchmarks.test_row_level_security_does_not_degrade_into_a_scan[sqlite]",
+    "reason": "SQLite has no row-level security"
+  },
+  {
+    "test": "tests_arch.test_release_packaging.test_no_allowlisted_file_contains_the_live_aws_credentials",
+    "reason": "no .env in this checkout, so there is nothing to leak"
+  },
+  {
+    "test": "tests_arch.test_slo_evaluation.test_the_mapper_reads_the_real_soak_artifact",
+    "reason": "soak artifact not present in this checkout"
+  },
+  {
+    "test": "tests_arch.test_slo_evaluation.test_the_real_artifact_yields_a_met_ingest_and_an_unmeasurable_availability",
+    "reason": "soak artifact not present in this checkout"
+  },
+  {
+    "test": "tests_arch.test_slo_evaluation.test_the_cli_exits_one_when_a_target_is_unmeasurable",
+    "reason": "soak artifact not present in this checkout"
+  },
+  {
+    "test": "tests_arch.test_slo_evaluation.test_the_cli_prints_the_artifacts_own_claim_beside_the_computed_verdict",
+    "reason": "soak artifact not present in this checkout"
+  },
+  {
+    "test": "tests_arch.test_slo_evaluation.test_the_cli_states_that_the_soak_gate_stays_open",
+    "reason": "soak artifact not present in this checkout"
+  },
+  {
+    "test": "tests_arch.test_soft_detection_independent.test_independent_english_soft_benchmark_meets_promotion_floor",
+    "reason": "UNVERIFIED: the independent-English promotion floor was not checked. evaluation/results/benchmark_test_english_soft.json is absent, which means the benchmark corpus could not be fetched (it is downloaded from a third-party dataset service and cached under evaluation/.cache, which is not committed). Regenerate with: python evaluation/run_benchmark.py --test --english --soft"
+  },
+  {
+    "test": "tests_arch.test_sql_infrastructure.test_a_tenant_scoped_table_added_late_is_still_protected[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_a_write_cannot_be_attributed_to_another_tenant[sqlite]",
+    "reason": "SQLite has no WITH CHECK; the application predicate is all there is"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_the_application_role_is_not_a_superuser[sqlite]",
+    "reason": "no roles on SQLite"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_every_protected_table_actually_carries_a_forced_policy[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_no_tenant_owned_table_was_left_out_of_the_protected_set[sqlite]",
+    "reason": "catalogue query is PostgreSQL-specific"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_an_unscoped_connection_still_sees_no_queue_rows[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_the_worker_scope_sees_every_tenants_queue_rows_and_nothing_else[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  },
+  {
+    "test": "tests_arch.test_tenant_isolation_rls.test_the_worker_scope_does_not_outlive_its_transaction[sqlite]",
+    "reason": "SQLite has no row-level security to interrogate"
+  }
+]

@@ -1,0 +1,73 @@
+# The three identities of a protected change, and the least each may hold.
+#
+#   sentinel-broker    what the Sentinel pods run as. Its ONLY cluster right is
+#                      to mint tokens for sentinel-executor. It cannot read or
+#                      write a single workload object, so the credential that
+#                      lives in the long-running process can change nothing.
+#   sentinel-executor  never runs anywhere. It exists to have tokens minted for
+#                      it, one per operation, ten minutes each. Its rights are
+#                      the blast radius of one in-flight operation: the named
+#                      resource kinds in the protected namespace, nothing else.
+#   agents/*           read-only in the protected namespace. The admission
+#                      policy refuses their writes even if a later RoleBinding
+#                      grants some by mistake.
+#
+# Configure Sentinel with:
+#   SENTINEL_KUBERNETES_TOKEN_FILE=<projected token of sentinel-broker>
+#   SENTINEL_KUBERNETES_EXECUTOR_SERVICE_ACCOUNT=sentinel-executor
+#   SENTINEL_KUBERNETES_EXECUTOR_NAMESPACE=sentinel
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: sentinel-broker, namespace: sentinel}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: sentinel-executor, namespace: sentinel}
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: sentinel-mint-executor-tokens, namespace: sentinel}
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    resourceNames: ["sentinel-executor"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: sentinel-mint-executor-tokens, namespace: sentinel}
+subjects:
+  - {kind: ServiceAccount, name: sentinel-broker, namespace: sentinel}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: sentinel-mint-executor-tokens}
+---
+# Bind in EACH protected namespace; `prod` is the example.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: sentinel-protected-change, namespace: prod}
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["configmaps", "deployments"]
+    verbs: ["get", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: sentinel-protected-change, namespace: prod}
+subjects:
+  - {kind: ServiceAccount, name: sentinel-executor, namespace: sentinel}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: sentinel-protected-change}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: agents-read-only, namespace: prod}
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["configmaps", "deployments", "pods", "services"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: agents-read-only, namespace: prod}
+subjects:
+  - {kind: Group, name: "system:serviceaccounts:agents", apiGroup: rbac.authorization.k8s.io}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: agents-read-only}

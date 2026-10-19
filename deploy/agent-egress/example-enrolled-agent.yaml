@@ -1,0 +1,91 @@
+# Example agent Deployment under the F-11 Protect deployment contract.
+# Labels + annotation satisfy ValidatingAdmissionPolicy; NetworkPolicy
+# fail-closes egress except to Sentinel. Optional egress-proxy sidecar shown.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-enrolled-agent
+  labels:
+    sentinel.io/deployment-contract: protect-egress-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-enrolled-agent
+  template:
+    metadata:
+      labels:
+        app: example-enrolled-agent
+        sentinel.io/role: agent
+        sentinel.io/enrolled: "true"
+      annotations:
+        sentinel.io/tool-path: egress-proxy
+    spec:
+      # ── Pod security context ────────────────────────────────────────────
+      # Trivy flagged this manifest with five HIGH misconfigurations -- KSV-0118
+      # (default security context, allows root privileges) and KSV-0014 (root
+      # filesystem writable) -- and it was right to.
+      #
+      # This file is an EXAMPLE. People copy examples. An example in a security
+      # product that runs an agent as root with a writable root filesystem
+      # teaches the opposite of what the rest of this directory is for: the
+      # whole point of the Protect deployment contract is that an enrolled agent
+      # cannot reach the network except through the proxy, and an agent running
+      # as root can rewrite its own proxy configuration.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532        # `nonroot` in distroless; any non-zero uid works
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: agent
+          image: example-agent:latest
+          # Least privilege, spelled out rather than inherited. `allowPrivilege
+          # Escalation: false` is the one that stops a setuid binary inside the
+          # container from undoing the rest of this.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: ["ALL"]}
+          env:
+            - name: HTTPS_PROXY
+              value: http://127.0.0.1:18080
+            - name: HTTP_PROXY
+              value: http://127.0.0.1:18080
+            - name: NO_PROXY
+              value: sentinel.sentinel.svc,127.0.0.1,localhost
+          # A read-only root filesystem needs somewhere to write. An emptyDir
+          # for /tmp is the standard answer and keeps the rest immutable; a
+          # workload needing more should mount more, not give up the property.
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+        - name: sentinel-egress-proxy
+          image: sentinel-egress-proxy:latest
+          # The proxy is the control that the agent's egress is measured
+          # against. If it is easier to compromise than the workload it
+          # constrains, it is not a control -- so it gets the same treatment.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: ["ALL"]}
+          args:
+            - --sentinel-url=http://sentinel.sentinel.svc:8000
+            - --check
+          ports:
+            - {containerPort: 18080, name: proxy}
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - /app/fail_closed_proxy.py
+                - --sentinel-url=http://sentinel.sentinel.svc:8000
+                - --check
+            periodSeconds: 5
+          volumeMounts:
+            - {name: proxy-tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        - {name: proxy-tmp, emptyDir: {}}

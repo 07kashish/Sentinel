@@ -1,0 +1,15 @@
+{
+  "version": "charngram-lr@20260819-30c5a0a1540ee2b8",
+  "trained_at": "2026-08-19T19:00:08.797685+00:00",
+  "n_train": 5608,
+  "n_attack": 3697,
+  "n_benign": 1911,
+  "train_fingerprint": "30c5a0a1540ee2b8",
+  "sources": [
+    "deepset/prompt-injections",
+    "jackhhao/jailbreak-classification",
+    "Lakera/gandalf_ignore_instructions",
+    "DAMO-NLP-SG/MultiJail"
+  ],
+  "note": "Trained on the TRAIN split only. Any metric quoted on the TEST split is out-of-sample with respect to this artifact."
+}

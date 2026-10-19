@@ -1,0 +1,15 @@
+{
+  "why": "No UTC offset, so the moment it names depends on who reads it. Reported rather than refused: the document is ambiguous, not forged.",
+  "passport": {
+    "schema": "sentinel.passport/v1",
+    "execution_id": "exec-1",
+    "tenant_id": "acme",
+    "occurred_at": "2026-03-01T12:00:00",
+    "agent_id": "finance-agent",
+    "action": "transfer_funds",
+    "decision": "allowed"
+  },
+  "expect_codes": [
+    "naive_timestamp"
+  ]
+}

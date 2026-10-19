@@ -1,0 +1,14 @@
+{
+  "why": "`human_principal: null` says nobody authorised this. Dropping the key says the field was never considered. A canonicaliser that erases the difference lets those two documents share a signature.",
+  "passport": {
+    "schema": "sentinel.passport/v1",
+    "execution_id": "exec-1",
+    "tenant_id": "acme",
+    "occurred_at": "2026-03-01T12:00:00+00:00",
+    "agent_id": "finance-agent",
+    "action": "transfer_funds",
+    "decision": "allowed",
+    "human_principal": null
+  },
+  "expect_codes": []
+}

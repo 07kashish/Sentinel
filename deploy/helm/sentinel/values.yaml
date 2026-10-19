@@ -1,0 +1,164 @@
+﻿replicaCount: 3
+
+image:
+  repository: sentinel
+  tag: "2.0.0"
+  # Set a sha256:... digest in production to make releases immutable.
+  digest: ""
+  pullPolicy: IfNotPresent
+
+postgres:
+  existingSecret: sentinel-db
+  secretKey: url
+
+# Evidence bodies are sealed per record under this data key (base64, 32 bytes).
+# Production refuses to start without one. To rotate: add the new key to the
+# secret, change keyId, roll the pods, run `evidence-reseal` per tenant, then
+# remove the old key. Losing the key loses the bodies, never the proofs.
+evidenceEncryption:
+  existingSecret: sentinel-data-key
+  secretKey: key
+  keyId: k1
+
+# This chart does NOT deploy PostgreSQL -- it consumes a DSN from the secret
+# above, the same way it consumes the Redis and metrics credentials. That is a
+# deliberate shape (the database outlives any one release), but it left a real
+# gap: the RPO promised in docs/DISASTER_RECOVERY.md depends on archive settings
+# this chart cannot apply, and the only thing pointing that out was a line in
+# NOTES.txt printed after a successful install -- i.e. after it was too late.
+#
+# `archiveTimeoutConfirmed` is a required acknowledgement. values.schema.json
+# demands the literal `true`, so `helm install`/`helm template` REFUSES to render
+# while it is false. Setting it is a statement that the database this release
+# points at has continuous archiving configured:
+#
+#     wal_level = replica
+#     archive_mode = on
+#     archive_command = <copies %p to durable storage, refusing to overwrite>
+#     archive_timeout = 60s
+#
+# `helm test` verifies the claim against the live server rather than trusting it
+# (templates/tests/postgres-archive-check.yaml). Measured consequences of getting
+# this wrong are historical; this chart alone establishes no recovery bound.
+externalPostgres:
+  archiveTimeoutConfirmed: false
+  # Upper bound the `helm test` hook enforces against the live server, in
+  # seconds. This is a configuration check, not a measured RPO guarantee.
+  # Verify archive delivery and recovery in an independent failure domain.
+  maxArchiveTimeoutSeconds: 60
+
+auth:
+  existingSecret: sentinel-auth
+  secretKey: apiKeys
+
+metrics:
+  existingSecret: sentinel-metrics
+  secretKey: token
+
+redis:
+  existingSecret: sentinel-redis
+  secretKey: redisUrl
+
+otel:
+  endpoint: "https://otel-collector.observability:4318/v1/traces"
+
+egressProxy:
+  namespace: sentinel-egress
+  podLabels: {app: egress-gateway}
+  port: 8080
+
+# ── Production requirements ─────────────────────────────────────────────────
+#
+# The chart sets SENTINEL_ENV=production, and production is not a label: the
+# application REFUSES TO START when any of these is unsatisfied. Both variables
+# below were missing when SENTINEL_ENV was first corrected from the phantom
+# SENTINEL_MODE, and the result was a pod that crash-looped with
+# `Available: 0/1` -- the refusal working exactly as designed, against a
+# manifest that had been switched to production without being given what
+# production demands.
+#
+# `python -m sentinel.interface.cli preflight` reports every one of these at
+# once against a candidate environment.
+
+# Exact browser origins allowed to call the API. REQUIRED: there is no default,
+# because the only default that would work for everyone is a wildcard, and a
+# wildcard origin on a credentialed API lets any site call it as the user.
+# The application refuses `*` outright, so a permissive default here would only
+# move the failure from render time to crash time.
+corsOrigins: ""
+
+# What the rate limiter does when its backing store is unreachable.
+#
+# `false` = fail CLOSED (deny). Shipped as the default because this is a
+# security product and losing the limit is worse than losing availability, but
+# it is a real trade-off and the application refuses to guess it -- which is why
+# this is rendered explicitly rather than left unset. The supported chart
+# refuses fail-open values; availability exceptions require separate review.
+rateLimitFailOpen: false
+
+# Refuse the UNBOUND tool path, so every side effect must carry an
+# ExecutionAuthorization whose parameter digest is re-checked immediately before
+# the tool runs.
+#
+# The protected workflow requires a bound authorization for every execution.
+# Migrate callers before admission; do not disable binding to make them run.
+requireExecutionBinding: true
+
+retentionDays: 90
+
+# How long the INCIDENT RECORD is kept: `incidents`, `domain_events`,
+# `incident_transitions`, `execution_steps`, `reports`.
+#
+# `null` means never delete, and that is the shipped default deliberately. This
+# is a compliance decision with legal weight -- SOC 2, GDPR Article 5(1)(e) and
+# sector rules all bear on it and they do not agree -- so the chart declines to
+# choose a number that an auditor would later read as this organisation's stated
+# policy. Set it to an integer number of days once someone has signed for that
+# number. `0` is refused by the application rather than treated as "forever":
+# it is ambiguous between "keep nothing" and "keep everything", and those are
+# opposites.
+#
+# The evidence ledger (`ledger_entries`, `ledger_batches`, `security_audit`) is
+# NEVER trimmed by this, whatever it is set to. See
+# sentinel/infrastructure/sql/retention.py.
+incidentRetentionDays: null
+
+maintenance:
+  retentionIntervalSeconds: 3600
+
+resources:
+  requests: {cpu: 250m, memory: 256Mi, ephemeral-storage: 128Mi}
+  limits: {cpu: 1000m, memory: 1Gi, ephemeral-storage: 1Gi}
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+networkPolicy:
+  enabled: true
+  postgresPodLabels: {app: postgres}
+  redisPodLabels: {app: redis}
+  ingressNamespace: ingress-nginx
+  observabilityNamespace: observability
+  otelPodLabels: {app: otel-collector}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+serviceMesh:
+  enabled: true
+  mtls:
+    mode: STRICT
+  destinationRule:
+    enabled: true

@@ -1,0 +1,29 @@
+# Accepted dependency-vulnerability exceptions.
+#
+# The CI dependency scan is BLOCKING. Previously it ran with `|| true`, so every
+# advisory was reported and then discarded -- a security product shipped with an
+# audit gate that could not fail. Exceptions now have to be written down here,
+# with a reason and a review date, instead of being silently swallowed.
+#
+# Format: one entry per line
+#   <VULN-ID>  <YYYY-MM-DD review-by>  <reason>
+#
+# Rules:
+#   - An entry is a dated, reviewed decision, not a mute button.
+#   - Prefer upgrading the dependency. Only add an entry when no fixed version
+#     exists or the upgrade is genuinely blocked, and say which it is.
+#   - Entries past their review-by date should be re-argued, not extended by habit.
+#
+# Example (not active):
+#   GHSA-xxxx-xxxx-xxxx  2026-10-01  no fixed release; vulnerable code path unreachable
+#   (we never call the affected parser -- see docs/ARCHITECTURE_DECISIONS.md)
+
+# (no active exceptions)
+#
+# PYSEC-2024-110 was here until 2026-08-19, deferring the scikit-learn 1.4.0
+# pin on the grounds that the vulnerable attribute had been stripped from the
+# committed artifact. That exception is now RESOLVED rather than expired: the
+# dependency was upgraded to 1.9.0 and the artifact RETRAINED under it, so the
+# attribute is never created in the first place instead of being removed after
+# the fact. `pip-audit -r requirements.txt` reports no findings with no ignore
+# flags at all, which is the state this file exists to keep rare.

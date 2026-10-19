@@ -1,0 +1,103 @@
+# Verifies the archiving claim `externalPostgres.archiveTimeoutConfirmed` makes.
+#
+# The values gate forces an operator to ASSERT that continuous WAL archiving is
+# configured. An assertion is not a configuration, so this hook asks the server
+# itself and fails the release test if the answer disagrees. Run with:
+#
+#     helm test <release> -n <namespace>
+#
+# It reads the same DSN secret the application uses, so it checks the database
+# the release actually talks to rather than one named in a values file.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-postgres-archive-check
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: release-test
+  annotations:
+    helm.sh/hook: test
+    # `before-hook-creation` ONLY -- deliberately NOT `hook-succeeded`.
+    #
+    # `hook-succeeded` deletes the pod the moment the test passes, and
+    # `helm test --logs` then cannot read it:
+    #
+    #     unable to get pod logs for sentinel-postgres-archive-check:
+    #     pods "sentinel-postgres-archive-check" not found
+    #
+    # `helm test` exits 1 on that log-fetch failure, so CI reported a PASSING
+    # archive check as "the chart's helm test hook reported a misconfigured
+    # archive". A false red on a gate whose whole purpose is to tell the truth
+    # about WAL archiving.
+    #
+    # Whether the race is lost depends on the Helm version, which is exactly
+    # why it must not be left to timing. Keeping the pod until the next test
+    # run makes the logs readable on every version -- and the CI step's own
+    # comment argues for that: "a red gate whose output nobody can see is only
+    # marginally better than no gate."
+    #
+    # `before-hook-creation` still cleans up: the next `helm test` deletes it
+    # before creating the replacement, so pods do not accumulate.
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+  containers:
+    - name: archive-check
+      image: postgres:16-alpine
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: ["ALL"]}
+      env:
+        - name: PGCONNECT_TIMEOUT
+          value: "10"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.postgres.existingSecret }}
+              key: {{ .Values.postgres.secretKey }}
+        - name: MAX_ARCHIVE_TIMEOUT
+          value: "{{ .Values.externalPostgres.maxArchiveTimeoutSeconds }}"
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          # `SHOW` reports the setting in force on the running server, which is
+          # the only thing that governs whether WAL actually reaches an archive.
+          archive_mode=$(psql "$DATABASE_URL" -tAc 'SHOW archive_mode')
+          archive_command=$(psql "$DATABASE_URL" -tAc 'SHOW archive_command')
+          archive_timeout=$(psql "$DATABASE_URL" -tAc 'SHOW archive_timeout')
+          wal_level=$(psql "$DATABASE_URL" -tAc 'SHOW wal_level')
+          echo "wal_level=$wal_level archive_mode=$archive_mode"
+          echo "archive_timeout=$archive_timeout"
+          echo "archive_command=$archive_command"
+
+          fail() { echo "FAIL: $1" >&2; exit 1; }
+
+          [ "$archive_mode" = "on" ] || \
+            fail "archive_mode=$archive_mode, expected on. WAL is not being archived, so this deployment has no PITR and no bounded RPO."
+          case "$wal_level" in
+            replica|logical) ;;
+            *) fail "wal_level=$wal_level cannot support archive recovery." ;;
+          esac
+          # An empty archive_command with archive_mode=on means segments are
+          # marked archived without going anywhere -- the worst shape, because it
+          # looks configured.
+          [ -n "$archive_command" ] || \
+            fail "archive_command is empty while archive_mode=on; segments are discarded, not archived."
+
+          # `SHOW archive_timeout` returns e.g. "60s", "1min", or "0" when unset.
+          case "$archive_timeout" in
+            0|0s) fail "archive_timeout is unset. A quiet database archives only when a segment fills, so the data-loss window is unbounded." ;;
+            *min) seconds=$(( ${archive_timeout%min} * 60 )) ;;
+            *s)   seconds=${archive_timeout%s} ;;
+            *)    seconds=$archive_timeout ;;
+          esac
+          [ "$seconds" -le "$MAX_ARCHIVE_TIMEOUT" ] || \
+            fail "archive_timeout=${seconds}s exceeds the declared bound of ${MAX_ARCHIVE_TIMEOUT}s; worst-case RPO is approximately archive_timeout."
+
+          echo "OK: continuous archiving is configured; worst-case RPO ~${seconds}s"

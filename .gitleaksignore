@@ -1,0 +1,3 @@
+# Synthetic planted scanner fixture, never a live credential.
+# Exact historical finding only; current code constructs the fixture at runtime.
+7d975921a7630baa926693ccee5dfd2b8454cada:tests_arch/test_release_hygiene.py:generic-api-key:78

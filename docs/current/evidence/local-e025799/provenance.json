@@ -1,0 +1,214 @@
+{
+  "schema": "sentinel.local-release-evidence/v1",
+  "created_at": "2026-09-19T13:22:18.556978+00:00",
+  "source": {
+    "commit": "e025799f495747cce4d9b84a678668d166021d3d",
+    "inputs_sha256": "92dc648f18063788a8bbae7f7ab88a65ad89ae4e329acf39e1bda5a8e5f2d823",
+    "tree": "a3d4bb5029cdcc6ab53e978bb48576b38e13cd90",
+    "working_tree_dirty": false
+  },
+  "builder": {
+    "kind": "local clean detached worktree",
+    "host_python": "3.13.14",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "image": "linux/arm64 Python 3.12",
+    "setuptools": "84.0.0",
+    "source_date_epoch": 1789603200
+  },
+  "signature": {
+    "verified": false,
+    "reason": "Unsigned local evidence; no registry or CI signer attestation"
+  },
+  "tests": {
+    "total": 4250,
+    "passed": 4228,
+    "postgres_passed": 592,
+    "skipped": 22
+  },
+  "wheel": {
+    "sha256": "d4c7eb1c82f357689adada8ee94624dfe1b6880bb3bd69b0ff6a290165e6794c",
+    "two_builds_byte_identical": true,
+    "fresh_install_passed": true
+  },
+  "image": {
+    "id": "sha256:6f6e89534e2ff02ad28613d8979b1dcf007623b488f77aec81ae6eb1f7a70072",
+    "runtime_binding_passed": true,
+    "vulnerability_gate_passed": false,
+    "high_package_findings": 44,
+    "distinct_cves": 8,
+    "secret_pattern_markers": 2,
+    "secret_marker_triage": "cryptography SSH parser header constants; no key body detected; raw scan retained"
+  },
+  "local_services": {
+    "host_postgresql": "17.11 UTF-8 / non-superuser application tests",
+    "host_redis": "8.10.1",
+    "kind": "v1.37.0, two gateway pods / one node",
+    "pod_postgresql": "16-alpine non-superuser/NOBYPASSRLS",
+    "pod_redis": "7.4.2-alpine",
+    "minio": "local real roundtrip; no WORM or independent domain proof",
+    "helm": "3.16.3; local schema exception / no mesh"
+  },
+  "dependency_audit": {
+    "audit_date": "2026-09-17",
+    "scope": "Unchanged requirements.lock; prior audit retained, not a new query",
+    "components": 41,
+    "reported_vulnerabilities": 0,
+    "license_spdx_missing": 9
+  },
+  "limitations": [
+    "44 HIGH OS findings block release; no approved waiver",
+    "Unsigned artifacts; Actions held until 2026-10-02",
+    "Two-pod echo smoke and live Kubernetes mutation HTTP harness are distinct scopes",
+    "No verified CNI enforcement, workload IdP, TLS/mesh or production credential path",
+    "No independently controlled WORM witness, independent-domain restore or external security assessment",
+    "No production soak, 30-day SLO or paid design-partner evidence",
+    "Container OS package updates and source tarball bytes are not claimed reproducible"
+  ],
+  "artifacts": [
+    {
+      "path": "bandit.json",
+      "sha256": "62d66e61adab17b02d4c1ce5dc0edc02064d3bfb9ab8d9ecf915f1c5876bf80c",
+      "bytes": 79620
+    },
+    {
+      "path": "bandit.log",
+      "sha256": "2b714e025263ad2d74d76771c9abe1c1b3a24c8cc1b6a2a780431b4faa3f31f6",
+      "bytes": 825
+    },
+    {
+      "path": "build-restored.log",
+      "sha256": "7d56d94743edb66bfaaddf99397257c2d2cc4154ebdd9164f90c3b6d9c68d169",
+      "bytes": 4432
+    },
+    {
+      "path": "clean-build/secret-scan.json",
+      "sha256": "f575c7b394706a9cbdbab778460cd7a2015fc514951f24af32f9742c6d20f6d9",
+      "bytes": 208
+    },
+    {
+      "path": "clean-build/sentinel_agent_trust-0.1.0-py3-none-any.whl",
+      "sha256": "d4c7eb1c82f357689adada8ee94624dfe1b6880bb3bd69b0ff6a290165e6794c",
+      "bytes": 1063882
+    },
+    {
+      "path": "clean-build/sentinel_agent_trust-0.1.0.tar.gz",
+      "sha256": "1e2afb81bd2ed72d56c046c4acf8fdf4938c0bce84097fc49a73ffdac69f9c4d",
+      "bytes": 911549
+    },
+    {
+      "path": "clean-build/smoke.json",
+      "sha256": "412099227efd33ca0f9c4c7b74a8ab8473416a2d890e0f3baa239559e2f9a7c7",
+      "bytes": 1690
+    },
+    {
+      "path": "clean-repeat/sentinel_agent_trust-0.1.0-py3-none-any.whl",
+      "sha256": "d4c7eb1c82f357689adada8ee94624dfe1b6880bb3bd69b0ff6a290165e6794c",
+      "bytes": 1063882
+    },
+    {
+      "path": "clean-repeat/sentinel_agent_trust-0.1.0.tar.gz",
+      "sha256": "e25f240cdd659c5229a038fbfee3b55b8a56f027e31b8515efdc94d20a116903",
+      "bytes": 911560
+    },
+    {
+      "path": "cluster-smoke.json",
+      "sha256": "4d3cd6f15e1d38949ac29c9f721596d3385ebb048dde58d109d7c7353c7e7d9e",
+      "bytes": 1324
+    },
+    {
+      "path": "cluster-smoke.values.json",
+      "sha256": "a76c526bfeffab99d76450183daa31806d1e0856a1708a907100a4944e430973",
+      "bytes": 636
+    },
+    {
+      "path": "image-gate.json",
+      "sha256": "48940180d73427f5a2cbf9db3646f9da47283a970975e2abc9077ae3b1abdab4",
+      "bytes": 6094
+    },
+    {
+      "path": "image-layer-secret-scan.json",
+      "sha256": "759fc86bb9ba4fa1923d86fbc40b7ee0cc21c45eac22bb63ae27490f254516b0",
+      "bytes": 1320
+    },
+    {
+      "path": "image-layer-triage.json",
+      "sha256": "ee637d59ffa6a5ec06b0e1025c2e40b6e3387b2cd6d275f9675999c978192481",
+      "bytes": 1359
+    },
+    {
+      "path": "image-runtime-binding.json",
+      "sha256": "eeec3e040635a3485a74c77e4bef49e5594739b3c51239b014b892808828b13e",
+      "bytes": 591
+    },
+    {
+      "path": "image-sbom.cdx.json",
+      "sha256": "1603361f9d363208fc90c74c1aeb702d6a384a0674c9714ac3c983faff83973a",
+      "bytes": 240532
+    },
+    {
+      "path": "image-vulnerabilities.json",
+      "sha256": "b43e21fa184df64cb8ff52c422d35f11862a70d3191bb9dd42fbecdebab9f0bd",
+      "bytes": 452354
+    },
+    {
+      "path": "image.tar",
+      "sha256": "23e444fee085c3c50992d9fe36ec35cef87ab6fb0e7806ab5ee9b46fca6312ed",
+      "bytes": 224471040
+    },
+    {
+      "path": "licenses.json",
+      "sha256": "df75fd1bcdb8a689b6e36c4794fbbec6c63e30b2035db0b31adaf369c5dcccf2",
+      "bytes": 55790
+    },
+    {
+      "path": "locked-dependencies.cdx.json",
+      "sha256": "b3d8936a67bf26390309fa0ded29e8b8a4347f4f81accb5cc8d8e23b690bf3af",
+      "bytes": 7459
+    },
+    {
+      "path": "ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19
+    },
+    {
+      "path": "run.json",
+      "sha256": "7604e64e954b371d29ec67fb49787f2f01c63f1dea6441ba00d5e18b89aae54e",
+      "bytes": 16853
+    },
+    {
+      "path": "run.log",
+      "sha256": "d4ca01d30c440b4a14f528f40e60dabce6fec24289ed89af0d7a08ff67c28abb",
+      "bytes": 7268
+    },
+    {
+      "path": "run.xml",
+      "sha256": "7c756f1811b25e49227d94f4395ca113c28465c309052ad3608ac9f4af736e87",
+      "bytes": 595715
+    },
+    {
+      "path": "scan_layers_reproduction.py",
+      "sha256": "24c570fdd078fdda2863c8be038fb2c8255b703ba8ab9c27e30f2d4e5a58f5d1",
+      "bytes": 2340
+    },
+    {
+      "path": "skipped-tests.json",
+      "sha256": "61371f16d684918fdab3b473b83149ae47902e2eeb7063530a3d54438dcdd0db",
+      "bytes": 4847
+    },
+    {
+      "path": "smoke.log",
+      "sha256": "b20d54f011e5746ac57fc448ebef31edea0071577468cffda12a74f54aee4716",
+      "bytes": 959
+    },
+    {
+      "path": "trivy-version.txt",
+      "sha256": "b9c1e3d7c4bcc34333f3be419f6571cbe6122117420601538cb71b54e1a7b9b5",
+      "bytes": 355
+    },
+    {
+      "path": "vulnerabilities.json",
+      "sha256": "0dc01befea78ec1606b5cc43b1167df4aa48d2c3e301d195547ac597f48e8473",
+      "bytes": 253
+    }
+  ]
+}

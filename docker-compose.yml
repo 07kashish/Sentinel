@@ -1,0 +1,173 @@
+# NOTE: Redis was removed. Nothing in the codebase ever read SENTINEL_REDIS_URL;
+# it was provisioned infrastructure with no consumer. The work queue it would
+# have backed lives in PostgreSQL instead (app/queue/durable_queue.py), so that
+# queue state and incident state cannot diverge. See docs/ARCHITECTURE_DECISIONS.md
+# Full self-hosted stack. Every component here is open-source and requires NO
+# vendor account. Only optional threat-intel keys come from outside (see .env).
+#
+#   docker compose up -d
+#   Sentinel   http://localhost:8000
+#   Prometheus http://localhost:9090
+#   Grafana    http://localhost:3000
+#   Keycloak   http://localhost:8080   (OIDC identity provider)
+#   Jaeger     http://localhost:16686  (traces)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: sentinel
+    # Continuous WAL archiving. `archive_timeout` is the setting that makes the
+    # documented RPO target hold: without it a segment is archived only when it
+    # fills, so a quiet system can sit on unarchived commits indefinitely and
+    # lose all of them. 60s buys a ~5x margin against the >=5m RPO target.
+    #
+    # archive_command refuses to overwrite (`test ! -f`) as the manual requires;
+    # an archive that silently clobbers a segment stops being a recovery source.
+    # Measured behaviour of exactly this configuration:
+    # scripts/run_dr_postgres_wal_pitr_drill.py --quiet, docs/DISASTER_RECOVERY.md.
+    #
+    # ── FAILURE DOMAIN: READ THIS BEFORE RELYING ON THE DEFAULT ──────────────
+    # The default below archives to `pgwalarchive`, a named Docker volume. That
+    # is a directory on THIS host, usually on the same disk as `pgdata`. Losing
+    # the node loses both, so the default archive cannot recover from the one
+    # failure a WAL archive exists for. It is a development default and it is
+    # labelled `fail` in docs/PRODUCTION_READINESS_REPORT.md, not a recommendation.
+    #
+    # The supported production path is object storage, which puts the archive in
+    # a different failure domain from the database's disk. Uncomment the
+    # `wal-archive-s3` block below and set SENTINEL_WAL_S3_* in .env; the drill
+    # `scripts/run_dr_postgres_wal_pitr_drill.py --archive-to s3` exercises this
+    # exact command and deletes the data directory before recovering, so its
+    # measured RPO/RTO are for archive-only recovery.
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=60s
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f
+      # ── Object storage (recommended). Replace the archive_command above with:
+      # - archive_command=python3 /opt/sentinel/wal-archive/wal_s3.py archive %p %f
+      #   and add the matching restore_command to your recovery configuration:
+      #   restore_command = 'python3 /opt/sentinel/wal-archive/wal_s3.py restore %f %p'
+      #   The script exits 0 only after reading the segment back and comparing its
+      #   SHA-256, because PostgreSQL may recycle a segment the moment it does.
+      - -c
+      - max_wal_senders=4
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # A separate volume, which is better than none and still not a backup: it
+      # shares a host with pgdata. See the failure-domain note above.
+      - pgwalarchive:/var/lib/postgresql/wal-archive
+      # Mounted read-only for the object-storage path. The image needs python3
+      # and this repository's `sentinel` package importable; the sentinel image
+      # already has both, which is why the documented deployment runs the
+      # archiver from a sidecar or from a postgres image with them installed.
+      - ./deploy/wal-archive:/opt/sentinel/wal-archive:ro
+    # Uncomment together with the object-storage archive_command above. These are
+    # read by the archiver process, which PostgreSQL forks with the server's own
+    # environment -- never passed on the command line, where `SHOW
+    # archive_command` would disclose the secret key to any connected user.
+    # SENTINEL_WAL_S3_ENDPOINT: ${SENTINEL_WAL_S3_ENDPOINT:-}
+    # SENTINEL_WAL_S3_BUCKET: ${SENTINEL_WAL_S3_BUCKET:-}
+    # SENTINEL_WAL_S3_ACCESS_KEY: ${SENTINEL_WAL_S3_ACCESS_KEY:-}
+    # SENTINEL_WAL_S3_SECRET_KEY: ${SENTINEL_WAL_S3_SECRET_KEY:-}
+    # SENTINEL_WAL_S3_CLUSTER: sentinel-prod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  sentinel:
+    build: .
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports: ["8000:8000"]
+    environment:
+      SENTINEL_API_KEYS: ${SENTINEL_API_KEYS:?set tenant:key:role in .env}
+      # SENTINEL_ENV, not SENTINEL_MODE. Nothing in `sentinel/` has ever read
+      # SENTINEL_MODE; `Settings.from_environment` reads SENTINEL_ENV.
+      #
+      # The default is `development` ON PURPOSE and must stay that way: compose
+      # is the local path, and a stack that silently demanded production
+      # invariants (PostgreSQL DSN, 32-char keys, explicit CORS, Redis for the
+      # shared limiter) would simply refuse to start on a laptop. Override it
+      # deliberately -- `SENTINEL_ENV=production docker compose up` -- when you
+      # want to rehearse the production checks.
+      SENTINEL_ENV: ${SENTINEL_ENV:-development}
+      SENTINEL_DATABASE_URL: postgresql+psycopg://sentinel:${POSTGRES_PASSWORD}@postgres:5432/sentinel
+      SENTINEL_CORS_ORIGINS: ${SENTINEL_CORS_ORIGINS:-http://localhost:8000}
+      SENTINEL_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SENTINEL_LOG_LEVEL: ${SENTINEL_LOG_LEVEL:-INFO}
+      SENTINEL_OIDC_ISSUER: ${SENTINEL_OIDC_ISSUER:-}
+      SENTINEL_METRICS_TOKEN_FILE: /run/secrets/sentinel_metrics_token
+      # Optional. Absent => intel lookups report "unavailable", never "clean".
+      VT_API_KEY: ${VT_API_KEY:-}
+      ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
+      GREYNOISE_API_KEY: ${GREYNOISE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    security_opt: ["no-new-privileges:true"]
+    secrets:
+      - source: sentinel_metrics_token
+        target: sentinel_metrics_token
+        mode: 0440
+    read_only: true
+    tmpfs: ["/tmp"]
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    environment: {COLLECTOR_OTLP_ENABLED: "true"}
+    ports: ["16686:16686", "4318:4318"]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Mounted where prometheus.yml's `rule_files` glob expects them. Without
+      # this mount the rules simply are not loaded, and Prometheus starts
+      # cleanly anyway -- an unmounted alert file is a silent no-op.
+      - ./deploy/alerts:/etc/prometheus/alerts:ro
+    secrets:
+      - source: sentinel_metrics_token
+        target: sentinel_token
+        mode: 0440
+    ports: ["9090:9090"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes: [grafanadata:/var/lib/grafana]
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: ["start-dev"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD:?set KEYCLOAK_PASSWORD in .env}
+    ports: ["8080:8080"]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pgwalarchive:
+  grafanadata:
+
+secrets:
+  sentinel_metrics_token:
+    file: ${SENTINEL_METRICS_TOKEN_FILE:?set SENTINEL_METRICS_TOKEN_FILE to a 32+ character token file}

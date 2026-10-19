@@ -1,0 +1,67 @@
+{
+  "10": {
+    "scale_requested": 10,
+    "enqueued": 10,
+    "claimed": 10,
+    "enqueue_seconds": 0.0024,
+    "claim_latency_ms": {
+      "n": 10,
+      "mean": 2.748,
+      "p95": 3.107,
+      "max": 3.537
+    },
+    "notes": "SQLite single-process microbench on work_queue claim/complete. 100k tenant/event production scale: UNVERIFIED."
+  },
+  "100": {
+    "scale_requested": 100,
+    "enqueued": 100,
+    "claimed": 100,
+    "enqueue_seconds": 0.0032,
+    "claim_latency_ms": {
+      "n": 100,
+      "mean": 3.339,
+      "p95": 5.144,
+      "max": 11.603
+    },
+    "notes": "SQLite single-process microbench on work_queue claim/complete. 100k tenant/event production scale: UNVERIFIED."
+  },
+  "1000": {
+    "scale_requested": 1000,
+    "enqueued": 1000,
+    "claimed": 1000,
+    "enqueue_seconds": 0.0201,
+    "claim_latency_ms": {
+      "n": 1000,
+      "mean": 5.052,
+      "p95": 6.937,
+      "max": 43.959
+    },
+    "notes": "SQLite single-process microbench on work_queue claim/complete. 100k tenant/event production scale: UNVERIFIED."
+  },
+  "10000": {
+    "scale_requested": 10000,
+    "enqueued": 10000,
+    "claimed": 10000,
+    "enqueue_seconds": 0.5179,
+    "claim_latency_ms": {
+      "n": 10000,
+      "mean": 6.038,
+      "p95": 12.432,
+      "max": 74.276
+    },
+    "notes": "SQLite single-process microbench on work_queue claim/complete. 100k tenant/event production scale: UNVERIFIED."
+  },
+  "100000": {
+    "scale_requested": 100000,
+    "enqueued": 100000,
+    "claimed": 100000,
+    "enqueue_seconds": 1.9734,
+    "claim_latency_ms": {
+      "n": 100000,
+      "mean": 193.638,
+      "p95": 53.755,
+      "max": 11442734.372
+    },
+    "notes": "SQLite single-process microbench on work_queue claim/complete. 100k tenant/event production scale: UNVERIFIED."
+  }
+}

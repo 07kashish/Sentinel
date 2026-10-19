@@ -1,0 +1,120 @@
+# Protected changes: the API server refuses what did not come through Sentinel.
+#
+# WHAT THIS CLOSES
+# ----------------
+# Sentinel can only vouch for changes that pass through it. Without this file
+# an agent that holds any credential with write access can call the Kubernetes
+# API directly, and everything Sentinel records about approvals is true and
+# beside the point. Two rules, enforced by the API server itself:
+#
+#   1. A service account from an AGENT namespace may not create, update or
+#      delete anything in a protected namespace. Agents read; they do not write.
+#   2. The EXECUTOR service account -- the one identity Sentinel mints
+#      per-operation tokens for -- may write only when the request carries a
+#      `fieldManager` of the form `sentinel-op-<digest>`. That is the stamp the
+#      Kubernetes adapter puts on every create and update, so a stolen executor
+#      token used by hand, without an operation behind it, is refused, and
+#      every admitted write is attributable to one operation id.
+#
+# DELETE carries no field manager in the Kubernetes API, so the OBJECT carries
+# the stamp instead: before a protected delete the adapter rewrites the approved
+# version, unchanged except for the annotation `sentinel.io/delete-operation`,
+# under the operation's field manager, and then deletes the version that write
+# produced. Rule 2 refuses an executor delete of an object without that mark.
+# The mark is written by a stamped update, so it is itself subject to rule 2.
+#
+# SCOPE
+# -----
+# A namespace opts in with the label `sentinel.io/protected-changes: "true"`.
+# Human operators and controllers are untouched: both rules are about service
+# accounts from the namespaces named in the parameters.
+#
+# `failurePolicy: Fail`: if the policy cannot be evaluated the write is
+# refused. Requires Kubernetes 1.30 or later (ValidatingAdmissionPolicy GA).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-protected-changes
+  namespace: sentinel
+  labels:
+    sentinel.io/deployment-contract: protected-changes-v1
+data:
+  # Comma-separated namespaces whose service accounts are AGENTS.
+  agentNamespaces: "agents"
+  # The one identity allowed to write, and only with an operation stamp.
+  executorUsername: "system:serviceaccount:sentinel:sentinel-executor"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: sentinel-protected-changes
+  labels:
+    sentinel.io/deployment-contract: protected-changes-v1
+spec:
+  failurePolicy: Fail
+  paramKind:
+    apiVersion: v1
+    kind: ConfigMap
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["*"]
+        apiVersions: ["*"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["*"]
+        scope: "Namespaced"
+  variables:
+    - name: username
+      expression: "request.userInfo.username"
+    - name: isServiceAccount
+      expression: "variables.username.startsWith('system:serviceaccount:')"
+    - name: callerNamespace
+      expression: "variables.isServiceAccount ? variables.username.split(':')[2] : ''"
+    - name: agentNamespaces
+      expression: "params.data.agentNamespaces.split(',')"
+    - name: fieldManager
+      expression: >-
+        has(request.options) && has(request.options.fieldManager)
+        ? request.options.fieldManager : ''
+    - name: deleteMark
+      expression: >-
+        request.operation == 'DELETE' && has(oldObject.metadata.annotations) &&
+        'sentinel.io/delete-operation' in oldObject.metadata.annotations
+        ? oldObject.metadata.annotations['sentinel.io/delete-operation'] : ''
+  validations:
+    - expression: >-
+        !variables.isServiceAccount ||
+        !(variables.callerNamespace in variables.agentNamespaces)
+      messageExpression: >-
+        'Sentinel protected changes: ' + variables.username +
+        ' is an agent identity and may not change this namespace directly; ' +
+        'request the change through Sentinel'
+      reason: Forbidden
+    - expression: >-
+        variables.username != params.data.executorUsername ||
+        (request.operation == 'DELETE' ? variables.deleteMark : variables.fieldManager)
+        .matches('^sentinel-op-[0-9a-f]{40}$')
+      message: >-
+        Sentinel protected changes: the executor identity may write only with an
+        operation stamp (fieldManager sentinel-op-<digest>, or for a delete the
+        object's sentinel.io/delete-operation mark); this request has none
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: sentinel-protected-changes
+  labels:
+    sentinel.io/deployment-contract: protected-changes-v1
+spec:
+  policyName: sentinel-protected-changes
+  validationActions: [Deny, Audit]
+  paramRef:
+    name: sentinel-protected-changes
+    namespace: sentinel
+    parameterNotFoundAction: Deny
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: sentinel.io/protected-changes
+          operator: In
+          values: ["true"]

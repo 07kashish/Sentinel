@@ -1,0 +1,72 @@
+{
+  "alb_dns_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sentinel-proof-811888797.ap-south-1.elb.amazonaws.com"
+  },
+  "cache_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "master.sentinel-proof.9uhqrg.aps1.cache.amazonaws.com"
+  },
+  "database_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sentinel-proof.cv6uw66u6c35.ap-south-1.rds.amazonaws.com:5432"
+  },
+  "evidence_bucket": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sentinel-proof-evidence-024330900387"
+  },
+  "how_to_set_secrets": {
+    "sensitive": false,
+    "type": "string",
+    "value": "aws secretsmanager put-secret-value --secret-id sentinel/proof/api-keys --secret-string '\u003cvalue\u003e'\naws secretsmanager put-secret-value --secret-id sentinel/proof/attestation-token --secret-string '\u003cvalue\u003e'\naws secretsmanager put-secret-value --secret-id sentinel/proof/evidence-data-key --secret-string '\u003cvalue\u003e'\naws secretsmanager put-secret-value --secret-id sentinel/proof/metrics-token --secret-string '\u003cvalue\u003e'\naws secretsmanager put-secret-value --secret-id sentinel/proof/siem-token --secret-string '\u003cvalue\u003e'"
+  },
+  "posture": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "alarms_reach_a_human": "bool",
+        "backups_survive_compromise": "bool",
+        "budget_is_measured": "bool",
+        "cache_survives_node_loss": "bool",
+        "database_deletion_protected": "bool",
+        "environment": "string",
+        "execution_binding_required": "bool",
+        "internet_egress": "bool",
+        "pitr_window_days": "number",
+        "rate_limit_fails_open": "bool",
+        "restore_verified": "bool",
+        "sentinel_env": "string",
+        "survives_az_loss": "bool",
+        "tls_terminated": "bool",
+        "waf_blocking": "bool"
+      }
+    ],
+    "value": {
+      "alarms_reach_a_human": false,
+      "backups_survive_compromise": false,
+      "budget_is_measured": false,
+      "cache_survives_node_loss": false,
+      "database_deletion_protected": false,
+      "environment": "proof",
+      "execution_binding_required": true,
+      "internet_egress": true,
+      "pitr_window_days": 1,
+      "rate_limit_fails_open": false,
+      "restore_verified": false,
+      "sentinel_env": "production",
+      "survives_az_loss": false,
+      "tls_terminated": false,
+      "waf_blocking": false
+    }
+  },
+  "task_role_arn": {
+    "sensitive": false,
+    "type": "string",
+    "value": "arn:aws:iam::024330900387:role/sentinel-proof-task"
+  }
+}

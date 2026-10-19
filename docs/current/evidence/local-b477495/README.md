@@ -1,0 +1,11 @@
+# Evidence for commit b477495 (2026-09-25, the AWS stack applied for real)
+
+One development machine plus one free-plan AWS account (ap-south-1). Not CI, not production, not independent.
+
+- `run.json`: the full suite bound to the release inputs. 4,495 tests, 0 failures, 0 errors, 39 skipped; 638 cases carry the PostgreSQL parameter, none skipped. Local PostgreSQL 17 and a disposable kind cluster (Kubernetes 1.37). The JUnit file is retained outside the repository; its sha256 is in `run.json`.
+- `aws-proof-journey.json`: `scripts/run_aws_proof_journey.py` against the `proof` environment (`deploy/terraform/aws/envs/proof`, the pilot stack module at free-tier sizes), PASSED on commit 7fea24f, 21 checks: migration by one-off task, two healthy Fargate tasks in two availability zones behind the ALB, secrets injected by the agent and absent from the task definition, managed PostgreSQL 16.11 encrypted and private, managed Valkey encrypted at rest and in transit, the evidence bucket with COMPLIANCE object lock under KMS, production mode serving, a tenant policy activated, a protected change pending for a human, invisible to another tenant, refused before approval, executed after, refused on replay, the receipt committed and the bundle verified offline.
+- `aws-sts-proof.json`: `scripts/run_aws_sts_proof.py`, PASSED on commit ff8344a: one real AssumeRole per operation under the operation's session name, the operation signed with the temporary credential, CloudTrail settling it as succeeded in 1.4 minutes.
+- `tofu-outputs.json`: the applied environment's outputs and `posture` (147 resources; `survives_az_loss=false`, `tls_terminated=false`, `waf_blocking=false`, as configured).
+- Seventeen defects were found by the run and fixed between 1ed5676 and b477495; `RELEASE_CHANGES.md` (2026-09-24/25) lists them. Everything was destroyed the same day and a per-service sweep found nothing of the environment left except KMS keys pending deletion and secrets in their recovery window; the run logs are kept outside the repository.
+
+Not established: AZ-loss survival (single-AZ sizes), TLS (no domain), workload identity on ECS (an API key acted as the agent), root publication to S3, cost, the GitHub App path (RISK R-021), CI (RISK R-019), any customer.
