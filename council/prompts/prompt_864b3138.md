@@ -1,1 +1,0 @@
-Run this shell command with your terminal tool and reply with ONLY its raw output: git rev-parse --abbrev-ref HEAD

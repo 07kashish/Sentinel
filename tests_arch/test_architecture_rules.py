@@ -9,7 +9,7 @@ its invariants were asserted in prose and enforced by nobody.
 call in this module: a helper that can be called without the epoch is a call site
 that will eventually be called without it." `repository.fail()` was exactly that
 helper, in that file, at line 617 -- and a second one lived in `api/main.py:170`.
-`REMEDIATION_V8.md` claimed "A stage physically cannot make an unfenced write."
+An archived review claimed "A stage physically cannot make an unfenced write."
 The v7 record claimed an "AST call-site guard" enforced it. No such guard existed
 anywhere in the test suite.
 

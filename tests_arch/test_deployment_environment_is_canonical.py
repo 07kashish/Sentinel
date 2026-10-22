@@ -62,10 +62,8 @@ LOCAL_ASSETS = (
     Path(".env.example"),
 )
 
-#: `council/` holds historical review transcripts. They are a RECORD of what was
-#: said at the time, and rewriting them would destroy that record -- the same
-#: reason retractions in this repository are struck through rather than deleted.
-EXCLUDED_FROM_SWEEP = ("council/", ".git/", "__pycache__", "tests_arch/")
+#: Exclude VCS metadata, bytecode and tests that deliberately construct bad inputs.
+EXCLUDED_FROM_SWEEP = (".git/", "__pycache__", "tests_arch/")
 
 #: A real assignment, not prose. Matches `SENTINEL_MODE=x`, `SENTINEL_MODE: x`
 #: and `{name: SENTINEL_MODE, ...}` while ignoring a mention inside a comment.
@@ -165,11 +163,7 @@ def test_compose_defaults_to_development_rather_than_production():
 
 
 def test_no_asset_anywhere_still_assigns_the_phantom_variable():
-    """Catches an overlay or chart the lists above do not name.
-
-    `council/` is excluded: it holds historical review transcripts, and
-    rewriting them would destroy the record of what was actually said.
-    """
+    """Catches an overlay or chart the lists above do not name."""
     checked = 0
     offenders: list[str] = []
     for path in ROOT.rglob("*"):

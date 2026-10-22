@@ -52,7 +52,7 @@ INVISIBLE = {
 #: Extensions worth scanning: anything a human edits and a machine parses.
 SCANNED = {".py", ".toml", ".json", ".yaml", ".yml", ".js", ".css", ".html", ".md", ".sql"}
 
-SKIP_DIRS = {"__pycache__", "node_modules", "venv", "release", "council"}
+SKIP_DIRS = {"__pycache__", "node_modules", "venv", "release"}
 
 
 def _skipped(path: Path) -> bool:

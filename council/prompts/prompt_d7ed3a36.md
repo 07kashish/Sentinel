@@ -1,1 +1,0 @@
-Run this exact shell command and report only its output: python --version

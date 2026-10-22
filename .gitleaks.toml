@@ -44,7 +44,8 @@ paths = [
   # value, and this scan reads history, so the allowlist is still required.
   '''PILOT_README\.md''',
 
-  # An archived council review transcript. The match is prose:
+  # Historical council path retained in archive/pre-cleanup. This exception
+  # still applies to history scans after its working-tree removal. The match is prose:
   # "ownership-token acknowledgements, resumable/idempotent processing, ..."
   # The generic-api-key rule fires on the long hyphenated run near the word
   # "token". There is no credential on the line. Reviewed 2026-08-19.

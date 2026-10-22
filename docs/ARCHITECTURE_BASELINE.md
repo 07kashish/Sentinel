@@ -2,7 +2,7 @@
 
 **Status:** pre-production engineering baseline. Not a production-readiness claim.
 
-Eighth Review F-numbers (council COUNCIL_REPORT_v8.md) are tracked here and in
+Eighth Review F-numbers (review archived at archive/pre-cleanup) are tracked here and in
 docs/REMEDIATION_MATRIX.md. Do not conflate them with docs/THREAT_MODEL.md F-numbers.
 
 ## Current architecture (verified against tree)

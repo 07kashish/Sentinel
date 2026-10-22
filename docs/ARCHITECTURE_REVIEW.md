@@ -482,7 +482,7 @@ Known site: `_terminalise` (`pipeline.py:617`). **[NEW]** Second site:
 `_handle_pipeline_failure` (`main.py:170-175`) — in a *different module*, on the
 retries-exhausted path, also unfenced.
 
-**[NEW]** And there is no structural guard. `REMEDIATION_V8.md` claims *"A stage physically
+**[NEW]** And there is no structural guard. The archived review claims *"A stage physically
 cannot make an unfenced write"*; the v7 record claims an "AST call-site guard." I found no AST
 check for `repository.transition` epoch anywhere in `tests/` — the only AST walks are in
 `test_board_v7_findings.py:72` (checks `protect_evaluate` for a literal `trust_level`) and
