@@ -112,38 +112,27 @@ jobs:
         # `tests_arch/conftest.py` parametrises the SQL, chaos and concurrency
         # suites over both engines using an embedded PostgreSQL, running as a
         # NON-superuser role so FORCE row-level security actually binds.
-        run: python scripts/current_test_evidence.py --out test-evidence/run.json
+        run: python -m pytest tests_arch/ -q -p no:cacheprovider --junitxml=test-results/junit.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: current-test-evidence
-          path: test-evidence/
+          name: test-results
+          path: test-results/
       - name: Measure the authorization decision
         # Phase 2. The only latency a caller waits on, and the one section 79
-        # names. Stamped in this job because provenance must be written where
-        # the artifact was produced.
+        # names.
         run: |
           python scripts/run_authorization_bench.py
-          python scripts/release_binding.py stamp docs/authorization_bench.json
       - uses: actions/upload-artifact@v4
         with:
           name: authorization-bench
           path: |
             docs/authorization_bench.json
-            docs/authorization_bench.json.provenance.json
-      - name: Stamp provenance onto the detection metrics
-        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
-        # after producing it. Stamping anywhere later would let a sidecar claim
-        # a build the artifact did not come from, which is the forgery this
-        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
-        # the readiness bundle -- never PASS.
-        run: python scripts/release_binding.py stamp evaluation/metrics.json
       - uses: actions/upload-artifact@v4
         with:
           name: detection-metrics
           path: |
             evaluation/metrics.json
-            evaluation/metrics.json.provenance.json
 
   # ── PostgreSQL only, reported separately ─────────────────────────────────
   #
@@ -724,15 +713,6 @@ jobs:
           diff <(grep -v '^#' requirements.lock) <(grep -v '^#' /tmp/requirements.lock)
       - name: Clean-install smoke (thin SDK, then server)
         run: python scripts/smoke_clean_install.py --wheel dist/*.whl --json dist/smoke.json
-      - uses: actions/download-artifact@v4
-        with:
-          name: current-test-evidence
-          path: test-evidence/
-      - name: Regenerate and stamp the release status
-        run: |
-          python scripts/build_current_status.py --out dist/current --test-evidence test-evidence/run.json \
-            --artifact dist/*.whl --artifact dist/*.tar.gz --artifact requirements.lock
-          python scripts/release_binding.py stamp dist/current/RELEASE_STATUS.json
       - uses: actions/upload-artifact@v4
         with:
           name: release-hygiene
@@ -742,7 +722,6 @@ jobs:
             dist/*.tgz
             dist/secret-scan.json
             dist/smoke.json
-            dist/current/
 
   # ── Image signing ────────────────────────────────────────────────────────
   #
@@ -926,19 +905,11 @@ jobs:
           pip install cyclonedx-bom==7.3.0
           cyclonedx-py requirements requirements.txt --output-reproducible \
             --output-format JSON --output-file sentinel.cdx.json
-      - name: Stamp provenance onto the SBOM
-        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
-        # after producing it. Stamping anywhere later would let a sidecar claim
-        # a build the artifact did not come from, which is the forgery this
-        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
-        # the readiness bundle -- never PASS.
-        run: python scripts/release_binding.py stamp sentinel.cdx.json
       - uses: actions/upload-artifact@v4
         with:
           name: sentinel-cyclonedx-sbom
           path: |
             sentinel.cdx.json
-            sentinel.cdx.json.provenance.json
           if-no-files-found: error
 
   # ── Deployment manifests ─────────────────────────────────────────────────
@@ -1175,13 +1146,6 @@ jobs:
       - run: pip install -r requirements.txt && pip install pip-licenses==5.0.0
       - name: Inventory dependency licences
         run: pip-licenses --format=json --output-file=licenses.json
-      - name: Stamp provenance onto the licence inventory
-        # PHASE 1. Stamped in the job that PRODUCED the artifact, immediately
-        # after producing it. Stamping anywhere later would let a sidecar claim
-        # a build the artifact did not come from, which is the forgery this
-        # mechanism exists to make hard. An unstamped artifact is UNVERIFIED in
-        # the readiness bundle -- never PASS.
-        run: python scripts/release_binding.py stamp licenses.json
       - name: Fail on strong copyleft
         # GPL/AGPL family only. Weak copyleft (LGPL, MPL) is permitted when
         # dynamically linked and is not auto-failed here; that is a judgement
@@ -1212,169 +1176,3 @@ jobs:
           name: sentinel-licenses
           path: |
             licenses.json
-            licenses.json.provenance.json
-
-  release-evidence:
-    # Section 8. One generated source of readiness truth, assembled from the
-    # artifacts other jobs actually produced.
-    #
-    # It runs with `if: always()` and does NOT require the other jobs to have
-    # succeeded, because its value is highest exactly when something failed: a
-    # bundle that only appears on a green build cannot tell you what was
-    # unverified on a red one.
-    needs: [test, security, docker, verification]
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
-      - uses: actions/download-artifact@v4
-        with: {path: artifacts}
-        continue-on-error: true
-      - name: Assemble release evidence
-        run: python scripts/build_release_evidence.py --artifacts artifacts --out release
-      - name: Show the readiness summary in the job log
-        run: cat release/readiness.md
-      - uses: actions/upload-artifact@v4
-        with: {name: sentinel-release-evidence, path: release/}
-
-  provenance:
-    # Section 12: SBOM, build provenance, artifact signing, image digest,
-    # release manifest.
-    #
-    # WHAT IS SIGNED, AND WHY IT IS NOT THE IMAGE
-    # ---------------------------------------------
-    # Signing the container proves the container came from this pipeline. It
-    # proves nothing about the SBOM, the licence inventory, the detection
-    # metrics or the readiness bundle -- which are the artifacts a customer's
-    # security team actually reads.
-    #
-    # So the signed object is a MANIFEST naming every released artifact and its
-    # SHA-256. Signing that binds them together: swapping the SBOM for a
-    # cleaner one now requires breaking a signature, not replacing a file. The
-    # image digest is one entry in it.
-    #
-    # `cosign sign-blob` is used rather than `cosign sign` because this pipeline
-    # does not push to a registry, and there is therefore no image reference to
-    # sign. Signing a blob is the honest operation for what this build actually
-    # produces; claiming registry attestation without a registry would not be.
-    needs: [test, security, docker, verification, license-scan]
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      # Keyless signing and SLSA attestation both need an OIDC token. Scoped to
-      # this job only -- the workflow default stays `contents: read`.
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
-      - uses: actions/download-artifact@v4
-        with: {path: artifacts}
-        continue-on-error: true
-
-      - name: Record the image digest
-        # The digest of the image this commit produces. Rebuilt here rather
-        # than trusted from another job: a digest passed between jobs as a
-        # string is a digest anything could have written.
-        id: image
-        run: |
-          docker build -q -t sentinel:provenance . > /dev/null
-          digest=$(docker image inspect sentinel:provenance --format '{{index .Id}}')
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-          echo "image digest: $digest"
-
-      - name: Build the release manifest
-        run: |
-          python scripts/build_provenance.py \
-            --artifacts artifacts \
-            --image-digest "${{ steps.image.outputs.digest }}" \
-            --out release/manifest.json
-          cat release/manifest.json
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.7.0
-
-      - name: Sign the manifest (keyless)
-        # Keyless: the signing identity is this workflow's OIDC token, recorded
-        # in Rekor. There is no private key to store, rotate or leak, and the
-        # signature is verifiable against the repository and workflow that
-        # produced it rather than against a secret somebody held.
-        #
-        # NOTHING MAY MODIFY manifest.json AFTER THIS POINT. An earlier version
-        # of this job flipped a `signed: true` field in the manifest after
-        # signing it, which changed the signed bytes; `verify-blob` then failed
-        # with "invalid signature when validating ASN.1 encoded signature". The
-        # verification step below is what caught it, and without that step the
-        # build would have published a signature that did not match its own
-        # artifact -- which is worse than publishing no signature at all.
-        run: |
-          cosign sign-blob --yes             --output-signature release/manifest.sig             --output-certificate release/manifest.pem             release/manifest.json
-          sha256sum release/manifest.json > release/manifest.json.sha256
-          echo "signed bytes: $(cat release/manifest.json.sha256)"
-
-      - name: Verify the signature we just made
-        # A signing step that never verifies is a signing step nobody has
-        # checked. This fails the job if the signature does not validate
-        # against the identity that produced it.
-        run: |
-          cosign verify-blob \
-            --certificate release/manifest.pem \
-            --signature release/manifest.sig \
-            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.*" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            release/manifest.json
-
-      - name: SLSA build provenance attestation (best effort)
-        # NOT BLOCKING, and the reason is a platform limit rather than a
-        # judgement call:
-        #
-        #   Failed to persist attestation: Feature not available for
-        #   user-owned private repositories.
-        #
-        # `actions/attest-build-provenance` writes to GitHub's attestation
-        # store, which is unavailable on this repository's plan -- the same
-        # constraint that blocks branch protection (see
-        # docs/BRANCH_PROTECTION.md). No code change can satisfy it.
-        #
-        # Failing the build on it would mean a permanently red pipeline that
-        # everybody learns to ignore, which costs more than the attestation is
-        # worth here. The COSIGN SIGNATURE ABOVE IS BLOCKING AND DOES WORK --
-        # it is verified in the previous step and is the actual attestation
-        # this build relies on. SLSA provenance is additive.
-        id: slsa
-        continue-on-error: true
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: release/manifest.json
-
-      - name: Record whether SLSA attestation was persisted
-        # Written to disk so `build_release_evidence.py` reports what actually
-        # happened rather than assuming. An unavailable attestation must show
-        # up as unavailable, not as silence.
-        run: |
-          if [ "${{ steps.slsa.outcome }}" = "success" ]; then
-            echo '{"slsa_attestation":"PERSISTED"}' > release/slsa-status.json
-            echo "SLSA attestation persisted"
-          else
-            echo '{"slsa_attestation":"UNAVAILABLE","reason":"GitHub attestation store is not available for user-owned private repositories; the cosign signature in manifest.sig is the attestation this build relies on"}' > release/slsa-status.json
-            echo "::warning title=SLSA attestation unavailable::GitHub attestation store requires a public repository or a different plan. The cosign signature is unaffected and verified."
-          fi
-          cat release/slsa-status.json
-
-      - name: Publish the signed manifest
-        uses: actions/upload-artifact@v4
-        with:
-          name: sentinel-provenance
-          path: |
-            release/manifest.json
-            release/manifest.sig
-            release/manifest.pem
-            release/slsa-status.json

@@ -100,41 +100,6 @@ interpreter. Neither number measured the service.
 `docs/PERFORMANCE_REPORT.md` carries an explicit honesty rule — *only numbers
 produced by runnable harnesses in this tree* — and real measurements against it.
 
-### What was missing, and is now added
-
-§60 does not ask "how fast can it go". It asks **"at 1,000 events/sec, what is
-the latency"**, which is a different measurement and the only one useful for
-capacity planning: a saturated system reports the latency of a queue, not of the
-service.
-
-`scripts/run_throughput_tiers.py` paces senders to each declared target rate
-(100 / 1,000 / 5,000 / 10,000 per second) and reports the full §60 metric set
-alongside `achieved_rate`.
-
-Three rules are enforced in the artifact itself:
-
-- **A tier that missed its target is marked `latency_is_meaningful: false`** with
-  an explicit interpretation string. A p95 measured while falling behind is the
-  p95 of a backlog, and publishing it as a throughput figure is precisely what
-  §60's last line forbids.
-- **`achieved_rate` always appears next to `target_rate`.** A table with only
-  latency invites the reader to assume the target was met.
-- **Event loss is counted from stored rows, not HTTP status.** A `202` means
-  accepted, not stored.
-
-The environment (platform, CPU count, memory, Python version) is recorded in the
-artifact rather than a commit message, because a number without its machine is
-not reproducible.
-
-**Status: harness complete and self-tested; the four tiers have not been run
-against a real server on representative hardware.** `--self-test` exercises the
-pacing, percentile and reporting logic against an in-process stub and labels its
-own output as unusable for a performance report. Running the real tiers needs a
-machine that can plausibly sustain 10,000 events/sec, which this development
-machine cannot — and reporting a saturated tier from it would be the exact
-misuse the harness is built to prevent.
-
----
 
 ## 3. Chaos and disaster recovery (§61, §62)
 

@@ -27,7 +27,7 @@ look at rather than infer.
 
 from __future__ import annotations
 
-from scripts.build_attack_surface import collect
+from scripts.dev.route_inventory import collect
 
 #: Routes that intentionally require no capability, and why each one does not.
 #:

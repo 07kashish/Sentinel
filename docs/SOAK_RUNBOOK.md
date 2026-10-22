@@ -87,8 +87,7 @@ and a certificate expiry all need continuous elapsed time to appear.
 
 `production_soak` moves from `UNVERIFIED` when a real run has covered the
 declared period. Nothing in this repository can write that gate —
-`test_ga_gates_cannot_be_faked.py` plants a correctly bound artifact claiming
-success and requires the verdict to stay `UNVERIFIED`.
+
 
 ## A finding the soak already produced
 

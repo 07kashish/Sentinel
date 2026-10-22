@@ -35,13 +35,11 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 
 SBOM = ROOT / "docs" / "sentinel.cdx.json"
 LICENSES = ROOT / "docs" / "licenses.json"
@@ -122,15 +120,8 @@ def main() -> int:
     build_sbom()
     build_licenses()
 
-    # Stamped here, by the job that produced them, immediately after producing
-    # them. An unbound artifact is UNVERIFIED in the readiness bundle, never
-    # PASS -- and stamping later would let a sidecar claim a build the artifact
-    # did not come from.
-    identity = release_binding.release_identity_from_git(ROOT)
-    now = datetime.now(timezone.utc)
     for artifact in (SBOM, LICENSES):
-        release_binding.write_binding(artifact, release=identity, now=now)
-        print(f"wrote and bound {artifact.relative_to(ROOT)}")
+        print(f"wrote {artifact.relative_to(ROOT)}")
 
     inventory = json.loads(LICENSES.read_text(encoding="utf-8"))
     print(f"\n{len(inventory)} runtime dependencies:")

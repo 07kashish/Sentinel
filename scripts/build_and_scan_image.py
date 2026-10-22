@@ -45,7 +45,6 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 
 GATES = ROOT / "release" / "gates"
 IMAGE = "sentinel:gate"
@@ -110,11 +109,6 @@ def _write(name: str, record: dict[str, object]) -> Path:
     GATES.mkdir(parents=True, exist_ok=True)
     path = GATES / f"gate_{name}.json"
     path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    release_binding.write_binding(
-        path,
-        release=release_binding.release_identity_from_git(ROOT),
-        now=datetime.now(timezone.utc),
-    )
     return path
 
 

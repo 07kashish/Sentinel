@@ -1,58 +1,14 @@
-"""Run the release gates this machine can actually run, and record what happened.
+"""Run available release checks and record command results.
 
-WHY THIS EXISTS
----------------
-`build_release_evidence.py` reads gate artifacts; nothing wrote most of them.
-Twenty of the twenty-six required gates had no producer at all, so the readiness
-report said "no artifact was produced for this gate" in perpetuity. That reads
-as "not measured yet" when the truth was "cannot be measured", and the two look
-identical to anyone holding the report.
-
-This is the producer. It runs a real command per gate, records the command, the
-exit code and the tail of the output, and stamps the result with the commit and
-source tree that produced it.
-
-THE ONE RULE
-------------
-A GATE THAT DID NOT RUN GETS NO ARTIFACT.
-
-Not a passing artifact, not a failing one -- nothing. `build_release_evidence`
-reports a gate with no artifact as UNVERIFIED, which is the correct statement
-about a check nobody performed. Writing a file for a tool that is not installed
-would convert "we did not look" into "we looked and it was fine", and that is
-the single most valuable lie a release report can tell.
-
-So `mypy` missing means `type_check` stays UNVERIFIED. It does not mean the
-types are fine.
-
-A FAILING GATE DOES GET AN ARTIFACT
------------------------------------
-The inverse matters just as much. If the artifact only appeared on success, a
-red gate and an unrun gate would produce the same evidence directory, and the
-report would say UNVERIFIED for a check that ran and failed. So the file is
-written either way, carrying `"ok": false` and the exit code, and
-`build_release_evidence._judge` reads that field rather than the file's mere
-existence.
-
-WHAT IS DELIBERATELY NOT HERE
------------------------------
-`postgres_tests` is available behind `--with-postgres` and off by default. The
-embedded-PostgreSQL fixture leaks a cluster per parametrisation on this
-platform, and a default that quietly consumes the machine is a default nobody
-runs twice. Off by default and UNVERIFIED is honest; on by default and hung is
-not.
-
-`container_build`, `kubernetes_helm`, `dast`, `container_scanning`,
-`production_preflight`, `sbom`, `license_scan`, `artifact_signing`,
-`migration_tests` and `redis_tests` have no runner here. They need a registry, a
-cluster, a running deployment or a signing key, none of which a developer
-workstation has by definition. They stay UNVERIFIED, and that is the accurate
-report.
+A gate that did not run gets no artifact. A failing command records failure.
+An all-skipped test run cannot pass. Results are discarded if the source tree
+changes while the checks run.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -68,7 +24,6 @@ from typing import Mapping, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts import release_binding  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 GATE_DIR = ROOT / "release" / "gates"
@@ -621,38 +576,41 @@ def _working_tree_is_dirty() -> bool:
 
 
 def _write(record: Mapping[str, object], *, identity, now: datetime) -> Path:
-    """Write the gate artifact and bind it to this build."""
+    """Write the observed gate result."""
     GATE_DIR.mkdir(parents=True, exist_ok=True)
     path = GATE_DIR / f"gate_{record['gate']}.json"
     path.write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    release_binding.write_binding(path, release=identity, now=now)
     return path
 
 
-def _identity(now: datetime):
-    """What this build IS, read from git rather than accepted as an argument."""
+def _source_tree_digest(paths: list[Path], *, root: Path) -> str:
+    """One digest over a set of files, path-sorted and path-included.
+
+    The path is hashed as well as the bytes. Without it, renaming a file --
+    moving a permissive policy over a strict one, say -- produces an identical
+    digest, and the whole point is to notice that the tree changed.
+    """
+    digest = hashlib.sha256()
+    for path in sorted(paths):
+        digest.update(str(path.relative_to(root)).replace("\\", "/").encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _identity(now: datetime) -> tuple[str, str]:
+    """Commit and source fingerprint for detecting edits during a gate run."""
     head = subprocess.run(  # noqa: S603,S607 - fixed command
-        ["git", "rev-parse", "HEAD"],
-        cwd=str(ROOT),
-        capture_output=True,
-        text=True,
-        check=False,
+        ["git", "rev-parse", "HEAD"], cwd=str(ROOT),
+        capture_output=True, text=True, check=False,
     )
     commit = head.stdout.strip()
     if not commit:
-        raise SystemExit(
-            "cannot determine HEAD. A gate artifact that cannot name the commit "
-            "it came from is unbound evidence, which the release report treats "
-            "as UNVERIFIED anyway -- so refusing here is the same verdict, "
-            "reached before writing a misleading file."
-        )
-    # The SAME function the report uses to verify. A second implementation
-    # here would drift, and a drifted tree digest makes every artifact verify
-    # as UNBOUND -- reported as UNVERIFIED, indistinguishable from never having
-    # run the gate at all.
-    return release_binding.release_identity(commit, root=ROOT)
+        raise SystemExit("cannot determine HEAD for the gate run")
+    source = [p for p in sorted((ROOT / "sentinel").rglob("*.py"))
+              if "__pycache__" not in p.parts]
+    return commit, _source_tree_digest(source, root=ROOT)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -740,12 +698,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     # job is to read artifacts, not to adjudicate their notes. Removing them
     # leaves the gates UNVERIFIED, which is the accurate report: nobody has
     # measured this tree.
-    after = release_binding.release_identity(identity.commit, root=ROOT)
-    if after.source_tree_sha256 != identity.source_tree_sha256:
+    after = _identity(now)
+    if after != identity:
         for spec in specs:
-            for suffix in ("", release_binding.PROVENANCE_SUFFIX):
-                stale = GATE_DIR / f"gate_{spec.name}.json{suffix}"
-                stale.unlink(missing_ok=True)
+            stale = GATE_DIR / f"gate_{spec.name}.json"
+            stale.unlink(missing_ok=True)
         print()
         print(
             "REFUSED: the source tree changed while the gates were running, so "

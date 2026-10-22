@@ -3,7 +3,7 @@
 WHY THIS MATTERS HERE SPECIFICALLY
 -----------------------------------
 This repository contains a real `.env` holding live AWS credentials. Until
-`scripts/build_release_artifact.py` existed there was no packaging step at all,
+`scripts/artifact_contract.py` existed there was no packaging step at all,
 which is safer than a bad one and means the first person to zip the working
 directory would have shipped those keys.
 
@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.build_release_artifact import (
+from scripts.artifact_contract import (
     INCLUDE,
     PRUNED_DIRS,
     REFUSED_NAMES,
@@ -206,7 +206,7 @@ def test_a_missing_gitleaks_is_unverified_and_not_a_pass(tmp_path, monkeypatch):
     one is a reason to ship. Reporting the first as the second is the specific
     dishonesty the release rules forbid.
     """
-    import scripts.build_release_artifact as packager
+    import scripts.artifact_contract as packager
 
     archive = tmp_path / "empty.zip"
     _write_zip([], root=tmp_path, destination=archive)

@@ -112,13 +112,7 @@ permissions used and pagination status — carry it through.
 
 `design_partner_validation` moves from `UNVERIFIED` only when a real
 organisation has completed the agreed validation and a human records that
-outcome. Nothing in this repository can write it: `build_release_evidence.py`
-emits it as `UNVERIFIED` with its reason, and
-`test_ga_gates_cannot_be_faked.py` plants a correctly bound artifact claiming
-success and requires the verdict to stay `UNVERIFIED`.
-
-That test exists because this is precisely the gate somebody under commercial
-pressure would want to turn green.
+outcome.
 
 ---
 

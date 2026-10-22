@@ -57,7 +57,7 @@ issue new → deploy new → revoke old.
       that GitHub retains deleted logs for a period and treat them as exposed.
 - [ ] Artifacts: yank or delete the wheel, image, chart or release zip that
       carried it; publish a new version built from a clean tree with
-      `scripts/build_release_artifact.py` and scanned by
+      `python -m build` and scanned by
       `scripts/scan_release_for_secrets.py`.
 - [ ] Chat, tickets, docs: edit or delete the messages. Record the URLs.
 - [ ] Local machines: ask the finder and anyone who pulled the location to

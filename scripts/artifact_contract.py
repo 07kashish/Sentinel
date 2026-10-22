@@ -1,66 +1,13 @@
-"""Package a release from an ALLOWLIST, then scan what was actually built.
-
-WHY AN ALLOWLIST AND NOT AN EXCLUDE LIST
------------------------------------------
-An exclude list is wrong by default. It ships everything nobody thought to
-exclude, so the failure mode is a file added next month by somebody who never
-read this script -- and the file most likely to be added to a repository and
-not thought about is a credential. This tree contains a real `.env` with live
-AWS keys right now, which is exactly the shape of thing an exclude list misses
-once and only needs to miss once.
-
-So `INCLUDE` names what ships. Anything not named does not ship, including
-things that do not exist yet.
-
-WHY THERE IS A DENYLIST AS WELL
---------------------------------
-Belt and braces, and not redundant: an allowlist entry is a DIRECTORY, so
-`docs/` ships whatever ends up in `docs/`. `REFUSED_NAMES` rejects a
-credential-shaped file even when a directory rule would otherwise have carried
-it, and it refuses rather than skipping quietly -- a packager that silently
-drops files produces artifacts that differ from the tree for reasons nobody can
-reconstruct.
-
-WHY THE SCAN RUNS ON THE ARTIFACT
-----------------------------------
-`run_release_gates.py` already runs `gitleaks git`, and its own comments record
-the limitation: it reads COMMITTED HISTORY, so an uncommitted secret-shaped
-line passes. That is the wrong question here. The question is what is inside
-the file about to be distributed, so this extracts the archive and runs
-`gitleaks dir` over the extraction.
-
-A missing gitleaks does NOT pass. It yields UNVERIFIED and the artifact is left
-in place but explicitly not blessed, because "we could not check" and "we
-checked and it was clean" are different facts and only one of them is a reason
-to ship.
-
-WHAT IT REFUSES
----------------
-A dirty working tree. An artifact is a claim about a commit; built from a dirty
-tree it is a claim about nothing, and the provenance sidecar would name a
-commit whose content is not what shipped.
-"""
-
+"""Artifact selection, refusal and scan contracts shared by release checks."""
 from __future__ import annotations
 
-import hashlib
-import json
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts.release_binding import (  # noqa: E402
-    release_identity_from_git,
-    write_binding,
-)
 
 #: What ships. Directories are copied recursively; files are copied as named.
 #: Adding to this list is a deliberate act, which is the point.
@@ -232,103 +179,3 @@ def _scan_artifact(artifact: Path) -> tuple[str, str]:
     # pasting this output into an issue must not be pasting a credential.
     detail = (result.stdout + result.stderr).strip()
     return "FAIL", f"gitleaks reported findings in the built artifact:\n{detail}"
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = list(argv if argv is not None else sys.argv[1:])
-    allow_dirty = "--allow-dirty" in args
-
-    dirty = bool(
-        subprocess.run(
-            ["git", "status", "--porcelain"], cwd=ROOT,
-            capture_output=True, text=True,
-        ).stdout.strip()
-    )
-    if dirty and not allow_dirty:
-        print(
-            "the working tree is dirty. An artifact is a claim about a commit; "
-            "built from a dirty tree the provenance sidecar would name a commit "
-            "whose content is not what shipped. Commit first, or pass "
-            "--allow-dirty for a throwaway build that must not be distributed.",
-            file=sys.stderr,
-        )
-        return 2
-
-    selected, refusals = _collect(ROOT)
-    if refusals:
-        print(
-            f"packaging REFUSED: {len(refusals)} file(s) matched by the allowlist "
-            "must not ship.\n",
-            file=sys.stderr,
-        )
-        for refusal in refusals:
-            print(f"  {refusal}", file=sys.stderr)
-        print(
-            "\nAn allowlist entry is a directory, so it carries whatever ends up "
-            "inside it. Either move these files or narrow the entry.",
-            file=sys.stderr,
-        )
-        return 1
-
-    release = release_identity_from_git(ROOT)
-    short = release.commit[:12] if release.commit else "unknown"
-    artifact = ROOT / "release" / "dist" / f"sentinel-{short}.zip"
-
-    _write_zip(selected, root=ROOT, destination=artifact)
-    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
-    (artifact.with_suffix(".zip.sha256")).write_text(
-        f"{digest}  {artifact.name}\n", encoding="utf-8"
-    )
-    write_binding(artifact, release=release, now=datetime.now(timezone.utc))
-
-    status, detail = _scan_artifact(artifact)
-    (artifact.with_suffix(".zip.scan.json")).write_text(
-        json.dumps(
-            {
-                "schema": "sentinel.artifact_scan.v1",
-                "artifact": artifact.name,
-                "sha256": digest,
-                "commit": release.commit,
-                "scanned_at": datetime.now(timezone.utc).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                ),
-                "status": status,
-                "detail": detail,
-                "scanner": "gitleaks dir",
-                "note": (
-                    "Scanned the BUILT ARTIFACT, not the git history. The "
-                    "release gate's secret_scanning reads committed history and "
-                    "cannot see what a packager put in a zip."
-                ),
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-    print(f"built    {artifact.relative_to(ROOT)}")
-    print(f"files    {len(selected)}")
-    print(f"sha256   {digest}")
-    print(f"scan     {status} -- {detail.splitlines()[0] if detail else ''}")
-
-    if status == "FAIL":
-        artifact.unlink()
-        print(
-            "\nthe artifact has been DELETED. A zip containing a secret is not "
-            "something to keep around and decide about later.",
-            file=sys.stderr,
-        )
-        return 1
-    if status == "UNVERIFIED":
-        print(
-            "\nthe artifact was NOT scanned and must not be distributed. "
-            "Missing evidence is UNVERIFIED, never a pass.",
-            file=sys.stderr,
-        )
-        return 3
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

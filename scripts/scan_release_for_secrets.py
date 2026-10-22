@@ -76,7 +76,7 @@ CHART_ALLOWED = (
 )
 
 #: Refused anywhere in any artifact, by name or suffix. Mirrors
-#: `build_release_artifact.py`; the two lists are compared by a test.
+#: `artifact_contract.py`; the two lists are compared by a test.
 REFUSED_NAMES = frozenset({
     ".env", ".env.local", ".env.production", ".env.staging",
     "terraform.tfstate", "terraform.tfstate.backup",

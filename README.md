@@ -192,20 +192,6 @@ is not a licence to use it; production use requires a written agreement.
 
 ## Status documentation
 
-**The generated bundle is the single source of readiness truth.** Anything
-hand-written can drift from the artifacts; that bundle cannot, because it has
-nothing to say except what the artifacts record.
-
-```bash
-python scripts/build_release_evidence.py
-```
-
-It writes `release/readiness.json` and `release/readiness.md`, and reports every
-required gate as PASS, FAIL or **UNVERIFIED** — where UNVERIFIED means no
-artifact was found, and is never to be read as assurance. The release tier is
-computed from that evidence rather than asserted.
-
-- Release evidence: `release/readiness.md` (generated; do not edit)
 - Branch protection status: [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) — **currently unenforced**, and the document explains why
 - Pre-production readiness: [docs/PRODUCTION_READINESS_REPORT.md](docs/PRODUCTION_READINESS_REPORT.md)
 - Eighth Review F-1..F-12: [docs/REMEDIATION_MATRIX.md](docs/REMEDIATION_MATRIX.md)

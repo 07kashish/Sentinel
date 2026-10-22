@@ -154,7 +154,7 @@ Migration: no application/schema change. Existing image candidates may correctly
 
 **Dormant modules.** `threat_intel`, `mfa` and `domain/identity` (and, until the streaming change below, `stream_guard`) are classified dormant by `tests_arch/test_component_status.py`; nothing may describe them as product capabilities.
 
-**Cloud proof.** `scripts/run_cloud_proof.py` ran the deployed journey on AWS EC2 and removed everything. Harness only; see RISK R-004 for what it does not establish.
+**Cloud proof.** `archive/pre-cleanup:scripts/run_cloud_proof.py` ran the deployed journey on AWS EC2 and removed everything. Harness only; see RISK R-004 for what it does not establish.
 
 ## 2026-09-20: two owner decisions implemented
 
@@ -230,7 +230,7 @@ Not established: anything requiring a customer, another region, an assessor, or 
 
 ## 2026-10-05: one tool definition for GPTs and the cloud agent platforms
 
-`docs/integrations/sentinel-agent-tool.openapi.json` (OpenAPI 3.1, two operations: `checkAction`, `executeApprovedAction`) is what a custom GPT's Actions, a Bedrock Agents action group, an Azure AI Foundry / Copilot Studio OpenAPI tool and a Vertex AI Agent Builder OpenAPI tool import. `scripts/build_agent_tool_spec.py` derives the request schemas from the running application's own models, narrowed to the fields an agent should fill, and refuses to name a field the route does not have; `--check` fails on drift. `tests_arch/test_agent_tool_spec.py` drives the real routes with only what the document offers through the whole journey on both engines. `docs/current/AGENT_PLATFORMS.md` has the per-platform steps and the instruction text.
+`docs/integrations/sentinel-agent-tool.openapi.json` (OpenAPI 3.1, two operations: `checkAction`, `executeApprovedAction`) is what a custom GPT's Actions, a Bedrock Agents action group, an Azure AI Foundry / Copilot Studio OpenAPI tool and a Vertex AI Agent Builder OpenAPI tool import. `archive/pre-cleanup:scripts/build_agent_tool_spec.py` derives the request schemas from the running application's own models, narrowed to the fields an agent should fill, and refuses to name a field the route does not have; `--check` fails on drift. `tests_arch/test_agent_tool_spec.py` drives the real routes with only what the document offers through the whole journey on both engines. `docs/current/AGENT_PLATFORMS.md` has the per-platform steps and the instruction text.
 
 Not established: the document imported into any of those platforms (no account used; all of them require HTTPS, which waits on the owner's DNS records). Stated in the guide: the gate is asked because the assistant's instructions say so; it does not stop an assistant that skips the call unless its consequential tools are reachable only through Sentinel.
 
@@ -264,7 +264,7 @@ A JavaScript/TypeScript client was drafted alongside (it is what first exposed t
 
 **The product runs on Windows.** `.github/workflows/desktop.yml` (run 37137147058) installed it the way `TRY_SENTINEL.md` says, ran the scanner against the Windows machine itself (38 checks, none `unsupported` or `inaccessible`), and ran `scripts/try_sentinel.py --scan --demo --check` end to end: migrate, serve, scan, import (HTTP 201), the sample story (two executed, one rejected, one replay refused, two pending, one containment), read back.
 
-**The app's real window is smoke-tested on both platforms.** `discovery_app --smoke-gui=<file>` opens the actual window, confirms the consent boxes start unticked, ticks them, presses Scan and records what the window shows; `scripts/build_desktop_app.py` runs it against the PACKAGED app and refuses to ship on failure. macOS: found five tools on the developer's Mac. Windows: the window opened, scanned and showed "None of the known AI tools was found" — correct for a machine with none installed. The first Windows check looked for a window title on the started process and could never pass: a one-file build's first process is a bootstrap that owns no window.
+**The app's real window is smoke-tested on both platforms.** `discovery_app --smoke-gui=<file>` opens the actual window, confirms the consent boxes start unticked, ticks them, presses Scan and records what the window shows; `archive/pre-cleanup:scripts/build_desktop_app.py` runs it against the PACKAGED app and refuses to ship on failure. macOS: found five tools on the developer's Mac. Windows: the window opened, scanned and showed "None of the known AI tools was found" — correct for a machine with none installed. The first Windows check looked for a window title on the started process and could never pass: a one-file build's first process is a bootstrap that owns no window.
 
 **Live smoke of the AWS deployment** the same hour: console, liveness and readiness 200; the published key is refused a decision (403); no key is refused (401); a freshly seeded incident's report carries the `antigravity-cli:gemini-3.1-pro-high` note.
 
@@ -276,7 +276,7 @@ Not established: a person using the app on their own Windows PC; the Windows ins
 
 ## 2026-10-03 (desktop app)
 
-**Sentinel AI Scan** (`sentinel/sdk/discovery_app.py`): the consent-based presence scanner behind a tkinter window, standard library only, no networking code, consent boxes unticked by default, reports saved under a new name and never overwritten. `scripts/build_desktop_app.py` packages only that file and `discovery.py` with PyInstaller, runs the packaged app's `--self-test` against an empty temporary home, and writes a SHA-256 beside the artifact. macOS: a universal (arm64 + x86_64) `.app`, built, unpacked and launched on the developer's Mac. Windows: `.github/workflows/desktop.yml` builds and self-tests the `.exe` on a hosted runner, on demand or when its sources change.
+**Sentinel AI Scan** (`sentinel/sdk/discovery_app.py`): the consent-based presence scanner behind a tkinter window, standard library only, no networking code, consent boxes unticked by default, reports saved under a new name and never overwritten. `archive/pre-cleanup:scripts/build_desktop_app.py` packages only that file and `discovery.py` with PyInstaller, runs the packaged app's `--self-test` against an empty temporary home, and writes a SHA-256 beside the artifact. macOS: a universal (arm64 + x86_64) `.app`, built, unpacked and launched on the developer's Mac. Windows: `.github/workflows/desktop.yml` builds and self-tests the `.exe` on a hosted runner, on demand or when its sources change.
 
 The scanner gains Windows checks: per-user install folders for the applications and `.exe`/`.cmd`/`.ps1` commands in the per-user command folders (`tests_arch/test_pilot_onboarding.py`, synthetic home).
 

@@ -71,10 +71,7 @@ one security reviewer at the partner; one engineer from Sentinel.
 A one-page statement, in their words, of: the numbers from step 4; any change
 that was refused and should not have been; any change that ran and should not
 have; any outcome that stayed unknown and how long it took to settle; and
-whether they will keep it on. With their permission it is stamped with
-`scripts/release_binding.py` and filed under `docs/current/evidence/production/`,
-which is the only thing that moves a capability to the `production_observed`
-tier.
+whether they will keep it on.
 
 ## What to stop for
 

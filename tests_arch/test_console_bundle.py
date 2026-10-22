@@ -278,7 +278,7 @@ def test_no_panel_fetches_a_route_that_requires_query_parameters_without_them():
     import inspect
     import re as _re
 
-    from scripts.build_attack_surface import collect
+    from scripts.dev.route_inventory import collect
 
     # Bare GET paths the bundle fetches, with no query string attached.
     fetched = set(_re.findall(r'(?:api|panel\([^,]+,)\s*"(/v1/[^"?]*)"', JS))

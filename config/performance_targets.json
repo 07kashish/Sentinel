@@ -10,9 +10,7 @@
     "cover ingest, detection or correlation, which are asynchronous and whose",
     "latency a caller never waits on.",
     "",
-    "A measurement satisfies a target only when the artifact BINDS to the build",
-    "(scripts/release_binding.py). A benchmark from another commit proves nothing",
-    "about this one, and Phase 1 exists because that used to pass."
+    "A measurement satisfies a target only when the artifact BINDS to the build"
   ],
   "authorization_decision": {
     "p50_ms": 5.0,

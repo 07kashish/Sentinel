@@ -58,8 +58,7 @@ pgdata/
 sentinel_pgdata_*/
 sentinel_wal_pitr_*/
 
-# Generated release evidence. Produced by scripts/build_release_evidence.py and
-# scripts/build_provenance.py, published by CI as artifacts.
+# Generated release checks and build artifacts.
 #
 # NOT committed, deliberately: a generated file under version control drifts
 # from the artifacts it claims to summarise, and this repository has already
@@ -92,7 +91,7 @@ logs/
 # and the reason is now demonstrated rather than argued.
 #
 # These are produced by a script, bound to the commit that produced them, and
-# read by `build_release_evidence` as that commit's evidence. Committing one
+# used by archived release reports as that commit's evidence. Committing one
 # moves HEAD PAST its own binding, so the artifact reports "produced from a
 # different commit" the moment it lands -- and the readiness report goes from
 # 15 pass to 0 in the act of recording the 15.

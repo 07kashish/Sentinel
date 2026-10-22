@@ -4,7 +4,7 @@ WHAT THIS GUARDS
 ----------------
 `build_connectors` and `build_ai_connectors` had tests and NO production
 caller. The connectors were cited in the gap ledger and audited by
-`scripts/build_state_audit.py`, which is exactly how a subsystem comes to look
+the archived state audit, which is exactly how a subsystem comes to look
 delivered while being unreachable.
 
 THE PROPERTY THIS FILE IS REALLY ABOUT

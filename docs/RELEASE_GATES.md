@@ -1,16 +1,5 @@
 # Release gates: how to run them, and how to read the result
 
-## The three words
-
-| Verdict | Means | Does **not** mean |
-|---|---|---|
-| `PASS` | An artifact exists, is bound to this build, and records success | The gate is comprehensive |
-| `FAIL` | An artifact exists, is bound to this build, and records failure | |
-| `UNVERIFIED` | **We do not know.** No artifact, or one that belongs to another build | The gate passed. It must never be read as assurance |
-
-`UNVERIFIED` is the default and the safe answer. A gate cannot become `PASS` by
-being ignored.
-
 ## Running them
 
 ```bash
@@ -28,8 +17,7 @@ python scripts/run_release_gates.py --list
 ```
 
 Shows what will run and, for everything that will not, why. A gate that neither
-runs nor appears in that second list would be one nobody decided about, and a
-test refuses to let that happen.
+runs nor appears in that second list would be one nobody decided about.
 
 The PostgreSQL parametrisations are opt-in:
 
@@ -39,12 +27,6 @@ python scripts/run_release_gates.py --with-postgres
 
 Off by default because the embedded server leaks a cluster per parametrisation
 on Windows. Off and `UNVERIFIED` is honest; on and hung is not.
-
-Then build the report:
-
-```bash
-python scripts/build_release_evidence.py
-```
 
 ## Two rules the runner will not bend
 
@@ -62,21 +44,11 @@ red. The verdict comes from the recorded `ok` field, compared against `is True`
 A timeout is recorded as a **failure**, not an absence. The gate ran; it did not
 finish.
 
-## Provenance
-
-Every artifact carries a `.provenance.json` sidecar naming the commit and a
-digest of the source tree. `build_release_evidence` verifies it, and an
-**unbound artifact is `UNVERIFIED`, never `PASS`** — an artifact whose origin
-nobody recorded is epistemically the same as one that does not exist.
-
-Producers stamp their own output, immediately after writing it. Stamping
-anywhere else — a later job, a cleanup step, a human — would let a sidecar claim
-a build the artifact did not come from.
+## Source changes during a run
 
 If the source tree changes **while** the gates are running, the runner deletes
 everything it wrote and exits `2`. Not `1`: the gates did not fail, the run is
-void. Results that describe no single version of the code are not evidence, and
-their sidecars would verify perfectly while saying so.
+void. Results that describe no single version of the code are not evidence.
 
 ### One caveat worth knowing
 
@@ -115,40 +87,6 @@ an existing artifact where it sits — that makes a sidecar claim a build the
 measurement did not come from, which is the forgery the whole mechanism exists
 to make hard.
 
-### The loosening that is deliberately not implemented
-
-Comparing only the tree digest would make a docs-only commit stop invalidating
-measurements, and it is a defensible reading: the tree digest is what answers
-*does this evidence describe this code*.
-
-It is not implemented, because it widens what counts as this build's evidence,
-and that is a security invariant rather than an ergonomics decision. Anyone
-changing it should do so on purpose, in a commit that says so, having decided
-that a commit identity is metadata rather than part of the release's identity.
-The four measurement artifacts under `docs/` and `evaluation/` being tracked in
-git while their sidecars are ignored is the other half of the same question, and
-it should be answered at the same time.
-
-## The four gates no build can satisfy
-
-`independent_pentest`, `production_soak`, `disaster_recovery_proof`,
-`design_partner_validation`.
-
-Not one is code. They accrue from operating the product — a contract, a second
-failure domain, a calendar, other organisations running this against their own
-traffic. **No amount of engineering moves them**, and the best tier any build
-can report is `RELEASE CANDIDATE`.
-
-They are emitted with their reasons rather than omitted, because a reader
-seeing twenty-one green rows and no mention of pentesting could reasonably
-conclude the product was ready to sell. These four rows are what answer *why is
-this not GA*, from the generated document rather than from whoever is asked.
-
-`test_ga_gates_cannot_be_faked.py` proves this behaviourally rather than
-asserting it: it plants a well-formed artifact for each, correctly bound to the
-real HEAD and the real source tree, recording success in the exact shape every
-other gate uses — and requires the verdict to still be `UNVERIFIED`.
-
 ## Proving the guards are real
 
 ```bash
@@ -174,11 +112,9 @@ here or is one careless edit away:
 | Mutation | If the guard is vacuous |
 |---|---|
 | A console panel loses `class="view"` | The whole console renders blank, every tab |
-| `ok is True` relaxed to a truthy test | `"ok": "failed"` reports PASS |
 | The pass-count regex accepts a zero | An all-skipped run reports PASS |
 | A third route joins the throttle exemption | An ingest endpoint with no rate limit |
 | The readiness cache is removed | An unauthenticated, unmetered database amplifier |
-| A gate leaves the unsatisfiable GA set | A planted artifact claims customer validation |
 | A secret-allowlist entry is widened | The scanner says "no leaks found" and means nothing |
 
 A **stale anchor counts as vacuous**, not as a skip: a mutation that no longer
@@ -195,13 +131,6 @@ rather than continuing.
 
 It runs as its own CI job for the same reason: a crashed run must not leave a
 mutated tree for a later step to test and report on.
-
-### Why it is not a release gate
-
-`REQUIRED_GATES` is evidence about a build. This mutates the build while it
-runs, and a release-evidence runner that rewrites source is not a habit worth
-normalising. It answers a different question — *are the checks real* — and
-belongs beside them, not inside them.
 
 ## Invisible characters
 
@@ -223,18 +152,6 @@ marker **and a stated reason**, which a companion test enforces. Production code
 under `sentinel/` may not claim it: two literals found there were rewritten as
 escapes, which is clearer anyway, since the one thing a reader needs from
 `_ZWSP` is which character it is.
-
-## Adding a gate
-
-1. Add the name to `REQUIRED_GATES`.
-2. Give it a runner in `run_release_gates._specs()`, **or** an entry in
-   `NO_RUNNER` saying why it has none.
-
-A gate with neither is one nobody decided about, and
-`test_release_gate_runner.py` fails on it. It resolves to
-`gate_<name>.json` automatically — a gate absent from the filename map used to
-report `UNVERIFIED` forever with a message inviting someone to produce an
-artifact that nothing would ever look for.
 
 ## Related documents
 

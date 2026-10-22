@@ -48,7 +48,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 
 OUT = ROOT / "release" / "gates" / "gate_dast.json"
 
@@ -301,11 +300,6 @@ def main() -> int:
         )
         + "\n",
         encoding="utf-8",
-    )
-    release_binding.write_binding(
-        OUT,
-        release=release_binding.release_identity_from_git(ROOT),
-        now=datetime.now(timezone.utc),
     )
 
     # Printed through the same replace-on-error path the capture uses. The

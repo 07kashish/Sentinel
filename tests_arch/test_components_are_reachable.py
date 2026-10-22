@@ -87,7 +87,7 @@ MUST_BE_REACHABLE = {
     "AuthorizedScope": "sentinel/domain/observed_binding.py",
     "ScopedDetonation": "sentinel/domain/detonation.py",
     # Discovery. Same finding as detonation: `build_connectors` had tests, was
-    # cited in the gap ledger, was audited by `build_state_audit.py` -- and
+    # cited in the gap ledger, was audited by the archived state audit -- and
     # had no caller. Being AUDITED is not being wired, and the audit was what
     # made it look otherwise.
     "build_connectors": "sentinel/infrastructure/platforms/connectors.py",

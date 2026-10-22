@@ -73,7 +73,6 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 
 OUT = ROOT / "release" / "gates" / "gate_guard_mutation.json"
 
@@ -115,21 +114,6 @@ MUTATIONS: tuple[Mutation, ...] = (
             "`.view`, so selecting a classless panel hides every panel it can "
             "see and unhides nothing. This exact defect shipped and survived a "
             "check that read innerText from all nine views."
-        ),
-    ),
-    Mutation(
-        name="gate_artifact_recording_failure_treated_as_success",
-        path="scripts/build_release_evidence.py",
-        before='if artifact.get("ok") is True:',
-        after='if artifact.get("ok"):',
-        guard=(
-            "tests_arch/test_release_gate_runner.py::"
-            "test_ok_must_be_the_boolean_true_and_not_merely_truthy"
-        ),
-        consequence=(
-            'A gate artifact carrying `"ok": "failed"` reports PASS. Every '
-            "non-empty string is truthy, so a runner that wrote a status word "
-            "instead of a boolean would turn every failure into a pass."
         ),
     ),
     Mutation(
@@ -179,21 +163,6 @@ MUTATIONS: tuple[Mutation, ...] = (
             "`/health/ready` is exempt from rate limiting and queries the "
             "database. Without the cache that is an unauthenticated, unmetered "
             "load amplifier anyone can aim at the database."
-        ),
-    ),
-    Mutation(
-        name="ga_gate_quietly_leaves_the_unsatisfiable_set",
-        path="scripts/build_release_evidence.py",
-        before='    "design_partner_validation": (',
-        after='    "_removed_design_partner_validation": (',
-        guard=(
-            "tests_arch/test_ga_gates_cannot_be_faked.py::"
-            "test_the_four_gates_are_the_four_expected_ones"
-        ),
-        consequence=(
-            "A gate that leaves GA_GATES becomes satisfiable by a build, so a "
-            "planted artifact would report PASS for customer validation that "
-            "never happened."
         ),
     ),
     Mutation(
@@ -759,11 +728,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         + "\n",
         encoding="utf-8",
-    )
-    release_binding.write_binding(
-        OUT,
-        release=release_binding.release_identity_from_git(ROOT),
-        now=datetime.now(timezone.utc),
     )
 
     print()

@@ -27,7 +27,7 @@ THE PROTOCOL, WHICH IS THE POINT
 
 Results carry per-class recall and the benign false-positive rate with Wilson
 95% intervals, the policy digest, the commit and the environment. They are
-stamped with `scripts/release_binding.py` by the caller.
+recorded with the corpus digest, commit and environment.
 
 FORMAT
 ------

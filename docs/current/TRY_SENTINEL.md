@@ -29,7 +29,7 @@ Tick what you agree to check (nothing is pre-ticked), press **Scan**, read the l
 
 Where to get it: **Windows** — `https://sentinel-downloads-024330900387.s3.ap-south-1.amazonaws.com/downloads/windows/Sentinel-AI-Scan-Windows.exe` (the checksum and a short guide, `README-Windows.txt`, sit beside it in the same folder). **macOS** — the owner sends you the zip; there is no public link for it yet.
 
-Built by `scripts/build_desktop_app.py`, which runs the packaged app's self-test before writing anything. Verified on macOS (built, unpacked, launched). On a hosted Windows machine the packaged app's real window is opened, the boxes ticked, Scan pressed and the result recorded (`--smoke-gui`), and the local trial in section 3 runs end to end. **No person has yet used it on their own Windows PC**, and the Windows folder list has not met a machine with AI tools installed (the hosted machine has none, so every check there reads `not_found`).
+
 
 ### The same scan from a terminal
 

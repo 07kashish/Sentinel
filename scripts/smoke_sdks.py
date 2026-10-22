@@ -15,6 +15,7 @@ never worked against a real server. A wire contract is only tested on a wire.
 """
 from __future__ import annotations
 
+import json
 import os
 import secrets
 import socket
@@ -89,12 +90,23 @@ def main() -> int:
                     break
                 except OSError:
                     time.sleep(0.2)
-            seed = subprocess.run([sys.executable, str(ROOT / "scripts/seed_console_demo.py"), "--base", base], capture_output=True, text=True,
-                                  env=dict(env, SENTINEL_DEMO_INGEST_KEY=keys["ingest"], SENTINEL_DEMO_ANALYST_KEY=keys["analyst"],
-                                           SENTINEL_DEMO_ADMIN_KEY=keys["admin"]))
-            if seed.returncode != 0:
-                print("the sample policy did not load:", seed.stderr[-400:], file=sys.stderr)
-                return 1
+            policy = {"note": "SDK smoke policy", "rules": [
+                {"name": "production-changes-need-a-human", "effect": "require_approval",
+                 "resources": ["/protected-change/*"],
+                 "description": "Any change an agent makes under /protected-change/ waits for a person."},
+            ]}
+            headers = {"Authorization": "Bearer " + keys["admin"], "Content-Type": "application/json"}
+            request = urllib.request.Request(base + "/v1/policy/versions", method="POST",
+                                             data=json.dumps(policy).encode(), headers=headers)
+            with urllib.request.urlopen(request, timeout=20) as response:
+                if response.status != 201:
+                    raise RuntimeError("the SDK smoke policy was not created")
+                version = json.load(response)["version"]
+            request = urllib.request.Request(base + f"/v1/policy/versions/{version}/activate", method="POST",
+                                             data=b"{}", headers=headers)
+            with urllib.request.urlopen(request, timeout=20) as response:
+                if response.status != 200:
+                    raise RuntimeError("the SDK smoke policy was not activated")
             python = subprocess.run([sys.executable, "-c", PYTHON_JOURNEY], cwd=ROOT, capture_output=True, text=True, timeout=120,
                                     env=dict(env, SMOKE_BASE=base, SMOKE_INGEST=keys["ingest"], SMOKE_ANALYST=keys["analyst"]))
             print("python live:", python.stdout.strip() or "(no output)")

@@ -32,7 +32,6 @@ what a blind evaluation will add.
 2. `evaluation/run_blind.py` runs the shipped policy against it and writes
    per-class precision and recall with Wilson intervals, the corpus digest,
    the commit and the environment.
-3. The result is stamped with `scripts/release_binding.py` and cited here by
-   digest. Until then this section is a plan, not evidence.
+3. The result is cited here by digest. Until then this section is a plan, not evidence.
 
 The protocol above is now `evaluation/run_blind.py` (`seal`, then `run`), tested by `tests_arch/test_blind_evaluation.py`. It refuses an unsealed or edited corpus, an uncommitted seal, a corpus under 50 cases or with one label, and a second run unless acknowledged, in which case the result records `"blind": false`. `evaluation/blind/` contains no seal, so this document still reports no blind evidence.

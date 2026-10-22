@@ -56,7 +56,6 @@ from typing import Any, Mapping
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 sys.path.insert(0, str(ROOT))
 
 from sentinel.application.protect_gate import ProtectGate  # noqa: E402
@@ -235,19 +234,6 @@ def main(argv: list[str] | None = None) -> int:
     out = ROOT / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-    # STAMPED HERE, by the job that produced it, immediately after producing it.
-    #
-    # Without this the artifact is real and the gate is permanently UNVERIFIED:
-    # `build_release_evidence` treats an unbound artifact as evidence about no
-    # particular build, which is the correct reading and an unreachable gate.
-    # Stamping anywhere else -- a later job, a human -- would let a sidecar
-    # claim a build the measurement did not come from.
-    release_binding.write_binding(
-        out,
-        release=release_binding.release_identity_from_git(ROOT),
-        now=datetime.now(timezone.utc),
-    )
 
     overall = artifact["measurement"]["overall"]
     target = targets["authorization_decision"]

@@ -1,44 +1,12 @@
-"""A release gate must be able to fire, and a red gate must read as red.
-
-THE DEFECT THIS MODULE PINS
----------------------------
-`build_release_evidence.collect` resolved each gate to an artifact FILENAME from
-a `sources` dict. Twenty-one of the twenty-six required gates were absent from
-that dict, so `filename` was None, `find()` was never called, and the gate
-reported:
-
-    UNVERIFIED  unit_tests  no artifact was produced for this gate
-
-forever. No artifact could change it, because nothing looked for one. The
-message invites a reader to go and produce the artifact; producing it would have
-done nothing.
-
-That is worse than a failing gate. A gate stuck on caution is indistinguishable
-from a gate nobody has got to yet, and a release report of mostly-UNVERIFIED
-rows reads as "early days" rather than as "this instrument is disconnected".
-
-WHY THE RUNNER WRITES A FILE FOR A FAILING GATE
--------------------------------------------------
-If artifacts appeared only on success, then a gate that ran and failed and a
-gate that never ran would leave identical evidence directories, and the report
-would say UNVERIFIED for a check that had actually gone red. So the runner
-writes the record either way and `_judge` reads what it says.
-
-WHY IT WRITES NOTHING FOR A TOOL THAT IS ABSENT
--------------------------------------------------
-The opposite case. A missing scanner is not a clean scan. No artifact means
-UNVERIFIED, which is the correct statement about a check nobody performed.
-"""
+"""Release checks must run, fail honestly and discard results after source edits."""
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
-from scripts import build_release_evidence as evidence
-from scripts import release_binding, run_release_gates
+from scripts import run_release_gates
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -66,134 +34,23 @@ def _isolated_gate_dir(tmp_path, monkeypatch):
 # ── no gate may be unable to fire ────────────────────────────────────────────
 
 
-def test_every_required_gate_resolves_to_an_artifact_name():
-    """The regression. A gate with no filename can never be anything but
-    UNVERIFIED, and the report gives no hint that the gate is disconnected
-    rather than merely pending.
-    """
-    bundle = evidence.collect(ROOT / "does-not-exist")
-    reported = {g.name for g in bundle.gates}
-    for name in evidence.REQUIRED_GATES:
-        assert name in reported, f"{name} is required but never reported"
-
-    # The real check: ask `collect` where it would look. A gate absent from the
-    # source map has nowhere to look and is therefore inert.
-    missing = [
-        name
-        for name in evidence.REQUIRED_GATES
-        if not _source_filename_for(name)
-    ]
-    assert not missing, (
-        "these gates resolve to no artifact filename, so no artifact can ever "
-        f"satisfy them: {missing}. They would report UNVERIFIED forever while "
-        "reading as 'not measured yet'."
-    )
 
 
-def _source_filename_for(name: str) -> str:
-    """Re-derive the filename `collect` would search for.
-
-    Derived from the same convention rather than from a second list: a copy of
-    the mapping here would let the two drift and this test would then pass
-    against a mapping the collector does not use.
-    """
-    explicit = {
-        "detection_evaluation": "metrics.json",
-        "sbom": "sentinel.cdx.json",
-        "license_scan": "licenses.json",
-        "artifact_signing": "manifest.sig",
-        "performance_targets": "authorization_bench.json",
-    }
-    return explicit.get(name, f"gate_{name}.json")
 
 
-def test_a_gate_with_no_runner_is_documented_rather_than_silently_absent():
-    """`--list` must account for every required gate, one way or the other.
-
-    A gate that neither runs nor appears in NO_RUNNER is one nobody decided
-    about: the reader cannot tell whether it was forgotten or deliberately
-    excluded.
-    """
-    runnable = {s.name for s in run_release_gates._specs()}
-    runnable.add(run_release_gates._postgres_spec().name)
-    accounted = runnable | set(run_release_gates.NO_RUNNER)
-    unaccounted = set(evidence.REQUIRED_GATES) - accounted
-    assert not unaccounted, (
-        f"these required gates have no runner and no documented reason: "
-        f"{sorted(unaccounted)}"
-    )
 
 
 # ── a red gate reads as red ──────────────────────────────────────────────────
 
 
-@pytest.fixture
-def bound_gate(tmp_path, monkeypatch):
-    """Write a gate artifact bound to a synthetic release, and read it back."""
-
-    def _write(payload: dict) -> tuple[str, str]:
-        gates = tmp_path / "release" / "gates"
-        gates.mkdir(parents=True, exist_ok=True)
-        path = gates / f"gate_{payload['gate']}.json"
-        path.write_text(json.dumps(payload), encoding="utf-8")
-        identity = release_binding.release_identity("0" * 40, root=ROOT)
-        release_binding.write_binding(
-            path,
-            release=identity,
-            now=__import__("datetime").datetime.now(
-                __import__("datetime").timezone.utc
-            ),
-        )
-        return evidence._judge(payload["gate"], path)
-
-    return _write
 
 
-def test_an_artifact_recording_failure_is_FAIL_not_PASS(bound_gate):
-    """The whole reason the runner writes a file on failure."""
-    status, detail = bound_gate(
-        {"gate": "lint", "ok": False, "exit_code": 1, "summary": "lint: exit 1"}
-    )
-    assert status == evidence.FAIL
-    assert "exit 1" in detail
 
 
-def test_an_artifact_recording_success_is_PASS(bound_gate):
-    status, _detail = bound_gate(
-        {"gate": "lint", "ok": True, "exit_code": 0, "summary": "lint: exit 0"}
-    )
-    assert status == evidence.PASS
 
 
-def test_ok_must_be_the_boolean_true_and_not_merely_truthy(bound_gate):
-    """A runner that wrote `"ok": "failed"` would otherwise report PASS.
-
-    Every non-empty string is truthy, so a truth test on a field that could
-    carry a status word turns a failure into a pass. The one value that means
-    success is `True`.
-    """
-    for truthy in ("failed", "yes", 1, ["something"], {"a": 1}):
-        status, _detail = bound_gate(
-            {"gate": "lint", "ok": truthy, "exit_code": 1, "summary": "s"}
-        )
-        assert status == evidence.FAIL, f"{truthy!r} was treated as success"
 
 
-def test_a_timeout_is_a_failure_not_an_absence(bound_gate):
-    """A gate that hung ran. Reporting UNVERIFIED would use the same word as a
-    gate nobody attempted.
-    """
-    status, detail = bound_gate(
-        {
-            "gate": "unit_tests",
-            "ok": False,
-            "exit_code": None,
-            "timed_out": True,
-            "summary": "unit_tests: TIMED OUT",
-        }
-    )
-    assert status == evidence.FAIL
-    assert "TIMED OUT" in detail
 
 
 # ── the runner never invents evidence ────────────────────────────────────────
@@ -231,16 +88,6 @@ def test_the_runner_writes_no_artifact_for_a_tool_it_cannot_find(tmp_path, capsy
     assert "UNVERIFIED (not run)" in capsys.readouterr().out
 
 
-def test_the_runner_and_the_report_compute_the_same_release_identity():
-    """If they diverge, every artifact verifies as UNBOUND.
-
-    UNBOUND is reported as UNVERIFIED -- the same word as a gate nobody ran --
-    so a one-line difference in how the file list is built would blank the whole
-    report with nothing pointing at the cause.
-    """
-    from_report = evidence._release_identity("a" * 40)
-    from_runner = release_binding.release_identity("a" * 40, root=ROOT)
-    assert from_report.source_tree_sha256 == from_runner.source_tree_sha256
 
 
 def test_the_pip_audit_exceptions_are_read_from_the_file_that_holds_them():
@@ -294,24 +141,20 @@ def test_results_are_discarded_if_the_tree_changes_mid_run(monkeypatch):
         why="a command that always succeeds",
     )
 
-    real_identity = release_binding.release_identity
+    real_identity = run_release_gates._identity
     calls = {"n": 0}
 
-    def _drifting(commit, *, root):
+    def _drifting(now):
         calls["n"] += 1
-        identity = real_identity(commit, root=root)
+        identity = real_identity(now)
         if calls["n"] == 1:
             return identity
         # The second call is the post-run re-read. A different digest is what
         # an edit during the run would have produced.
-        return release_binding.ReleaseIdentity(
-            commit=identity.commit,
-            source_tree_sha256="f" * 64,
-            image_digest=identity.image_digest,
-        )
+        return identity[0], "f" * 64
 
     monkeypatch.setattr(run_release_gates, "_specs", lambda: (quick,))
-    monkeypatch.setattr(release_binding, "release_identity", _drifting)
+    monkeypatch.setattr(run_release_gates, "_identity", _drifting)
     exit_code = run_release_gates.main([])
 
     # 2, not 1: the gates did not fail, the run is void.

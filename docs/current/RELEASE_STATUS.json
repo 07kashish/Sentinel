@@ -367,7 +367,7 @@
       "key": "deploy",
       "name": "Deployment configuration and operational telemetry",
       "tier": "integration_tested",
-      "limits": "Local chart/settings, OTLP HTTP and separately retained two-pod kind smoke evidence. The image moved to a minimal digest-pinned base and the local vulnerability gate reports no HIGH or CRITICAL findings; CI and a published, signed image have not confirmed it (RISK R-015). scripts/run_cloud_proof.py ran the whole deployed journey on an AWS EC2 host (ap-south-1, Ubuntu 24.04, k3s with containerd, flannel plus kube-router policy) and removed it; that is a real cloud host and a second Kubernetes distribution and network plugin, NOT the declared topology: no managed PostgreSQL or Redis, load balancer, object store, second node or IAM integration. Collector TLS, the Terraform topology and soak remain unverified. Actions held until 2026-10-02.",
+      "limits": "Local chart/settings, OTLP HTTP and separately retained two-pod kind smoke evidence. The image moved to a minimal digest-pinned base and the local vulnerability gate reports no HIGH or CRITICAL findings; CI and a published, signed image have not confirmed it (RISK R-015). archive/pre-cleanup:scripts/run_cloud_proof.py ran the whole deployed journey on an AWS EC2 host (ap-south-1, Ubuntu 24.04, k3s with containerd, flannel plus kube-router policy) and removed it; that is a real cloud host and a second Kubernetes distribution and network plugin, NOT the declared topology: no managed PostgreSQL or Redis, load balancer, object store, second node or IAM integration. Collector TLS, the Terraform topology and soak remain unverified. Actions held until 2026-10-02.",
       "tests_passed": 79,
       "postgres_tests_passed": 5,
       "modules_present": [
@@ -396,7 +396,7 @@
       "tests_passed": 79,
       "postgres_tests_passed": 0,
       "modules_present": [
-        "scripts/build_release_artifact.py",
+        "archive/pre-cleanup:scripts/build_release_artifact.py",
         "scripts/scan_release_for_secrets.py",
         "scripts/smoke_clean_install.py",
         "requirements.lock"

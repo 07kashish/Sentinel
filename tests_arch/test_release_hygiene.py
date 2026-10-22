@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts import build_release_artifact, scan_release_for_secrets as scanner
+from scripts import artifact_contract, scan_release_for_secrets as scanner
 from scripts.smoke_clean_install import SDK_IMPORTS, THIN_PROBE
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,8 +118,8 @@ def test_chart_allowlist(member, ok):
 
 
 def test_the_two_refusal_lists_agree_with_the_packager():
-    assert scanner.REFUSED_SUFFIXES == build_release_artifact.REFUSED_SUFFIXES
-    assert scanner.REFUSED_NAMES <= build_release_artifact.REFUSED_NAMES
+    assert scanner.REFUSED_SUFFIXES == artifact_contract.REFUSED_SUFFIXES
+    assert scanner.REFUSED_NAMES <= artifact_contract.REFUSED_NAMES
 
 
 def test_every_tree_allowlist_entry_still_matches_something():

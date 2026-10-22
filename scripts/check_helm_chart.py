@@ -43,7 +43,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts import release_binding  # noqa: E402
 
 CHART = ROOT / "deploy" / "helm" / "sentinel"
 OUT = ROOT / "release" / "gates" / "gate_kubernetes_helm.json"
@@ -146,11 +145,6 @@ def main() -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    release_binding.write_binding(
-        OUT,
-        release=release_binding.release_identity_from_git(ROOT),
-        now=datetime.now(timezone.utc),
-    )
 
     print(record["summary"])
     for guard in guards_checked:

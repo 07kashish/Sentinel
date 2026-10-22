@@ -5,7 +5,7 @@ WHY THIS EXISTS
 `build_connectors` (Kubernetes, AWS IAM) and `build_ai_connectors` (Bedrock,
 Entra, Vertex, OpenAI, MCP) both had tests and NO production caller. The
 connectors were cited in the gap ledger and audited by
-`scripts/build_state_audit.py`, which is how a subsystem comes to look
+the archived state audit, which is how a subsystem comes to look
 delivered while being unreachable -- the same defect as the detonation
 subsystem, found the same way.
 

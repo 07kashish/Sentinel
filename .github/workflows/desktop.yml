@@ -1,27 +1,4 @@
-name: Windows (desktop app and local trial)
-# Two things are proven here on a real Windows machine, because nothing else in
-# this repository's CI runs on Windows and the developer has no Windows PC:
-#
-#   app    -- the "Sentinel AI Scan" .exe is built, passes its packaged
-#             self-test, and its REAL WINDOW is opened, the boxes ticked, Scan
-#             pressed and what the window then shows recorded (`--smoke-gui`).
-#             An earlier check looked for the window title on the started
-#             process and always failed: a one-file build's first process is a
-#             bootstrap that owns no window.
-#   trial  -- the product itself runs on Windows the way TRY_SENTINEL.md tells a
-#             tester to run it: install, migrate, serve, scan THIS Windows
-#             machine, import the report, load the sample story, read it back.
-#
-# PyInstaller cannot cross-build, so the .exe is built here; the macOS app is
-# built on a Mac by `scripts/build_desktop_app.py` and NOT here, because macOS
-# minutes are billed at ten times the Linux rate against a 2,000-minute
-# allowance. Windows minutes are billed at twice the Linux rate, so this runs
-# ONLY when asked for, or when a pull request changes the files it exercises.
-#
-# The .exe is UNSIGNED: SmartScreen will warn until the owner signs it with
-# their own certificate. What this does NOT show: a person clicking through the
-# window, or the scanner's folder list checked against real installed AI tools
-# (a hosted runner has none of them installed).
+name: Windows local trial
 on:
   workflow_dispatch:
   pull_request:
@@ -29,7 +6,6 @@ on:
     paths:
       - sentinel/sdk/discovery.py
       - sentinel/sdk/discovery_app.py
-      - scripts/build_desktop_app.py
       - scripts/try_sentinel.py
       - scripts/seed_console_demo.py
       - .github/workflows/desktop.yml
@@ -42,28 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  windows:
-    name: app
-    runs-on: windows-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
-      - name: Install the packager (pinned)
-        run: python -m pip install --disable-pip-version-check pyinstaller==6.11.1
-      - name: Build, self-test, and smoke-test the real window
-        run: python scripts/build_desktop_app.py
-      - name: What the window showed on Windows
-        shell: pwsh
-        run: Get-Content dist/desktop/gui-smoke-windows.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Sentinel-AI-Scan-Windows
-          path: dist/desktop/
-          if-no-files-found: error
-          retention-days: 30
-
   trial:
     name: local trial
     runs-on: windows-latest
