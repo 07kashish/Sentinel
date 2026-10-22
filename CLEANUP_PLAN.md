@@ -100,11 +100,11 @@ Regression command: `python -m unittest discover -s scripts/dev -p test_import_g
 | `sentinel.infrastructure.cbor` | 179 | Phase 2: delete (dead-security) |
 | `sentinel.infrastructure.endpoint_scan` | 434 | Phase 3: park (endpoint) |
 | `sentinel.infrastructure.openapi_risk` | 291 | Phase 2: delete (dead-security) |
-| `sentinel.infrastructure.persistence.backup` | 616 | Phase 2: delete (dead-persistence) |
-| `sentinel.infrastructure.persistence.diagnostics` | 248 | Phase 2: delete (dead-persistence) |
-| `sentinel.infrastructure.persistence.migrations` | 417 | Phase 2: delete (dead-persistence) |
+| `sentinel.infrastructure.persistence.backup` | 616 | Keep: backup/PITR verify_restore supports Stage 4; external-support exception like objectstore. |
+| `sentinel.infrastructure.persistence.diagnostics` | 248 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
+| `sentinel.infrastructure.persistence.migrations` | 417 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
 | `sentinel.infrastructure.persistence.objectstore` | 470 | Keep: external WAL archive command imports it; see exceptions. |
-| `sentinel.infrastructure.persistence.schema` | 557 | Phase 2: delete (dead-persistence) |
+| `sentinel.infrastructure.persistence.schema` | 557 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
 | `sentinel.infrastructure.platforms.copilot_studio` | 330 | Phase 3: park (discovery) |
 | `sentinel.infrastructure.platforms.databricks_agents` | 195 | Phase 3: park (discovery) |
 | `sentinel.infrastructure.platforms.discovery_breadth` | 244 | Phase 3: park (discovery) |
@@ -138,6 +138,9 @@ Never imported by any other sentinel module (including legitimate roots): `senti
 |---|---:|---|
 | `sentinel/infrastructure/attestation.py` | 273 | **KEEP**. composition/adapters.py imports the generic HTTP/unconfigured gateways. It preserves evidence disposition/reconciliation; it does not call the Solidity contract. Keep SENTINEL_ATTESTATION_ENDPOINT/TOKEN and generic anchoring. |
 | `sentinel/infrastructure/persistence/objectstore.py` | 470 | **KEEP — prompt exception**. deploy/wal-archive/wal_s3.py imports S3ObjectStore/BlobKey/BlobMissing (lines 85, 133, 141, 201); the WAL/PITR drill and live-MinIO/storage tests use this adapter. It is not dead despite having no sentinel importer. Keep as documented external CLI support; removal would disable off-host WAL recovery. |
+| `sentinel/infrastructure/persistence/backup.py` | 616 | **KEEP — Checkpoint 1**. backup/PITR verify_restore supports Stage 4 ("backup restore tested"). Keep test_persistence_backup_pitr.py; treat it like objectstore.py. |
+| `sentinel/interface/advisor_check.py` | 101 | **Console entrypoint**. If removed in Phase 2, remove sentinel-advisor-check from pyproject.toml and only test_the_check_command_reports_a_cli_answer from mixed test_cli_advisor.py in the same commit. Preserve its other CLI-advisor assertions. |
+| `sentinel/infrastructure/persistence/schema.py`, `migrations.py`, `diagnostics.py` | 1,222 | **Proof required before Phase 2 removal**. Demonstrate live sql migration parity for all PostgreSQL test requirements, including RLS and partitioning, and review skip messages naming schema.py. |
 | `sentinel/infrastructure/secrets.py` | 361 | **DELETE after checks**. No kept consumer found. Connected-app sealing instead uses persistence/crypto.py through sql/connected_apps.py and composition, which remain unchanged. |
 | `sentinel/infrastructure/enterprise.py` | 399 | **KEEP — prompt condition not met**. sql/unit_of_work.py and sql/retention.py use SqlPolicyStore, SqlTenantKeys and SqlTenantSettings. It is not SCIM/multi-org-only infrastructure. |
 | `sentinel/domain/residency.py` | 211 | **KEEP shared types**. composition/settings.py imports Region; enterprise.py imports Region, RetentionPolicy and assert_no_cross_region_read. Retention and tenant isolation are core. Do not erase these to remove an analytics screen. |
@@ -164,6 +167,26 @@ The two Passport directories are **not interchangeable corpora**: `spec/` contai
 
 The soft classifier is live and defaults to true in settings.py; it is not dead code. Removing it is an intentional product change in Phase 1. Keep deterministic evaluation/metrics.py, benchmark.py, run_benchmark.py without its soft branch, corpora, sequence/baseline machinery and their benign-corpus assertions. evaluation/validate.py is classifier-only LOSO evaluation and is an additional deletion. Mixed protect tests must still prove deterministic authority after the classifier-specific inspection is rewritten.
 
+## Checkpoint 1 decisions
+
+These decisions amend the future Phase 2 plan only. Phase 1 removes the listed
+non-product groups; no Phase 2 or Phase 3 work is authorized in this execution.
+
+- Keep persistence/backup.py and test_persistence_backup_pitr.py because Stage 4
+  ("backup restore tested") depends on backup/PITR verify_restore. It is an
+  external-support exception like objectstore.py, regardless of static reachability.
+- advisor_check.py is the sentinel-advisor-check console entrypoint in pyproject.toml.
+  Any Phase 2 removal must remove that entry and only the CLI case in the mixed
+  test_cli_advisor.py file in the same commit. Its retained advisory, isolation,
+  decision-authority and worker assertions remain.
+- Before Phase 2 removes persistence/schema.py, migrations.py or diagnostics.py,
+  prove the live sql migrations already supply everything their PostgreSQL tests
+  require, including RLS and partitioning. Review skip messages naming schema.py;
+  no parity result is claimed here.
+
+The Phase 2 removal inventory excludes the two retained backup files: 26 files,
+8,487 text LOC. Other historical measurements remain point-in-time observations.
+
 ## Proposed removals and impact inventory
 
 Each table names every existing file selected for deletion, merging or parking, with physical LOC. “Merge” removes the source document only after its still-true content has moved. Test files listed in a feature group are proposed removals because they exercise that removed feature; shared tests listed under impacts must instead be adapted. These are proposals, not deletions already performed. Paths absent from this snapshot are listed separately below.
@@ -171,7 +194,7 @@ Each table names every existing file selected for deletion, merging or parking, 
 | Phase | Unique proposed removed/merged/parked files | Text LOC | Binary bytes |
 |---|---:|---:|---:|
 | 1 | 319 | 76,409 | 5,379,130 |
-| 2 | 28 | 9,959 | 0 |
+| 2 | 26 | 8,487 | 0 |
 | 3 | 89 | 30,030 | 0 |
 
 References were searched with `rg -n --with-filename -F -f <group-patterns>` across all requested roots (`sentinel/ tests_arch/ scripts/ evaluation/ .github/ Dockerfile docker-compose.yml deploy/ pyproject.toml`) plus `.env.example`, README, CONTRIBUTING, docs, sdk-ts, config and requirements files. This is the Windows equivalent of the requested recursive grep. Import edges independently identify code dependencies, including from-package imports. Text hits also include comments/fixtures; they are review locations, not proof of runtime use. Rerun both checks immediately before each deletion; this inventory alone is not a deletion certificate.
@@ -961,15 +984,15 @@ Unused campaign/admission helper and advisor-only CLI; remove the advisor consol
 
 ### Phase 2: dead-persistence
 
-Remove duplicate schema/backup/diagnostic implementation; retain live sql layer and retarget shared crypto/audit tests.
+Retain backup.py and test_persistence_backup_pitr.py. Before removing the duplicate schema/migration/diagnostic implementation, prove the live sql migrations provide every capability its PostgreSQL tests rely on, including RLS and partitioning; review the schema.py skip messages. Retarget shared crypto/audit tests only after that proof.
 
 | Proposed path | LOC / binary size | Action |
 |---|---:|---|
-| `sentinel/infrastructure/persistence/backup.py` | 616 | delete |
+| `sentinel/infrastructure/persistence/backup.py` | 616 | KEEP — Checkpoint 1 exception |
 | `sentinel/infrastructure/persistence/diagnostics.py` | 248 | delete |
 | `sentinel/infrastructure/persistence/migrations.py` | 417 | delete |
 | `sentinel/infrastructure/persistence/schema.py` | 557 | delete |
-| `tests_arch/test_persistence_backup_pitr.py` | 856 | delete |
+| `tests_arch/test_persistence_backup_pitr.py` | 856 | KEEP — backup/PITR restore verification |
 
 **Settings to review/remove for this feature:** No feature-specific SENTINEL names identified by this group scan; shared settings are covered by the dependency decisions.
 
@@ -1327,7 +1350,7 @@ Current job declarations for before/after comparison:
 
 Migration callbacks call the shared historical schema and RLS lists. A new drop migration must leave fresh installs and upgrades equivalent without retroactively changing applied migration behavior. Retain historical definitions/helper imports needed for replay, introduce an explicit current-table view for retention/readiness/fitness checks after drops, and test both an old-schema upgrade and a fresh database on SQLite and PostgreSQL. “One schema” means one live sql/ migration system, not rewriting history to remove every historical CREATE statement. Remove the unused persistence/schema.py system and adapt persistence crypto/audit tests to sql/ migrations.
 
-**DR:** keep scripts/run_dr_postgres_wal_pitr_drill.py and the WAL archive adapter; document standard PostgreSQL backup/restore/PITR in docs/OPERATIONS.md. Retain core backup/restore integrity tests for this path. The separate persistence/backup.py implementation can go. Evaluate redundant drill scripts after retaining the one complete sql/-based WAL/PITR path; never silently downgrade off-host archive behavior.
+**DR:** keep scripts/run_dr_postgres_wal_pitr_drill.py and the WAL archive adapter; document standard PostgreSQL backup/restore/PITR in docs/OPERATIONS.md. Retain core backup/restore integrity tests for this path. Keep persistence/backup.py and test_persistence_backup_pitr.py: verify_restore is required for Stage 4 ("backup restore tested"), like the retained objectstore.py adapter. Evaluate redundant drill scripts after retaining the one complete sql/-based WAL/PITR path; never silently downgrade off-host archive behavior.
 
 ## Fitness tests and invariants that must survive
 
@@ -1547,12 +1570,12 @@ internal/dynamic imports for this snapshot. Physical Sentinel LOC is 78,966
 | `sentinel/infrastructure/openapi_risk.py` | yes | Phase 2: remove after recursive consumer verification. |
 | `sentinel/domain/attack_campaign.py` | yes | Phase 2: remove after recursive consumer verification. |
 | `sentinel/application/deployment_contract.py` | yes | Phase 2: remove after recursive consumer verification. |
-| `sentinel/interface/advisor_check.py` | yes | Phase 2: remove after recursive consumer verification. |
-| `sentinel/infrastructure/persistence/backup.py` | yes | Phase 2: remove after recursive consumer verification. |
-| `sentinel/infrastructure/persistence/schema.py` | yes | Phase 2: remove after recursive consumer verification. |
+| `sentinel/interface/advisor_check.py` | yes | Console entrypoint: any Phase 2 removal must remove sentinel-advisor-check from pyproject.toml and only the CLI case from mixed test_cli_advisor.py in the same commit. |
+| `sentinel/infrastructure/persistence/backup.py` | yes | KEEP: Stage 4 backup/PITR verify_restore and its tests; Checkpoint 1 exception. |
+| `sentinel/infrastructure/persistence/schema.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
 | `sentinel/infrastructure/persistence/objectstore.py` | yes | Keep: external WAL archive adapter; service-root reachability is not the deletion criterion. |
-| `sentinel/infrastructure/persistence/migrations.py` | yes | Phase 2: remove after recursive consumer verification. |
-| `sentinel/infrastructure/persistence/diagnostics.py` | yes | Phase 2: remove after recursive consumer verification. |
+| `sentinel/infrastructure/persistence/migrations.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
+| `sentinel/infrastructure/persistence/diagnostics.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
 | `sentinel/infrastructure/platforms/discovery_breadth.py` | yes | Phase 3: park vendor discovery. |
 | `sentinel/infrastructure/platforms/copilot_studio.py` | yes | Phase 3: park vendor discovery. |
 | `sentinel/infrastructure/platforms/databricks_agents.py` | yes | Phase 3: park vendor discovery. |
