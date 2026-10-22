@@ -37,7 +37,7 @@ gate in front of a stream has two options and both are dishonest:
   * forward chunks as they arrive -- which means forwarding text nobody
     evaluated, through a product whose entire claim is that it evaluated it.
 
-So they are refused by name with a reason. `docs/A2A_GATEWAY.md` says so, and
+So they are refused by name with a reason, and
 `NOT_SUPPORTED` is the honest answer rather than a proxy that silently degrades
 one of the two properties a caller is relying on.
 

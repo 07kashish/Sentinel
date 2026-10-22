@@ -20,8 +20,7 @@ this one stands in the path:
   3. THE CARD IS DRIFT-CHECKED AGAINST WHAT THE PEER SERVES NOW. The proxy
      fetches the agent card at call time, so the pin comparison is against what
      the agent claims today rather than what the caller cached. The cost is one
-     extra round trip per call, stated in `docs/A2A_GATEWAY.md` rather than
-     hidden.
+     extra round trip per call.
 
   4. THE REPLY IS INSPECTED, NOT ONLY THE REQUEST. A remote agent's answer is
      prose the CALLING agent's model reads and acts on. A proxy that scanned

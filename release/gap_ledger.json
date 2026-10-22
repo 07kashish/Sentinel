@@ -321,8 +321,7 @@
         "tests_arch/test_components_are_reachable.py"
       ],
       "docs": [
-        "docs/CONNECTOR_MATRIX.md",
-        "docs/AGENT_DISCOVERY.md"
+        "docs/CONNECTOR_MATRIX.md"
       ],
       "security_risk": "Visibility gaps, not vulnerabilities -- an undiscovered agent is an unenforced agent. Two specific residuals: no credential value reaches a URL, a log or a report (BearerCredentials and McpEndpoint redact in __repr__, and tests assert the scope is shown while the token is not), and sign_request now signs a caller-supplied PATH, which _signable_path restricts to an unreserved-character literal so the signed string and the transmitted one cannot drift -- a mismatch there surfaces as an opaque 403 that gets debugged in IAM for a day.",
       "competitor_relevance": "Parity gap, narrowed. Connector breadth is where the incumbents are strongest. Nine of seventeen, and the five that matter most for agents specifically are now present.",
@@ -378,9 +377,7 @@
         "tests_arch/test_delegation_passport.py",
         "tests_arch/test_execution_binding_seam.py"
       ],
-      "docs": [
-        "docs/A2A_GATEWAY.md"
-      ],
+      "docs": [],
       "security_risk": "An authorization issued WITHOUT a bound chain cannot compare one, and that is a real state -- not every action flows through a delegation. It is REPORTED as delegation_bound=False rather than inferred from an absence, because comparing to nothing would accept any chain and comparing to an empty string would refuse every legitimate call.",
       "competitor_relevance": "differentiator",
       "recommended_action": "None.",
@@ -401,9 +398,7 @@
       "tests": [
         "tests_arch/test_endpoint_sensor.py"
       ],
-      "docs": [
-        "docs/AGENT_DISCOVERY.md"
-      ],
+      "docs": [],
       "security_risk": "The sensor is the component most likely to be uninstalled, and not because of a bug: one engineer finding it read something personal ends the rollout. So the allowlist is the entire surface, `--explain` prints it before anybody runs it for real, credential VALUES are never retained, and the host label is the hostname rather than a durable device fingerprint.",
       "competitor_relevance": "Parity gap closed. Competitors ship endpoint agents; this is narrower than theirs by design -- configuration discovery, not EDR.",
       "recommended_action": "Windows paths are deliberately absent: they need their own allowlist and their own review, and a Windows machine reports UNREADABLE rather than appearing clean. Add them when a design partner runs Windows.",
@@ -1265,7 +1260,6 @@
       "docs": [
         "sentinel/domain/detection_metrics.py",
         "scripts/measure_benign_tool_call_false_positives.py",
-        "docs/AI_MODEL_EVALUATION.md",
         "docs/RELEASE_GATES.md"
       ],
       "security_risk": "Claiming any of these without external evidence would be the failure this ledger exists to prevent.",

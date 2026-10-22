@@ -25,8 +25,7 @@ said out loud.
 Specifically, it does NOT find: an agent on a laptop, an agent in a cloud
 account nobody gave a credential for, a namespace the token cannot list, a
 framework whose image and labels look like nothing on the marker list, or a
-serverless function. `docs/AGENT_DISCOVERY.md` states that; so does every
-report this module produces.
+serverless function. Every report this module produces states that.
 
 RECOGNITION IS BY DECLARED MARKER, NOT BY GUESSING
 ----------------------------------------------------

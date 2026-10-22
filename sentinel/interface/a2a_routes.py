@@ -30,7 +30,6 @@ WHAT THIS IS NOT
 Not an A2A wire proxy. `interface/mcp_proxy_routes.py` speaks MCP; nothing here
 speaks A2A. An agent framework that never calls Sentinel stays outside
 enforcement -- the same residual risk F-11 records for the inline tool proxy.
-`docs/A2A_GATEWAY.md` states the limit rather than leaving it implied.
 """
 
 from __future__ import annotations
@@ -311,8 +310,7 @@ def register_a2a_routes(app: FastAPI, container: Any, *, require: Any) -> None:
         The card store is per-process. A card enrolled through one replica is
         not visible to the next, so a multi-replica deployment does NOT have
         working A2A drift detection until the SQL-backed store exists. That is
-        recorded in `docs/A2A_GATEWAY.md` and is why this is not yet claimed as
-        a production control.
+        why this is not yet claimed as a production control.
         """
         try:
             card = container.a2a_gateway.enrol(

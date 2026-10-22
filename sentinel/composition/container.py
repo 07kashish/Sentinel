@@ -295,7 +295,7 @@ class Container:
     #: The card store is IN-PROCESS. That is a real limit and it is stated
     #: rather than implied: a pin one replica holds is not a pin the next
     #: request sees, so multi-replica A2A enforcement needs the SQL-backed
-    #: store this does not yet have. `docs/A2A_GATEWAY.md` records it.
+    #: store this does not yet have.
     a2a_gateway: A2AGateway
     #: Durable, tenant-scoped MCP enrolment. Backs `mcp_gateway`; also read
     #: directly for the operator listing, which the gateway has no reason to know

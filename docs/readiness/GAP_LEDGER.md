@@ -109,7 +109,7 @@ MCP tool descriptions and OpenAI function descriptions are deliberately NOT stor
 - *Competitive relevance*: Parity gap, narrowed. Connector breadth is where the incumbents are strongest. Nine of seventeen, and the five that matter most for agents specifically are now present.
 - *Implementation*: `sentinel/infrastructure/platforms/ai_connectors.py`, `sentinel/infrastructure/platforms/ai_discovery.py`, `sentinel/infrastructure/platforms/connectors.py`, `sentinel/composition/discovery_wiring.py`, `scripts/run_discovery.py`, `sentinel/domain/assets.py`
 - *Tests*: `tests_arch/test_ai_connectors.py`, `tests_arch/test_discovery_wiring.py`, `tests_arch/test_connectors.py`, `tests_arch/test_platform_discovery.py`, `tests_arch/test_components_are_reachable.py`
-- *Docs*: `docs/CONNECTOR_MATRIX.md`, `docs/AGENT_DISCOVERY.md`
+- *Docs*: `docs/CONNECTOR_MATRIX.md`
 - *Recommended action*: REQUIRES EXTERNAL VALIDATION. Not one of the five new connectors has authenticated against a real tenant, and no test in a repository can establish that it would: request shapes, auth headers, pagination fields and scopes come from each vendor's published contract, and a published contract is not a successful call. Every connector reports this itself via `external_validation`, and describe_discovery names the unvalidated ones in the report rather than in a document nobody opens while reading a count. Obtain credentials and run scripts/run_discovery.py; sequence by which tenants are actually obtainable. The remaining eight platforms follow the same pattern.
 - *Acceptance criteria*: Each new connector authenticates against a real tenant, normalises, syncs incrementally, detects deletion, and ships a least-privilege permission guide. No fake connectors. The code and the least-privilege scopes are met; the authentication is not, and cannot be from here -- which is why this stays PARTIAL rather than being scored on the code existing.
 
@@ -136,7 +136,6 @@ MCP tool descriptions and OpenAI function descriptions are deliberately NOT stor
 - *Competitive relevance*: differentiator
 - *Implementation*: `sentinel/domain/a2a.py`, `sentinel/infrastructure/a2a_registry.py`, `sentinel/domain/delegation_passport.py`, `sentinel/domain/execution_binding.py`, `sentinel/application/tool_proxy.py`
 - *Tests*: `tests_arch/test_a2a_delegation.py`, `tests_arch/test_a2a_proxy.py`, `tests_arch/test_delegation_passport.py`, `tests_arch/test_execution_binding_seam.py`
-- *Docs*: `docs/A2A_GATEWAY.md`
 - *Recommended action*: None.
 - *Acceptance criteria*: An independent verifier validates the chain from signatures alone, a forged hop fails, and a valid chain from the wrong principal is refused at execution. Met.
 
@@ -150,7 +149,6 @@ MCP tool descriptions and OpenAI function descriptions are deliberately NOT stor
 - *Competitive relevance*: Parity gap closed. Competitors ship endpoint agents; this is narrower than theirs by design -- configuration discovery, not EDR.
 - *Implementation*: `sentinel/domain/endpoint_sensor.py`, `sentinel/infrastructure/endpoint_scan.py`, `scripts/run_endpoint_sensor.py`
 - *Tests*: `tests_arch/test_endpoint_sensor.py`
-- *Docs*: `docs/AGENT_DISCOVERY.md`
 - *Recommended action*: Windows paths are deliberately absent: they need their own allowlist and their own review, and a Windows machine reports UNREADABLE rather than appearing clean. Add them when a design partner runs Windows.
 - *Acceptance criteria*: A read-only sensor collecting MCP and agent configuration without personal content, whose absences are distinguishable from its failures. Met. NOT met: signed and remotely attestable -- the sensor is a script, not a signed binary, which matters when it is distributed rather than run from a checkout.
 
@@ -611,7 +609,7 @@ These are `EXTERNALLY-UNVERIFIED`, which is **not** a synonym for incomplete. Th
 
 ## Naming note on the prompt's final deliverables
 
-The prompt names sixteen documents. Twelve do not exist under those exact filenames, but the content of most does exist under this repository's own names -- `docs/MCP_GATEWAY.md` for `MCP_SECURITY.md`, `docs/A2A_GATEWAY.md` for `A2A_SECURITY.md`, `docs/PENTEST_PACKAGE.md` for `PENTEST_READINESS.md`, `docs/RELEASE_GATES.md` for `RELEASE_CHECKLIST.md`, and so on. Creating sixteen renamed duplicates would satisfy a filename check and make the documentation worse, so it has not been done.
+The prompt names sixteen documents. Twelve do not exist under those exact filenames, but the content of most does exist under this repository's own names -- `docs/MCP_GATEWAY.md` for `MCP_SECURITY.md`, `docs/PENTEST_PACKAGE.md` for `PENTEST_READINESS.md`, `docs/RELEASE_GATES.md` for `RELEASE_CHECKLIST.md`, and so on. Creating sixteen renamed duplicates would satisfy a filename check and make the documentation worse, so it has not been done.
 
 Three are genuinely absent rather than renamed: `EXECUTION_TRUST_ARCHITECTURE.md` and `EXECUTION_PASSPORT_SPEC.md` both describe Phase 3 and Phase 13 work that does not exist yet, and `AWS_PRODUCTION_ARCHITECTURE.md` would describe Terraform that has not been written. Writing any of the three now would produce exactly the `DOCUMENTATION-ONLY` status this ledger is designed to expose.
 

@@ -87,7 +87,7 @@ The legacy `api/`, `app/`, `agents/`, and `dashboard/` trees are **gone**.
 | POST | `/v1/tools/execute` | Inline tool proxy. Effects register only where configured: `read_file`, `write_file`, `http_request`, plus `aws_api`, `github_api`, `kubernetes_api`, `sql_query` where platform credentials are supplied. Every platform effect carries a tier ceiling checked **after** the gate allows. |
 | POST | `/v1/a2a/evaluate` | Delegation chain: privilege amplification, loops, agent-card drift, cross-agent injection, then the same policy. Capability `evaluate_protect`. |
 | POST | `/v1/a2a/proxy/{agent_id}` | A2A wire proxy (JSON-RPC). Forwards to ENROLLED agents only; the delegation is refused BEFORE the message moves, the agent card is drift-checked against what the peer serves now, and the REPLY is inspected too. `message/stream` is NOT_SUPPORTED. Registered only when `SENTINEL_A2A_PROXY_ENABLED` is set. Capability `execute_tool`. |
-| POST | `/v1/a2a/cards` | Enrol an agent card and pin its fingerprint. Capability `manage_policy` (admin). **In-process store** — see [docs/A2A_GATEWAY.md](docs/A2A_GATEWAY.md). |
+| POST | `/v1/a2a/cards` | Enrol an agent card and pin its fingerprint. Capability `manage_policy` (admin). **In-process store**. |
 | POST | `/v1/skills/assess` | Explainable skill risk + static source scan that never executes what it inspects. Capability `evaluate_protect`. |
 | GET | `/v1/incidents`, `/v1/incidents/{id}`, history, report | Read capabilities |
 | GET | `/v1/dashboard` | Tenant summary JSON (not an HTML UI) |
@@ -165,9 +165,6 @@ See `.github/workflows/ci.yml`.
 - `docs/THREAT_MODEL.md` — edge findings (**different** F-numbering)
 - `docs/MCP_GATEWAY.md` — MCP server trust, tool pinning, description poisoning
 - `docs/TOOL_GATEWAY.md` — OpenAPI ingestion, tool adapters, SIEM export
-- `docs/AGENT_DISCOVERY.md` — agent inventory, unmanaged agents, attack surface graph
-- `docs/A2A_GATEWAY.md` — delegation lineage, privilege amplification, agent cards
-- `docs/SKILL_REGISTRY.md` — skills as supply-chain artefacts, and what the scanner cannot see
 
 ## What this README does not claim
 

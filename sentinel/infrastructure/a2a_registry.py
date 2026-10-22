@@ -160,8 +160,7 @@ class SqlTaskLedger:
 
     HONEST LIMIT: task ids expire with the retention window. A delegation
     replayed after that window is not detected here -- the same bound
-    signed-event replay protection operates under, stated in
-    `docs/A2A_GATEWAY.md` rather than left to be discovered.
+    signed-event replay protection operates under.
     """
 
     __slots__ = ("_pool", "_window")

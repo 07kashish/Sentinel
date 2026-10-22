@@ -21,7 +21,7 @@ description did not mention.
 It does NOT find a determined attacker. `getattr(__import__("o"+"s"), "system")`
 defeats name matching, and so does fetching the payload at runtime. Every static
 analyser has this limit; the difference between a useful one and a dishonest one
-is whether it says so. `docs/SKILL_REGISTRY.md` says so, this docstring says so,
+is whether it says so. This docstring says so,
 and no finding here is phrased as "this package is malicious" -- each names a
 construct that is present, which is a fact, and leaves the judgement to a human.
 
