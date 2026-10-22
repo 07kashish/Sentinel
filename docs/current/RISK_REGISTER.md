@@ -71,7 +71,7 @@ Severity: **critical** = customer data or an unauthorised consequential action i
 - **Owner:** CTO
 - **Description:** The declared AWS stack was applied on 2026-09-24/25 as the `proof` environment (same module, free-tier sizes) and the protected-change journey ran over its load balancer: managed PostgreSQL, managed Valkey, ALB, S3 with KMS and object lock, Secrets Manager injection, IAM task and execution roles, two Fargate tasks in two availability zones. Sixteen defects were found by that first apply and fixed (RELEASE_CHANGES, 2026-09-24/25). What remains unproven is the paid sizing: multi-AZ database, a cache replica, and therefore AZ-loss survival; TLS needs a domain; workload identity on ECS needs an identity provider.
 - **Impact:** The single-AZ proof says nothing about an AZ loss; a design partner on the pilot sizing would be the first to observe it.
-- **Mitigation:** The proof environment and its journey are committed (deploy/terraform/aws/envs/proof, archive/pre-cleanup:scripts/run_aws_proof_journey.py) and rerunnable; the evidence is bound to a commit.
+- **Mitigation:** The proof environment and its journey are committed (archive/pre-cleanup:deploy/terraform/aws/envs/proof, archive/pre-cleanup:scripts/run_aws_proof_journey.py) and rerunnable; the evidence is bound to a commit.
 - **Closes when:** One run of the `pilot` sizing (multi-AZ, cache replica) on a paid-plan account with the same journey, plus a certificate on the listener
 - **Review by:** 2026-11-15
 

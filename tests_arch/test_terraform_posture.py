@@ -75,10 +75,10 @@ def test_every_module_declares_a_pinned_provider():
         assert 'version = "~> 5.0"' in source, f"{name}: aws provider not pinned"
 
 
-def test_the_three_environments_exist():
+def test_only_the_dev_environment_is_shipped():
     present = {path.name for path in ENVS.iterdir() if path.is_dir()}
 
-    assert {"dev", "pilot", "production"} <= present
+    assert present == {"dev"}
 
 
 def test_no_environment_commits_a_backend():
@@ -126,8 +126,31 @@ def _mutated(tmp_path: Path, replacements: dict[str, str]) -> Path:
         ".terraform", "*.tfstate*", ".terraform.lock.hcl"
     ))
 
+    # Exercise the production bar with a hardened COPY of the retained dev
+    # root. No deployable production environment is shipped by this fixture.
     target = destination / "envs" / "production" / "main.tf"
-    source = target.read_text(encoding="utf-8")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    source = (destination / "envs" / "dev" / "main.tf").read_text(encoding="utf-8")
+    controls = {
+        "multi_az": "multi_az                 = true",
+        "deletion_protection": "deletion_protection      = true",
+        "cache_replica_count": "cache_replica_count = 1",
+        "require_execution_binding": "require_execution_binding = true",
+        "rate_limit_fail_open": "rate_limit_fail_open = false",
+        "enable_vault_lock": "enable_vault_lock = true",
+        "certificate_arn": "certificate_arn = var.certificate_arn",
+    }
+    for field, assignment in controls.items():
+        source, count = re.subn(r"(?m)^  " + field + r"\s*=.*$", "  " + assignment, source)
+        assert count == 1, field
+    source = source.replace('sentinel_env = "development"', 'sentinel_env = "production"')
+    source = source.replace('variable "alarm_email" {', 'variable "alarm_email" {\n'
+                            '  validation {\n'
+                            '    condition = var.alarm_email != ""\n'
+                            '    error_message = "alarm_email is required in production"\n'
+                            '  }\n')
+    source += '\nvariable "certificate_arn" {\n  type = string\n}\n'
+
     for old, new in replacements.items():
         assert old in source, f"anchor absent, so this test would not mutate: {old}"
         source = source.replace(old, new)
@@ -225,7 +248,7 @@ def test_the_honesty_constants_are_still_false():
     """`restore_verified` and `budget_is_measured` are hardcoded false in their
     modules because they cannot be satisfied from inside this repository.
     """
-    for environment in ("dev", "pilot", "production"):
+    for environment in ("dev",):
         assert check(environment) == [], environment
 
 
@@ -352,7 +375,7 @@ def test_the_stack_declares_variables_at_all():
     assert declared["multi_az"] is True
 
 
-@pytest.mark.parametrize("environment", ["dev", "pilot", "production"])
+@pytest.mark.parametrize("environment", ["dev"])
 def test_no_root_passes_an_undeclared_argument(environment):
     """A misspelled argument name is an error terraform reports and nothing
     else does.
@@ -365,7 +388,7 @@ def test_no_root_passes_an_undeclared_argument(environment):
     assert unknown == set(), f"{environment} passes undeclared: {sorted(unknown)}"
 
 
-@pytest.mark.parametrize("environment", ["dev", "pilot", "production"])
+@pytest.mark.parametrize("environment", ["dev"])
 def test_every_required_stack_variable_is_supplied(environment):
     """A missing REQUIRED argument fails the plan, which is fine. A missing
     OPTIONAL one silently inherits the stack's dev default, which is not --
@@ -380,12 +403,12 @@ def test_every_required_stack_variable_is_supplied(environment):
     assert missing == set(), f"{environment} omits required: {sorted(missing)}"
 
 
-def test_production_states_every_control_rather_than_inheriting_a_default():
-    """Production must not rely on ANY stack default for a control the posture
+def test_dev_states_every_control_rather_than_inheriting_a_default():
+    """Dev must not rely on ANY stack default for a control the posture
     checker cares about, even where the default happens to be correct today.
-    Changing a default is otherwise a silent change to production.
+    Changing a default is otherwise a silent change to dev.
     """
-    passed = _root_arguments("production")
+    passed = _root_arguments("dev")
 
     for name in (
         "multi_az",
@@ -398,8 +421,8 @@ def test_production_states_every_control_rather_than_inheriting_a_default():
         "evidence_retention_days",
     ):
         assert name in passed, (
-            f"production inherits the stack default for {name}. Changing that "
-            f"default would then change production silently."
+            f"dev inherits the stack default for {name}. Changing that "
+            f"default would then change dev silently."
         )
 
 
@@ -429,15 +452,15 @@ def _hcl_map(block_name: str) -> dict[str, str]:
 def _ecs_environment_as_the_task_sees_it() -> dict[str, str]:
     """Literals from `environment`, and a value of the right shape for every
     injected secret; a Terraform expression (`var.x`, `tostring(...)`) is
-    replaced by what the pilot root passes."""
+    replaced by a production configuration of the retained stack."""
     env = _hcl_map("environment")
-    pilot = {"var.sentinel_env": "production", "tostring(var.rate_limit_fail_open)": "false",
+    production = {"var.sentinel_env": "production", "tostring(var.rate_limit_fail_open)": "false",
              "tostring(var.require_execution_binding)": "true", "var.cors_origins": "https://console.example.com",
-             "module.storage.evidence_bucket": "sentinel-pilot-evidence", "data.aws_region.current.name": "ap-south-1",
+             "module.storage.evidence_bucket": "sentinel-test-evidence", "data.aws_region.current.name": "ap-south-1",
              "tostring(var.mcp_proxy.enabled)": "false", 'join(",", sort(tolist(var.mcp_proxy.allowed_hosts)))': "",
              "var.advisor.endpoint": "", "var.advisor.model": "", 'var.brain_host.enabled ? "0" : "4': "4",
              'join(",", var.root_publish_tenants)': ""}
-    resolved = {k: pilot.get(v, v) for k, v in env.items()}
+    resolved = {k: production.get(v, v) for k, v in env.items()}
     shaped = {"SENTINEL_DATABASE_URL": "postgresql://sentinel:x@db.internal:5432/sentinel",
               "SENTINEL_REDIS_URL": "rediss://cache.internal:6379/0",
               "SENTINEL_API_KEYS": "acme:" + "k" * 40 + ":ingest", "SENTINEL_METRICS_TOKEN": "m" * 40,
@@ -471,7 +494,7 @@ def test_removing_the_data_key_from_the_task_is_caught(monkeypatch):
     assert not validate_production_configuration(env).ok
 
 
-def test_only_the_demonstration_environment_publishes_a_console_key():
+def test_no_retained_environment_publishes_a_console_key():
     """`console_demo_enabled` puts a read-only key on a public sign-in page.
     That is a decision for a demonstration environment and nothing else: a
     pilot or production environment that turned it on would hand every visitor
@@ -479,4 +502,4 @@ def test_only_the_demonstration_environment_publishes_a_console_key():
     for environment in sorted(p.name for p in ENVS.iterdir() if p.is_dir()):
         source = (ENVS / environment / "main.tf").read_text(encoding="utf-8")
         enabled = re.search(r"^\s*console_demo_enabled\s*=\s*true\b", source, re.M) is not None
-        assert enabled is (environment == "proof"), f"{environment}: console_demo_enabled={enabled}"
+        assert enabled is False, f"{environment}: console_demo_enabled={enabled}"

@@ -1,19 +1,12 @@
 #############################################################################
 # Sentinel — stack inputs
 #
-# Every value the three environments differ on, and nothing else. The wiring
-# between the twelve modules lives in main.tf and is identical everywhere,
-# which is the point: copied three times, those wires drift — a security group
-# that stops being passed to the database in one environment and nobody
-# notices, because each root looks internally consistent on its own.
-#
-# The defaults here are the DEV defaults, i.e. the cheapest and weakest. Each
-# stronger environment states what it strengthens, so a posture is a readable
-# list rather than something you reconstruct by diffing three files.
+# Shared stack inputs. The defaults are the DEV defaults, i.e. the cheapest
+# and weakest. Stronger configurations must explicitly state what they strengthen.
 #############################################################################
 
 variable "name" {
-  description = "Environment name: dev, pilot, production. Prefixes every resource."
+  description = "Environment name. Prefixes every resource."
   type        = string
 
   validation {
