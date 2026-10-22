@@ -1633,3 +1633,13 @@ Fresh continuation checks passed all seven graph regression tests and Ruff over 
 - [ ] Only after the Phase 4 confirmation: implement 5.1–5.6 with current official API verification, fixture-only connector tests and unchanged approval/execution authority, then Phase 6 verification/report. No connector, credential broker or new source integration is implemented in Phase 0.
 
 Requested phase commit messages remain as specified in the user brief. Latest requested Phase 0 commit: `chore(phase0): establish Linux test baseline`. No Phase 1 deletion is authorized by writing this file.
+
+## Open decisions
+
+- **Passport integer range** — service/JS/schema bound to ±(2^53−1); standard
+  verifier unbounded. Must be resolved before any external party verifies Passports.
+  Recommended direction: adopt the bounded rule everywhere, because the issuer
+  and the JS verifier already enforce it. Phase 1 preserves both corpora, all
+  verifier results (including `10-large-integer.json`), the service, TS SDK,
+  schema and the existing SPEC.md integer rules. The user approved documenting
+  this incompatibility while consolidating the files on 2026-10-22.

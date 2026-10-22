@@ -1,4 +1,4 @@
-"""Generate spec/execution-passport/schema.json FROM the implementation.
+"""Generate standard/execution-passport-v1/schema.json FROM the implementation.
 
 Hand-written next to a dataclass, a schema drifts the first time a field is
 added, and it drifts silently -- the schema still validates every document
@@ -80,7 +80,7 @@ def main() -> int:
         ),
     }
 
-    out = ROOT / "spec" / "execution-passport" / "schema.json"
+    out = ROOT / "standard" / "execution-passport-v1" / "schema.json"
     out.write_text(
         json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )

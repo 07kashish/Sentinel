@@ -114,6 +114,16 @@ the edge, where the conversion is visible: a risk score is `96`, not `96.0`.
 Integers are exact and unbounded in JSON. `9007199254740993` MUST survive a
 round trip, which means a verifier MUST NOT parse numbers as IEEE doubles.
 
+### Known incompatibility: integer range
+
+The service (`sentinel.domain.passport`), the JavaScript canonical verifier
+(`verify_canonical.mjs`), the TS SDK and `schema.json` use the bounded rule:
+integers must be within ±(2^53−1). The standard Python verifier
+(`verify_passport.py`) follows the unbounded integer rule above; its
+`vectors/10-large-integer.json` expects `2^53 + 1` to be accepted. Both rules
+and all existing conformance expectations are preserved in Phase 1. This
+incompatibility must be resolved before any external party verifies Passports.
+
 ### Digest
 
 `digest_of(document)` is the lowercase hex SHA-256 of the canonical bytes. It
@@ -256,3 +266,116 @@ not to matter for one document.
 * **That the signer is who they claim.** The format binds a document to a key.
   Binding that key to an organisation is somebody else's problem, and the
   reason `key_id` is an opaque string rather than a name.
+
+---
+
+## Passport field groups
+
+| Group | Fields |
+|---|---|
+| Identity of the execution | `execution_id`, `tenant_id`, `occurred_at`, `previous_passport_digest`, `parent_execution_id`, `session_id` |
+| Who | `human_principal`, `agent_id`, `agent_instance`, `agent_version`, `agent_framework`, `model_identity`, `delegation_chain` |
+| Through what | `mcp_server_id`, `mcp_server_fingerprint`, `tool_name`, `tool_definition_fingerprint`, `skill_ids`, `credential_id` |
+| Against what | `action`, `action_semantics`, `resource`, `environment`, `data_classifications`, `destination` |
+| Under which rules | `policy_id`, `policy_version`, `policy_digest`, `decision`, `risk_score`, `risk_reasons` |
+| Human involvement | `approval_required`, `approval_actor`, `approval_at` |
+| What happened | `idempotency_key`, `execution_fence`, `outcome`, `side_effect` |
+| Proof | `evidence_digest`, `attestation_status`, `attestation_reference` |
+
+## Canonical and digest verifier procedure
+
+A conforming verifier MUST perform these checks and MUST report which it could
+**not** perform.
+
+1. **Canonicalisation.** Re-serialise the supplied document using the canonical form and confirm
+   its digest equals the passport's digest. A mismatch means the document was
+   altered or was never canonical.
+2. **Required fields.** Report each of the six that is absent or empty.
+3. **Signature**, if a public key is supplied. Absent key ⇒ report
+   `signature_unverified`, never "verified".
+4. **Parent chain**, if parents are supplied. If `previous_passport_digest` is
+   non-empty and no supplied parent has that digest, report it. If a supplied
+   parent's recomputed digest differs from the commitment, report it.
+5. **Policy digest**, if an expected value is supplied.
+6. **Attestation**, if an attestation digest is supplied: it must name this
+   passport's digest.
+
+### The rule that matters most
+
+> **An omitted input yields an explicit "unverified" finding, never a pass.**
+
+A verifier handed no public key has not verified the signature. Reporting
+"valid" in that case is the single most dangerous thing a verifier can do,
+because the output is indistinguishable from a real verification. Every
+optional input in this procedure follows the same rule.
+
+---
+
+## Canonicalization and digest conformance vectors
+
+`vectors/canonical/` holds the test corpus. Each file is:
+
+```json
+{
+  "name": "...",
+  "why": "what this vector is for",
+  "document": { ... },
+  "expect": { "digest": "...", "defects": ["..."] }
+}
+```
+
+`vectors/canonical/malicious/` is the half that matters. A verifier that passes only the
+valid vectors has been tested against documents nobody was trying to forge.
+The malicious set is:
+
+| Vector | What it forges |
+|---|---|
+| `float-risk-score` | a float where an integer belongs — two signatures for one document |
+| `float-nested-deep-in-an-object` | the same, two levels down, where a shallow type check misses it |
+| `float-inside-an-array` | the same, reached through a list |
+| `integer-beyond-the-json-safe-range` | a value that round-trips to a different number elsewhere |
+| `digest-does-not-match-document` | content altered after the digest was recorded |
+| `missing-required-field` | an action attributed to nobody |
+| `empty-required-field` | the same, past a presence-only check |
+| `parent-commitment-with-no-parent-supplied` | a chain that cannot be walked |
+| `parent-edited-after-being-committed-to` | a chain that *looks* intact — the attack an id-based chain would permit outright |
+| `attestation-names-a-different-passport` | a real attestation over someone else's record |
+
+### Three attacks that cannot be file-based vectors
+
+Worth naming, because their absence from the corpus is a property of the corpus
+format and not an oversight:
+
+- **A duplicated object key.** Every JSON parser resolves it before a verifier
+  sees the document (last one wins, in practice), so a `.json` vector cannot
+  carry the ambiguity. Defending against it requires operating on the raw byte
+  stream, which is a parser-level concern above this format.
+- **Non-ASCII escaped instead of emitted.** Escaping is a property of a
+  *serialisation*, not of a parsed document. `"А"` and `"А"` parse to the
+  same string, so the vector would have to be raw bytes.
+- **Keys in non-sorted order.** This cannot fail: §1 sorts keys before hashing,
+  so input order is discarded by construction. A vector for it would assert
+  something the format makes impossible.
+
+The first two are real attacks against a *parser*. A verifier hardening against
+them must compare the bytes it received with the bytes it would produce, not
+just the digests.
+
+### Two implementations must agree
+
+`verify_canonical.mjs` is an independent verifier in dependency-free JavaScript. It exists
+so the conformance vectors are checked by something that does not share code
+with the Python implementation — two implementations of one spec disagreeing is
+how an ambiguity in the spec gets found, and a corpus checked by only the
+implementation it was generated from proves that implementation is
+self-consistent and nothing more.
+
+Run both:
+
+```bash
+PYTHONPATH=. python -m pytest tests_arch/test_passport_conformance.py
+```
+
+```bash
+node standard/execution-passport-v1/verify_canonical.mjs --vectors standard/execution-passport-v1/vectors/canonical
+```

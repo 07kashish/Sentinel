@@ -17,7 +17,7 @@ INCLUDE: tuple[str, ...] = (
     "tests_arch",
     "deploy",
     "docs",
-    "spec",
+    "standard",
     "security",
     "README.md",
     "CONTRIBUTING.md",
@@ -100,7 +100,7 @@ def _collect(root: Path) -> tuple[list[Path], list[str]]:
     for entry in INCLUDE:
         source = root / entry
         if not source.exists():
-            # Absent allowlist entries are fine and not silent: `spec/` does not
+            # Absent allowlist entries are fine and not silent: `standard/` does not
             # exist yet, and naming it here means it ships the day it does
             # rather than the day somebody remembers this file.
             continue

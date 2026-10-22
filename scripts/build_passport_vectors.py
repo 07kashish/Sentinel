@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 from sentinel.domain.passport import digest_of  # noqa: E402
 
-VECTORS = ROOT / "spec" / "execution-passport" / "vectors"
+VECTORS = ROOT / "standard" / "execution-passport-v1" / "vectors" / "canonical"
 
 VALID = {
     "schema": "sentinel.execution_passport.v1",

@@ -244,7 +244,7 @@ documentation worse, so it has not been done.
 | `THREAT_MODEL.md` | [`THREAT_MODEL.md`](THREAT_MODEL.md) |
 | `MCP_SECURITY.md` | [`MCP_GATEWAY.md`](MCP_GATEWAY.md) |
 | `EXECUTION_TRUST_ARCHITECTURE.md` | [`EXECUTION_TRUST_ARCHITECTURE.md`](EXECUTION_TRUST_ARCHITECTURE.md) |
-| `EXECUTION_PASSPORT_SPEC.md` | `../spec/execution-passport/README.md` |
+| `EXECUTION_PASSPORT_SPEC.md` | `../standard/execution-passport-v1/SPEC.md` |
 | `AI_BOM_SPEC.md` | `sentinel/domain/ai_bom.py`, `sentinel.cdx.json` |
 | `AGENT_IDENTITY_SPEC.md` | [`ENTERPRISE_CONTROLS.md`](ENTERPRISE_CONTROLS.md) |
 | `ENTERPRISE_DISCOVERY.md` | [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) |

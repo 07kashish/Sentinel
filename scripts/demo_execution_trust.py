@@ -573,9 +573,9 @@ def _step_evidence(receipt) -> tuple[ExecutionPassport, MerkleLog]:
 def _step_independent(passport) -> bool:
     _head("6. INDEPENDENT VERIFICATION -- a different implementation")
 
-    verifier = ROOT / "spec" / "execution-passport" / "verify.mjs"
+    verifier = ROOT / "standard" / "execution-passport-v1" / "verify_canonical.mjs"
     if not verifier.exists():
-        _refused("verify.mjs is missing, so nothing independent ran")
+        _refused("verify_canonical.mjs is missing, so nothing independent ran")
         return False
 
     import shutil
