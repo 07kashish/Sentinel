@@ -10,16 +10,6 @@ The capability it is being built around is **verifiable agent execution**: which
 actor performed an action, under whose authority, through which tool or MCP
 path, against which resource, under which policy, and with what evidence.
 
-Blockchain anchoring is an **optional** attestation backend, not the product.
-A previous `package.json` at the repository root described Sentinel as
-"production-grade… tamper-proof incident attestations to the **Base Sepolia
-Testnet**" under an **ISC** licence. Every part of that was wrong — this project
-is pre-production, proprietary (see [LICENSE](LICENSE)), and not
-blockchain-centric — and that file has been removed. It served nothing: it
-declared a `main` that did not exist, a test script that always failed, and a
-hardhat dependency with no config at the root. The real Node project lives in
-[blockchain/](blockchain/) and has its own correct metadata.
-
 **Status: pre-production.** Not a SOC replacement. Not "production-ready".
 Durable storage, fail-closed auth, execution fencing, and honest attestation
 dispositions are in place. Detection is a configurable policy engine plus an
