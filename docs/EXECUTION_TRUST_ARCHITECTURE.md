@@ -233,7 +233,6 @@ testing for.
 
 ## Related
 
-- [`RESEARCH.md`](RESEARCH.md) — the claims and their current status
 - [`TRANSPARENCY_SINK.md`](TRANSPARENCY_SINK.md) — why the root has to leave the
   operator's control
 - [`readiness/GAP_LEDGER.md`](readiness/GAP_LEDGER.md) — every phase, honestly

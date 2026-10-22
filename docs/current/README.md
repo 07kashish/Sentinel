@@ -10,9 +10,7 @@ This directory distinguishes current program decisions from measured evidence. G
 | `INCIDENT_ROTATION_CHECKLIST.md` | What to do the moment a credential is found where it should not be | Hand-maintained |
 | `PRODUCTION_ACCEPTANCE.md` | The measurable conditions under which a deployment is accepted, and which are unmet | Hand-maintained; each condition names its evidence artifact |
 | `FIRST_WORKFLOW.md` | The approved first workflow and the unverified customer integration gates | Hand-maintained |
-| `COMPETITIVE_MATRIX.md` | Capability comparison with sources and dates; no claim without a citation | Hand-maintained |
 | `SECURITY_AND_DR_EVIDENCE.md` | What security and recovery evidence exists, what each proves, and what is missing | Hand-maintained; cites artifacts |
-| `COMMERCIAL_METRICS_TEMPLATE.csv` | The metrics a design partner engagement must produce, with definitions | Hand-maintained |
 | `Sentinel-Product-Dossier.pdf` | The full product document: what it does, flow and architecture diagrams, every component, setup, evidence, and the ahead/behind comparison with alternatives | Hand-written in `scripts/build_dossier.py` from the files in this directory; rebuild when they change. It names its commit on every page |
 | `WINDOWS_APP_README.txt` | The short guide published beside the Windows download | Hand-maintained; a copy of what is in the download bucket |
 | `PRODUCT_DEFINITION.md` | The adopted business definition of the product, mapped sentence by sentence to what is implemented, its evidence, and what falls short | Hand-maintained; every row names its test or artifact |
@@ -20,7 +18,6 @@ This directory distinguishes current program decisions from measured evidence. G
 | `DEMO_RUNBOOK.md` | The owner's runbook: preparing and giving the demo, letting people try it, running it for a partner, and what blocks a public launch | Hand-maintained; each command and click was performed at the commit that changed it |
 | `TRY_SENTINEL.md` | A tester's guide: the live demo, the device scanner, a one-command local trial, one gated action, the advisory brain | Hand-maintained; each command was run at the commit that changed it |
 | `PILOT_KIT.md` | The three-week procedure a design partner follows, with the observation that proves each step | Hand-maintained; every step names its artifact |
-| `DISCOVERY_INTERVIEW_TEMPLATE.md` | The customer-discovery script and the record to keep after each call | Hand-maintained |
 | `RELEASE_GOVERNANCE.md` | How a change becomes a release: gates, roles, rollback | Hand-maintained |
 | `evidence/production/` | Bound evidence files from real tenants (none yet) | Written by operators, stamped by `scripts/release_binding.py` |
 | `evidence/external/` | Bound evidence from third parties (none yet) | Same |

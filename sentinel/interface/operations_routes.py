@@ -34,7 +34,7 @@ class ReconcileRequest(BaseModel):
     note: str = Field(min_length=8, max_length=2000)
 
 
-#: The first workflow's targets, from COMMERCIAL_METRICS_TEMPLATE.csv. Judged by
+#: The first workflow's targets. Judged by
 #: `domain.slo`, which answers UNVERIFIED until the sample supports a verdict.
 WORKFLOW_SLOS = (
     SloTarget(name="approval_latency_p95", kind=SloKind.LATENCY_PERCENTILE, threshold=3_600_000.0, percentile=95),

@@ -253,7 +253,6 @@ documentation worse, so it has not been done.
 | `DR_RUNBOOK.md` | [`DR_RUNBOOK.md`](DR_RUNBOOK.md) |
 | `PENTEST_READINESS.md` | [`PENTEST_PACKAGE.md`](PENTEST_PACKAGE.md) |
 | `RELEASE_CHECKLIST.md` | [`RELEASE_GATES.md`](RELEASE_GATES.md) |
-| `COMPETITIVE_GAP_MATRIX.md` | [`COMPETITIVE_GAP_MATRIX.md`](COMPETITIVE_GAP_MATRIX.md) |
 | `DESIGN_PARTNER_RUNBOOK.md` | [`DESIGN_PARTNER_RUNBOOK.md`](DESIGN_PARTNER_RUNBOOK.md) |
 
 Machine-readable evidence lives under `docs/evidence/` and `release/`, each

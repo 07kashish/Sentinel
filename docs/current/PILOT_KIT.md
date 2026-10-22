@@ -62,8 +62,7 @@ one security reviewer at the partner; one engineer from Sentinel.
 3. At the end of the week the reviewer exports a bundle
    (`GET /v1/evidence/export`) and runs `verify_evidence_bundle.py` against a
    root from their own witness file.
-4. Pull `GET /v1/workflow/metrics?days=7` and fill
-   `COMMERCIAL_METRICS_TEMPLATE.csv` from it. Onboarding hours, support hours
+4. Pull `GET /v1/workflow/metrics?days=7`. Onboarding hours, support hours
    and whether each refusal was legitimate come from the engagement log and
    the partner's review, not from Sentinel.
 

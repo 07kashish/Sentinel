@@ -51,7 +51,7 @@ Live figures recorded on 2026-10-11 (`sentinel_program_evidence/2026-10-11-produ
 
 ## Against the alternatives, in the definition's own terms
 
-The definition's differentiator is not a feature; it is the *connected chain*: rule → specific approval → bound execution → uncertain-outcome handling → reviewable, independently verifiable record. `COMPETITIVE_MATRIX.md` shows that each link exists somewhere in the market (Cedar policies at AWS AgentCore, asynchronous approval at Auth0, signed approval receipts in the Agent Permission Protocol draft). What this review did not find documented elsewhere, and what Sentinel can demonstrate on request today, is the chain end to end with (a) refusal of a changed or repeated execution at the last moment, (b) an explicit uncertain state reconciled from the target rather than retried, and (c) a receipt that a customer verifies without Sentinel. "Better than the alternatives" is a claim a matched customer trial can make; this document does not.
+The definition's differentiator is not a feature; it is the *connected chain*: rule → specific approval → bound execution → uncertain-outcome handling → reviewable, independently verifiable record. What this review did not find documented elsewhere, and what Sentinel can demonstrate on request today, is the chain end to end with (a) refusal of a changed or repeated execution at the last moment, (b) an explicit uncertain state reconciled from the target rather than retried, and (c) a receipt that a customer verifies without Sentinel. "Better than the alternatives" is a claim a matched customer trial can make; this document does not.
 
 ## The owner's decisions that this file depends on
 

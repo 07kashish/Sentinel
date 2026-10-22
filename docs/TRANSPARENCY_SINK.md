@@ -177,6 +177,5 @@ Implementing another is one method.
 
 ## Related
 
-- [`RESEARCH.md`](RESEARCH.md) — the transparency claim and its current status
 - [`DELIVERY_STATUS.md`](DELIVERY_STATUS.md) — what is built and what is blocked
 - `sentinel/domain/root_sink.py` — the contract, and why the default refuses

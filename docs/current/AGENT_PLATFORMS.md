@@ -40,7 +40,7 @@ Always send the same agentId. Never change the arguments after asking.
 | **Azure AI Foundry agents** | Agent → Tools → Add → **OpenAPI 3.0 specified tool** → paste the JSON | Connection of type API key, header `Authorization`, value `Bearer <key>` | Use the `-3.0.json` file |
 | **Microsoft Copilot Studio** | Tools → Add a tool → REST API → upload the JSON | API key, header `Authorization` | Use the `-3.0.json` file |
 | **Google Vertex AI Agent Builder** | Agent → Tools → Create → type **OpenAPI** → paste the document (YAML or JSON) | API key or bearer token in the tool's authentication settings | |
-| **Gemini function calling (your own code)** | `sentinel/sdk/adapters/gemini.py` | Your server holds the key | See `GEMINI_ANTIGRAVITY.md` |
+| **Gemini function calling (your own code)** | `sentinel/sdk/adapters/gemini.py` | Your server holds the key | `sentinel.sdk.adapters.gemini` |
 | **Anything else that speaks HTTP** (n8n, Zapier, Make, a script) | Two POST requests, shown below | Header `Authorization: Bearer <key>` | |
 
 ```bash

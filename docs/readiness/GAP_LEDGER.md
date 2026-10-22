@@ -441,8 +441,8 @@ A mutation caught my own test being wrong here: the lookalike-bucket case used a
 - *What was checked*: These guards have caught real drift in this work: a claimed count of 41 tests where pytest collected 30, and a stated RPO recalled from memory that contradicted the recorded artifact. A guard that has never failed is not evidence; these have.
 - *Competitive relevance*: differentiator in rigour
 - *Implementation*: `tests_arch/test_documentation_cites_real_tests.py`
-- *Tests*: `tests_arch/test_documentation_cites_real_tests.py`, `tests_arch/test_delivery_status.py`, `tests_arch/test_research_page.py`
-- *Docs*: `docs/DELIVERY_STATUS.md`, `docs/RESEARCH.md`
+- *Tests*: `tests_arch/test_documentation_cites_real_tests.py`, `tests_arch/test_delivery_status.py`
+- *Docs*: `docs/DELIVERY_STATUS.md`
 - *Recommended action*: None.
 - *Acceptance criteria*: Documentation contradicting implementation fails CI. Met.
 
@@ -497,7 +497,7 @@ A mutation caught my own test being wrong here: the lookalike-bucket case used a
 - *Competitive relevance*: This IS the moat, and it is now demonstrable in one command rather than described.
 - *Implementation*: `scripts/demo_execution_trust.py`
 - *Tests*: `tests_arch/test_demo_execution_trust.py`, `tests_arch/test_end_to_end.py`
-- *Docs*: `docs/EXECUTION_TRUST_ARCHITECTURE.md`, `docs/COMPETITIVE_GAP_MATRIX.md`
+- *Docs*: `docs/EXECUTION_TRUST_ARCHITECTURE.md`
 - *Recommended action*: None. Worth noting the demo crashed on its first run with a UnicodeEncodeError -- the Windows console is cp1252 and the output had box-drawing characters -- which is the worst failure a flagship demo can have and one no existing test would have caught. There is now a test that encodes the output as cp1252.
 - *Acceptance criteria*: One command answers the eighteen questions, marks what it cannot answer, and fails if a substituted execution is permitted. Met.
 
@@ -536,7 +536,6 @@ A mutation caught my own test being wrong here: the lookalike-bucket case used a
 - *Competitive relevance*: commercial
 - *Implementation*: `deploy/helm/sentinel`
 - *Tests*: `tests_arch/test_deployment_environment_is_canonical.py`
-- *Docs*: `docs/EXECUTIVE_SUMMARY.md`, `docs/COMPETITIVE_GAP_MATRIX.md`
 - *Recommended action*: Blocked on Phase 15. Keep pricing unset until Phase 32 measures cost.
 - *Acceptance criteria*: Each SKU maps to shippable capability, priced from measured cost.
 

@@ -81,7 +81,7 @@ With step 3 running, take the `ingest` and `analyst` keys from `.sentinel-trial/
 curl -s http://127.0.0.1:8000/v1/protect/evaluate -H "Authorization: Bearer $INGEST" -H "X-Sentinel-Agent-Id: agent:demo" -H "Content-Type: application/json" -d '{"agentId":"agent:demo","tool":"echo","action":"update","resource":"/protected-change/prod/config/rate-limit","arguments":{"rps":450}}'
 ```
 
-The answer carries the decision and, when a human is required, an authorization to approve in the console under **Agent requests** (sign in with the analyst key). An approved authorization executes once through `POST /v1/tools/execute`; the second attempt is refused. `scripts/seed_console_demo.py` does this whole journey against any deployment and is the shortest complete example. For real agents: `GEMINI_ANTIGRAVITY.md` (Gemini function calls and MCP hosts such as Antigravity) and `FIRST_WORKFLOW.md`.
+The answer carries the decision and, when a human is required, an authorization to approve in the console under **Agent requests** (sign in with the analyst key). An approved authorization executes once through `POST /v1/tools/execute`; the second attempt is refused. `scripts/seed_console_demo.py` does this whole journey against any deployment and is the shortest complete example. For real agents: `FIRST_WORKFLOW.md`.
 
 ## 5. Optional: the advisory brain
 

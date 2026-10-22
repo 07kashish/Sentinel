@@ -29,7 +29,6 @@ Pre-effect checks can prevent execution. A target may change state before a time
    Success: `routed_executions.bound_operations` for those tools equals their
    observed calls.
 3. **Enforce (week 3 onward).** `SENTINEL_PROTECT_ENFORCE=true` for the deployment (this is a deployment setting, not a tenant-specific switch), with `SENTINEL_REQUIRE_EXECUTION_BINDING=true` (the default).
-   Success criteria are the targets in `COMMERCIAL_METRICS_TEMPLATE.csv`.
 
 ## What is now in the workflow (2026-09-20), and how far each is proven
 

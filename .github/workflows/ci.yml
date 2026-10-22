@@ -102,8 +102,8 @@ jobs:
       - name: Detection evaluation gate
         # Fails the build on any regression not marked a known gap.
         #
-        # BEFORE the suite, not after it. `test_metric_intervals.py` and
-        # `test_research_page.py` read `evaluation/metrics.json` and assert on
+        # BEFORE the suite, not after it. `test_metric_intervals.py`
+        # reads `evaluation/metrics.json` and asserts on
         # THIS build's numbers; run afterwards, they either read a stale copy
         # or find no file at all -- which is what happened on every run of
         # this branch until now.

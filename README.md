@@ -15,19 +15,6 @@ Durable storage, fail-closed auth, execution fencing, and honest attestation
 dispositions are in place. Detection is a configurable policy engine plus an
 advisory statistical path that is **not** in the control plane.
 
-## Research and evidence
-
-[docs/RESEARCH.md](docs/RESEARCH.md) lists every measurable claim with its
-evidence status -- `PASS`, `FAIL`, `UNVERIFIED` or `NOT_APPLICABLE`, used
-strictly. Missing evidence is `UNVERIFIED` and is never converted to `PASS`.
-
-The rows worth reading first are the negative ones: a soft detector that fired
-on **51.7%** of ordinary tool calls (disabled by default as a result), and a
-handcrafted corpus that overstated its own detector's capability by roughly
-**26x** against third-party data. `tests_arch/test_research_page.py` checks
-every number on that page against the artifact it came from, because the
-failure mode of a research page is drift rather than fabrication.
-
 ## Five-minute quickstart
 
 No Docker, no accounts, no `.env`:

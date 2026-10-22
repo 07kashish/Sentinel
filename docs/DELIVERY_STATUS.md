@@ -81,8 +81,7 @@ package surfaced 71 errors, now zero, including a CLI command that always
 reported zero enrolled agents and a ports layer narrower than both its
 implementations and its callers.
 
-**A soft detector fired on 51.7% of ordinary tool calls.** Measured, published
-in `RESEARCH.md`, and disabled by default. The runtime logs its independent
+**A soft detector fired on 51.7% of ordinary tool calls.** Measured and disabled by default. The runtime logs its independent
 English recall (0.067) when disabled, so nobody re-enables it believing it is
 free.
 
@@ -108,7 +107,6 @@ fail. A guard that stays green while its property is broken is reported as
 
 ## Related
 
-- [`RESEARCH.md`](RESEARCH.md) — every measurable claim and its evidence
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — the gate verdict
 - [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) — all connectors, with real status
 - [`COMPLIANCE_MATRIX.md`](COMPLIANCE_MATRIX.md) — mapping, which is not certification

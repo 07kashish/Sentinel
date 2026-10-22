@@ -940,12 +940,10 @@
       ],
       "tests": [
         "tests_arch/test_documentation_cites_real_tests.py",
-        "tests_arch/test_delivery_status.py",
-        "tests_arch/test_research_page.py"
+        "tests_arch/test_delivery_status.py"
       ],
       "docs": [
-        "docs/DELIVERY_STATUS.md",
-        "docs/RESEARCH.md"
+        "docs/DELIVERY_STATUS.md"
       ],
       "security_risk": "none",
       "competitor_relevance": "differentiator in rigour",
@@ -1036,8 +1034,7 @@
         "tests_arch/test_end_to_end.py"
       ],
       "docs": [
-        "docs/EXECUTION_TRUST_ARCHITECTURE.md",
-        "docs/COMPETITIVE_GAP_MATRIX.md"
+        "docs/EXECUTION_TRUST_ARCHITECTURE.md"
       ],
       "security_risk": "none. The demo prints what it does NOT show on every run: tool, action and resource are caller declarations compared against the authorization; the transparency root is not published to S3 in this run; and the nonce ledger is in-process rather than the shared one a deployment needs.",
       "competitor_relevance": "This IS the moat, and it is now demonstrable in one command rather than described.",
@@ -1108,10 +1105,7 @@
       "tests": [
         "tests_arch/test_deployment_environment_is_canonical.py"
       ],
-      "docs": [
-        "docs/EXECUTIVE_SUMMARY.md",
-        "docs/COMPETITIVE_GAP_MATRIX.md"
-      ],
+      "docs": [],
       "security_risk": "none",
       "competitor_relevance": "commercial",
       "recommended_action": "Blocked on Phase 15. Keep pricing unset until Phase 32 measures cost.",

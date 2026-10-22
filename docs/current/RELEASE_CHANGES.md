@@ -140,7 +140,7 @@ Migration: no application/schema change. Existing image candidates may correctly
 
 **Deployed journey.** Runs over TLS under a private CA. Harness only.
 
-**Documents.** `PILOT_KIT.md` is the procedure a design partner follows and the evidence each step must leave; `DISCOVERY_INTERVIEW_TEMPLATE.md` is the customer-discovery script.
+**Documents.** `PILOT_KIT.md` is the procedure a design partner follows and the evidence each step must leave.
 
 ## 2026-09-20 (fourth pass): evidence encryption, live value and SLO judges, shadow MCP detection, AWS cloud proof
 

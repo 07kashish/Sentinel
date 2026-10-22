@@ -3,9 +3,7 @@
 Every number here is COUNTED from rows that already exist for other reasons:
 operations, authorizations, the audit trail, receipts. Nothing is sampled,
 estimated or self-reported, and a quantity that cannot be derived from a
-record is absent rather than approximated. These are the inputs to
-`docs/current/COMMERCIAL_METRICS_TEMPLATE.csv`; a pilot's claims should be
-made from this endpoint's output and nothing softer.
+record is absent rather than approximated.
 
 Percentiles use the nearest-rank method on the full set in the window, and
 the sample size is returned beside every percentile: a p95 of four samples is
