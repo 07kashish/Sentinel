@@ -59,12 +59,37 @@ SDK_IMPORTS = (
 )
 
 THIN_PROBE = r"""
+import builtins
+import importlib
 import sys
 names = %r
-for name in names:
-    __import__(name)
+# Startup hooks belong to the interpreter, not the SDK. Also record import
+# requests so a dependency already cached at startup cannot evade this check.
+before = set(sys.modules)
+requested = set()
+original_import = builtins.__import__
+original_import_module = importlib.import_module
+
+def tracked_import(*args, **kwargs):
+    module = original_import(*args, **kwargs)
+    requested.add(module.__name__)
+    return module
+
+def tracked_import_module(*args, **kwargs):
+    module = original_import_module(*args, **kwargs)
+    requested.add(module.__name__)
+    return module
+
+builtins.__import__ = tracked_import
+importlib.import_module = tracked_import_module
+try:
+    for name in names:
+        __import__(name)
+finally:
+    builtins.__import__ = original_import
+    importlib.import_module = original_import_module
 third = sorted(
-    m for m in sys.modules
+    m for m in (set(sys.modules) - before) | requested
     if not m.startswith("sentinel")
     and m.split(".")[0] not in sys.stdlib_module_names
     and not m.startswith("_")

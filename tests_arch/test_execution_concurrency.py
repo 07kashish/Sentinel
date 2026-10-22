@@ -258,6 +258,32 @@ def test_distinct_messages_are_all_accepted(harness):
     assert all(getattr(r, "accepted", False) for r in results)
 
 
+def test_terminal_redeliveries_report_the_atomic_inbox_winner(harness, monkeypatch):
+    """Both reads miss, but only one real INSERT may report acceptance."""
+    from sentinel.application.execution.engine import ExecutionEngine
+
+    incident = harness.admit()
+    harness.run(incident)
+    both_read = threading.Barrier(2)
+    original_advance = ExecutionEngine._advance_one
+
+    def advance_after_both_reads(self, **kwargs):
+        # The preliminary read transaction has closed here. Waiting inside
+        # SqlInbox.seen would hold SQLite's write lock and prevent the race.
+        both_read.wait(timeout=30)
+        return original_advance(self, **kwargs)
+
+    monkeypatch.setattr(ExecutionEngine, "_advance_one", advance_after_both_reads)
+    results, errors = _race(
+        2, lambda index: harness.run(incident, epoch=index + 100, message="terminal-race"),
+    )
+    assert errors == []
+    assert len(results) == 2
+    assert sum(outcome.accepted for outcome in results) == 1
+    assert all(not outcome.did_work for outcome in results)
+    harness.assert_invariants(incident)
+
+
 # ── Cross-tenant isolation under load ───────────────────────────────────────
 
 

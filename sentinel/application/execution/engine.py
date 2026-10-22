@@ -303,14 +303,15 @@ class ExecutionEngine:
                 break
 
         final = self._read_state(tenant, incident_id)
+        accepted = True
         if message_id is not None and _state_name_is_done_or_parked(final):
             with self._uow_factory.begin(tenant) as uow:
-                uow.inbox.accept(
+                accepted = uow.inbox.accept(
                     message_id=message_id, kind="process_incident", now=self._clock.now()
                 )
                 uow.commit()
         return ExecutionOutcome(
-            accepted=True,
+            accepted=accepted,
             executed=tuple(executed),
             replayed=tuple(replayed),
             final_state=final,

@@ -211,6 +211,45 @@ def test_importing_the_sdk_loads_nothing_outside_the_standard_library():
     assert line == "NONSTDLIB=", f"the SDK import pulled in: {line}"
 
 
+@pytest.mark.parametrize(
+    "sdk_source, startup_extra, expected",
+    [
+        ("pass\n", "", "NONSTDLIB="),
+        ("import third_party\n", "", "NONSTDLIB=third_party"),
+        ("import third_party\n", "import third_party\n", "NONSTDLIB=third_party"),
+        ("import sitecustomize\n", "", "NONSTDLIB=sitecustomize"),
+        ("pass\n", "import third_party\n", "NONSTDLIB="),
+        (
+            "import importlib\nimportlib.import_module('third_party')\n",
+            "import third_party\n", "NONSTDLIB=third_party",
+        ),
+    ],
+    ids=(
+        "startup-hook", "sdk-dependency", "preloaded-dependency", "sdk-imports-hook",
+        "unused-preloaded-module", "preloaded-dynamic-dependency",
+    ),
+)
+def test_thin_probe_distinguishes_startup_hooks_from_sdk_dependencies(
+    tmp_path, sdk_source, startup_extra, expected,
+):
+    """A startup hook is not an SDK dependency; actual dependencies still fail."""
+    (tmp_path / "sentinel.py").write_text(sdk_source, encoding="utf-8")
+    (tmp_path / "sitecustomize.py").write_text("pass\n", encoding="utf-8")
+    (tmp_path / "third_party.py").write_text("pass\n", encoding="utf-8")
+    startup = (
+        f"import sys\nsys.path.insert(0, {str(tmp_path)!r})\n"
+        "sys.modules.pop('sitecustomize', None)\nimport sitecustomize\n"
+        + startup_extra
+    )
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-I", "-c", startup + THIN_PROBE % (("sentinel",),)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    line = next(ln for ln in result.stdout.splitlines() if ln.startswith("NONSTDLIB="))
+    assert line == expected
+
+
 def test_advertised_console_assets_are_explicitly_allowlisted():
     for name in ("index.html", "app.js", "app.css"):
         assert scanner.check_wheel_member(f"sentinel/interface/console/{name}") == ""
