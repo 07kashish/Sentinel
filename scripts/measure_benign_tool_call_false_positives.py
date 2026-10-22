@@ -45,7 +45,7 @@ from sentinel.domain.detection_metrics import (  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "evaluation" / "artifacts" / "soft_prompt_model.pkl"
-OUT = ROOT / "docs" / "benign_tool_call_false_positives.json"
+OUT = ROOT / "reports" / "benign_tool_call_false_positives.json"
 THRESHOLD = 0.5
 
 #: Ordinary agent tool-call actions. Verbs and object names from filesystem,
@@ -123,6 +123,7 @@ def main() -> int:
         false_negatives=0,
     )
     payload["provenance"] = measurement.as_dict()
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(
         f"benign tool-call actions: {payload['n_benign_actions']}\n"

@@ -37,7 +37,7 @@ Authorized scope: local and GitHub only; first workflow is an approved Kubernete
 | B1. Forced row-level security on every tenant-scoped table on PostgreSQL | `tests_arch/test_tenant_isolation_rls.py`; `PROTECTED_TABLES` in `sentinel/infrastructure/sql/schema.py` | met (tested) |
 | B2. Schema fingerprint pinned to the migration version | `tests_arch/test_sql_infrastructure.py` | met (tested) |
 | B3. Retention never reaps pending or unknown operations | `sentinel/infrastructure/sql/retention.py`; `tests_arch/test_retention_sweep.py` | met (tested) |
-| B4. Backup and point-in-time restore proven in an independent failure domain | `docs/current/evidence/dr/` | no evidence (local drills only: `docs/dr_postgres_wal_pitr_drill.json`) |
+| B4. Backup and point-in-time restore proven in an independent failure domain | `docs/current/evidence/dr/` | no evidence (local drills only: `archive/pre-cleanup:docs/dr_postgres_wal_pitr_drill.json`) |
 
 ## C. Availability and performance (proposed targets)
 

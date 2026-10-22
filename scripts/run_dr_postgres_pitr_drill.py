@@ -24,7 +24,7 @@ from pathlib import Path
 
 def main() -> int:
     dsn = os.environ.get("SENTINEL_TEST_POSTGRES_DSN", "").strip()
-    out = Path("docs/dr_postgres_pitr_drill.json")
+    out = Path("reports/dr_postgres_pitr_drill.json")
     if not dsn:
         payload = {
             "ok": False,
@@ -37,6 +37,7 @@ def main() -> int:
             "measured": None,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
         }
+        out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(json.dumps(payload, indent=2))
         print(
@@ -117,6 +118,7 @@ def main() -> int:
         "meets_rto_target": total <= 1800,
         "recorded_at": datetime.now(timezone.utc).isoformat(),
     }
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
     return 0

@@ -213,7 +213,7 @@ it works, and nothing in this repository can:
 - `MEASURED_AWS_UNIT_ECONOMICS` — no bill exists
 
 Applying this is the beginning of collecting that evidence, not the end of it.
-See [`readiness/GAP_LEDGER.md`](readiness/GAP_LEDGER.md).
+See [`readiness/GAP_LEDGER.md`](https://github.com/07kashish/Sentinel/blob/d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6/docs/readiness/GAP_LEDGER.md).
 
 ---
 

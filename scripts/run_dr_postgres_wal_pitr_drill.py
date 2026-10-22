@@ -56,16 +56,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-OUT = ROOT / "docs" / "dr_postgres_wal_pitr_drill.json"
+OUT = ROOT / "reports" / "dr_postgres_wal_pitr_drill.json"
 #: `--archive-to s3` writes here. A third record, because it answers a third
 #: question: not "how much is lost in a crash" but "is any of it still reachable
 #: once the database's own disk is gone".
-S3_OUT = ROOT / "docs" / "dr_postgres_wal_pitr_s3_drill.json"
+S3_OUT = ROOT / "reports" / "dr_postgres_wal_pitr_s3_drill.json"
 #: `--quiet` writes here instead, so the two measurements cannot overwrite each
 #: other. They answer different questions: the default run measures RPO when
 #: write volume is what rotates segments, the quiet run measures it when
 #: `archive_timeout` is the only thing that does.
-QUIET_OUT = ROOT / "docs" / "dr_postgres_wal_pitr_quiet_drill.json"
+QUIET_OUT = ROOT / "reports" / "dr_postgres_wal_pitr_quiet_drill.json"
 
 #: Matches `archive_timeout` in docker-compose.yml. The drill is only evidence
 #: for the deployment if it exercises the value the deployment actually sets.
@@ -398,6 +398,7 @@ def _unverified(reason: str, out: Path = OUT) -> int:
         "measured": None,
         "recorded_at": datetime.now(timezone.utc).isoformat(),
     }
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
     return 2
@@ -858,6 +859,7 @@ def main() -> int:  # noqa: PLR0915 - a drill is a linear script; splitting it h
             "total_drill_seconds": round(time.perf_counter() - started_all, 4),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
         }
+        out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(json.dumps(payload, indent=2))
         if not pitr_selective:

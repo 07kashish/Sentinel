@@ -324,7 +324,7 @@ Writing them found the duplicate-tool-name defect described above.
 ## Measured overhead
 
 `scripts/run_mcp_proxy_bench.py` measures Sentinel's own per-call cost against
-a stub upstream that returns instantly; results in `docs/mcp_proxy_bench.json`.
+a stub upstream that returns instantly; results in `archive/pre-cleanup:docs/mcp_proxy_bench.json`.
 It is **not** end-to-end MCP latency — a real server's response time is added
 on top and dominates in any deployment — and quoting it as such would be the
 fake-benchmark failure section 127 bans. It is the gateway's tax, which is the

@@ -31,7 +31,7 @@ inventory, which reads identically to a clean estate.
 WHAT IS DELIBERATELY NOT HERE
 ------------------------------
 No route serves the attack campaign. It is a build-time artifact bound to a
-commit (`docs/evidence/attack_campaign.json`), and serving it from a running
+commit (`reports/evidence/attack_campaign.json`), and serving it from a running
 process would let a reader mistake "the campaign passed on some build" for "the
 campaign passed on THIS build". The release gate is where that belongs.
 """

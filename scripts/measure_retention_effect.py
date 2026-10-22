@@ -35,7 +35,7 @@ from datetime import timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "docs" / "retention_effect.json"
+OUT = ROOT / "reports" / "retention_effect.json"
 KEY = "t" * 40
 TENANT = "acme"
 
@@ -221,6 +221,7 @@ def main() -> int:
             "measures a partial reduction in table volume, not its elimination."
         ),
     }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps({k: report[k] for k in
                       ("sweep", "before", "after", "p95_change_ms", "p95_change_pct",

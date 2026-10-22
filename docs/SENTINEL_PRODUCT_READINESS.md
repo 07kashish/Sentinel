@@ -6,7 +6,7 @@ be closed by anyone inside this repository, and the GA definition requires
 them.
 
 The numbers below are read from
-[`readiness/GAP_LEDGER.md`](readiness/GAP_LEDGER.md), which is generated and
+[`readiness/GAP_LEDGER.md`](https://github.com/07kashish/Sentinel/blob/d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6/docs/readiness/GAP_LEDGER.md), which is generated and
 refuses to cite a file that does not exist. A guard test compares this document
 against it, so the two cannot drift.
 
@@ -33,7 +33,7 @@ What *can* be said about the starting point, from the audit itself:
 
 ## 2. New score
 
-Every figure below is asserted against `release/gap_ledger.json` by
+Every figure below is asserted against `archive/pre-cleanup:release/gap_ledger.json` by
 `tests_arch/test_readiness_doc_matches_ledger.py`, alongside the older
 `tests_arch/test_product_readiness.py`. The newer guard exists because
 the older one checked the mean, the dimension count and the zero-scored rows,

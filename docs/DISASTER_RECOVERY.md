@@ -45,12 +45,12 @@ Command: `PYTHONPATH=. python scripts/run_dr_sqlite_drill.py`
 | experimental_rpo_seconds | 0.0 |
 | notes | Offline file-copy after writers stopped; not multi-AZ failover |
 
-Raw: `docs/dr_sqlite_drill.json`.
+Raw: `archive/pre-cleanup:docs/dr_sqlite_drill.json`.
 
 ## Postgres PITR / region loss
 
 **Measured this session** via embedded `pgserver` +
-`scripts/run_dr_postgres_pitr_with_pgserver.py` → `docs/dr_postgres_pitr_drill.json`:
+`scripts/run_dr_postgres_pitr_with_pgserver.py` → `archive/pre-cleanup:docs/dr_postgres_pitr_drill.json`:
 
 | Metric | Value |
 |---|---|
@@ -64,7 +64,7 @@ Raw: `docs/dr_sqlite_drill.json`.
 ## Postgres continuous WAL archive PITR (measured 2026-08-12)
 
 Command: `PYTHONPATH=. python scripts/run_dr_postgres_wal_pitr_drill.py`
-Raw: `docs/dr_postgres_wal_pitr_drill.json`. Guarded by
+Raw: `archive/pre-cleanup:docs/dr_postgres_wal_pitr_drill.json`. Guarded by
 `tests_arch/test_dr_postgres_wal_pitr_drill.py`.
 
 What the drill actually does, in order: `initdb`; enable `wal_level=replica`
@@ -117,7 +117,7 @@ is to say not bounded at all.
 case has been measured against that exact value:
 
 Command: `PYTHONPATH=. python scripts/run_dr_postgres_wal_pitr_drill.py --quiet --archive-timeout 60`
-Raw: `docs/dr_postgres_wal_pitr_quiet_drill.json`.
+Raw: `archive/pre-cleanup:docs/dr_postgres_wal_pitr_quiet_drill.json`.
 
 The run writes 20 rows, then **idles with no writes at all** and watches the
 archive; then writes 20 more and crashes just *before* the next timeout fires,
@@ -262,7 +262,7 @@ on the failed node is therefore a hard failure rather than a subtle one.
 | PITR selection (target after batch 2 of 4) | recovered max batch **2**, 400 rows | exact ✅ |
 | Rows lost to the unarchived segment | 200 | — |
 
-Raw: `docs/dr_postgres_wal_pitr_s3_drill.json`.
+Raw: `archive/pre-cleanup:docs/dr_postgres_wal_pitr_s3_drill.json`.
 
 #### Object storage costs RPO and RTO, and here is by how much
 

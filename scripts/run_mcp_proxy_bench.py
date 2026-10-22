@@ -23,7 +23,7 @@ Two workloads are reported because they cost different amounts:
     refusal is cheap: a gate that costs more than the thing it guards is a
     denial-of-service primitive.
 
-Run:  python scripts/run_mcp_proxy_bench.py [--requests 300] [--out docs/mcp_proxy_bench.json]
+Run:  python scripts/run_mcp_proxy_bench.py [--requests 300] [--out reports/mcp_proxy_bench.json]
 """
 
 from __future__ import annotations
@@ -142,7 +142,7 @@ def _measure(client, *, server: str, requests: int, workers: int) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--requests", type=int, default=300)
-    parser.add_argument("--out", default="docs/mcp_proxy_bench.json")
+    parser.add_argument("--out", default="reports/mcp_proxy_bench.json")
     args = parser.parse_args()
 
     db = os.path.join(tempfile.mkdtemp(), "bench.db")
@@ -215,6 +215,7 @@ def main() -> int:
         report["meets_p95_target"] = worst_p95 < 50.0
         report["meets_p99_target"] = worst_p99 < 100.0
 
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report, indent=2))
         print(f"\nwrote {args.out}")

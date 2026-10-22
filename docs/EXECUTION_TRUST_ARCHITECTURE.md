@@ -222,7 +222,7 @@ sites, and the residual above is real."
 | Seam | `sentinel/application/tool_runner.py` (`execute_bound`) |
 | Comparison tests | `tests_arch/test_execution_binding.py` |
 | Reachability tests | `tests_arch/test_execution_binding_seam.py` |
-| Status | `docs/readiness/GAP_LEDGER.md`, Phase 3 |
+| Status | `archive/pre-cleanup:docs/readiness/GAP_LEDGER.md`, Phase 3 |
 
 The seam tests observe refusals by **counting side-effect invocations**, not by
 catching the exception. An implementation that ran the tool and then raised
@@ -235,5 +235,5 @@ testing for.
 
 - [`TRANSPARENCY_SINK.md`](TRANSPARENCY_SINK.md) — why the root has to leave the
   operator's control
-- [`readiness/GAP_LEDGER.md`](readiness/GAP_LEDGER.md) — every phase, honestly
+- [`readiness/GAP_LEDGER.md`](https://github.com/07kashish/Sentinel/blob/d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6/docs/readiness/GAP_LEDGER.md) — every phase, honestly
   classified

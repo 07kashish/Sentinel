@@ -36,7 +36,7 @@ load and multi-replica cardinality remain **UNVERIFIED**.
 ## Ingest p95 under concurrent load (2026-08-19) — METHOD CHANGED, READ THIS FIRST
 
 Command: `PYTHONPATH=. python scripts/run_ingest_loadtest.py --workers 6 --events 55000`
-Raw: `docs/ingest_loadtest_postgres.json`
+Raw: `archive/pre-cleanup:docs/ingest_loadtest_postgres.json`
 
 ### Why the previous two numbers are withdrawn
 
@@ -213,7 +213,7 @@ SQLite single-process. Scales >1000: full enqueue, claim latency on a **1000-cla
 | 10000 | 10000 | 1000 | 0.1376 | 7.51 | 31.944 | 41.537 |
 | 100000 | 100000 | 1000 | 3.8349 | 57.971 | 84.753 | 150.243 |
 
-Raw: `docs/performance_microbench.json`.
+Raw: `archive/pre-cleanup:docs/performance_microbench.json`.
 
 ## Persistence plan harness
 

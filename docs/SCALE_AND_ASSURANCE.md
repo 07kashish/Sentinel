@@ -156,7 +156,7 @@ are executable and produce evidence artifacts, which is that requirement met.
 ### The evidence-overwrite defect, now fixed
 
 The WAL drill test invoked `run_dr_postgres_wal_pitr_drill.py` with **no output
-override**, so every run rewrote `docs/dr_postgres_wal_pitr_drill.json` — the
+override**, so every run rewrote `archive/pre-cleanup:docs/dr_postgres_wal_pitr_drill.json` — the
 committed baseline — and left a spurious git diff. That had been outstanding
 across several sessions.
 

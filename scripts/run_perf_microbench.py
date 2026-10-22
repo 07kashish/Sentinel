@@ -125,7 +125,8 @@ def main() -> None:
             "status": "UNVERIFIED",
             "reason": "skipped: 10k enqueue exceeded soft budget",
         }
-    path = Path("docs/performance_microbench.json")
+    path = Path("reports/performance_microbench.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(json.dumps(out, indent=2))
 

@@ -61,7 +61,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
 
-OUT = ROOT / "docs" / "ingest_loadtest_postgres.json"
+OUT = ROOT / "reports" / "ingest_loadtest_postgres.json"
 TARGET_P95_MS = 500.0
 KEY = "k" * 40
 TENANT = "acme"
@@ -112,6 +112,7 @@ def _unverified(reason: str) -> int:
         ),
         "recorded_at": datetime.now(timezone.utc).isoformat(),
     }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
     return 2
@@ -416,6 +417,7 @@ def main() -> int:  # noqa: PLR0915 - a measurement is a linear script
             "total_seconds": round(time.perf_counter() - started_all, 2),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
         }
+        OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(json.dumps(payload["measured"], indent=2))
         print(f"meets <{TARGET_P95_MS}ms target: {payload['meets_target']}")

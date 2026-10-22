@@ -259,7 +259,7 @@ like `read_file` and `http_get` as though they were prompts.
 
 Measured over 60 unambiguously benign tool-call actions
 (`scripts/measure_benign_tool_call_false_positives.py`,
-`docs/benign_tool_call_false_positives.json`):
+`archive/pre-cleanup:docs/benign_tool_call_false_positives.json`):
 
 | | |
 |---|---|

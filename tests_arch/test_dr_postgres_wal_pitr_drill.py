@@ -1,6 +1,6 @@
 """The continuous-WAL PITR drill must measure, or say it did not.
 
-`docs/dr_postgres_pitr_drill.json` records a `pg_dump` round-trip whose RPO is
+`reports/dr_postgres_pitr_drill.json` records a `pg_dump` round-trip whose RPO is
 0 by construction: nothing is written between the backup and the "failure". That
 number is real but it does not test the claim `docs/DISASTER_RECOVERY.md` makes,
 which is about a continuously running system losing a node without warning.
@@ -28,8 +28,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "run_dr_postgres_wal_pitr_drill.py"
-RESULT = ROOT / "docs" / "dr_postgres_wal_pitr_drill.json"
-QUIET_RESULT = ROOT / "docs" / "dr_postgres_wal_pitr_quiet_drill.json"
+RESULT = ROOT / "reports" / "dr_postgres_wal_pitr_drill.json"
+QUIET_RESULT = ROOT / "reports" / "dr_postgres_wal_pitr_quiet_drill.json"
 
 #: Targets stated in docs/DISASTER_RECOVERY.md.
 RPO_TARGET_SECONDS = 300
@@ -95,7 +95,7 @@ def test_the_dump_drill_result_is_not_overwritten_by_this_one():
     drill demonstrates recovery from an unplanned crash. Collapsing them into one
     file would lose whichever claim the last run did not make.
     """
-    dump = ROOT / "docs" / "dr_postgres_pitr_drill.json"
+    dump = ROOT / "reports" / "dr_postgres_pitr_drill.json"
     if not dump.exists() or not RESULT.exists():
         pytest.skip("both drills have not been run in this tree")
     assert dump != RESULT, "the two drills must not write the same file"
@@ -183,7 +183,7 @@ def test_live_wal_archive_pitr_drill_runs_and_meets_targets(tmp_path):
     # Writes to a TEMPORARY path, not the committed evidence file.
     #
     # This test used to invoke the drill with no `--out`, so it rewrote
-    # `docs/dr_postgres_wal_pitr_drill.json` on every run and left a spurious
+    # `reports/dr_postgres_wal_pitr_drill.json` on every run and left a spurious
     # git diff behind. An artifact that changes whenever the suite runs cannot
     # serve as the baseline it is committed to be -- and the two jobs are
     # different: `test_recorded_result_is_internally_consistent` validates the

@@ -48,8 +48,8 @@ SECURITY SOFTWARE IS NOT A GUARANTEE
 The Software detects and reports on the behaviour of AI agents. It does not
 guarantee that every attack will be detected, that every detection is correct,
 or that any particular action will be prevented. Its documented limits — in
-particular what it can and cannot observe — are recorded in README.md,
-PILOT_README.md and docs/. Operating it does not transfer responsibility for the
+particular what it can and cannot observe — are recorded in README.md
+and docs/. Operating it does not transfer responsibility for the
 security of the operator's systems to the copyright holder.
 
 CONTACT

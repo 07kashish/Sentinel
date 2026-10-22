@@ -36,7 +36,7 @@ application work to whichever statement preceded it, and it could not run at all
 with more than one writer. The wrapper measures the call itself, is thread-safe,
 and works on both drivers, which is what makes a six-writer statement breakdown
 possible. Statement-level numbers here are therefore NOT directly comparable with
-the trace-callback numbers in the previous `docs/ingest_profile.json`; the
+the trace-callback numbers in the previous `reports/ingest_profile.json`; the
 end-to-end p50/p95 request latencies are.
 
 Usage:
@@ -60,7 +60,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-DEFAULT_OUT = ROOT / "docs" / "ingest_profile.json"
+DEFAULT_OUT = ROOT / "reports" / "ingest_profile.json"
 
 KEY = "p" * 40
 
@@ -279,7 +279,7 @@ def main() -> int:  # noqa: PLR0915 - a profiler is a linear script
     out = args.out or (
         DEFAULT_OUT
         if not args.postgres
-        else ROOT / "docs" / f"ingest_profile_postgres_{args.workers}w.json"
+        else ROOT / "reports" / f"ingest_profile_postgres_{args.workers}w.json"
     )
 
     import logging
@@ -317,6 +317,7 @@ def main() -> int:  # noqa: PLR0915 - a profiler is a linear script
                     "with a SQLite measurement."
                 ),
             }
+            out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(json.dumps(report, indent=2), encoding="utf-8")
             print(json.dumps(report, indent=2))
             return 2
@@ -457,6 +458,7 @@ def main() -> int:  # noqa: PLR0915 - a profiler is a linear script
         "db_bytes": size,
         "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print("\n=== table counts ===")
     for name, count in list(report["final_table_counts"].items())[:12]:

@@ -99,7 +99,7 @@ class EventPayload(BaseModel):
     action: str = Field(default="", max_length=8192)
     resource: str = Field(default="", max_length=2048)
     #: Where data went. DOCUMENTED SINCE THE FIRST PILOT AND SILENTLY DROPPED:
-    #: `docs/history/PILOT_README.md` shows `destination` in both its PowerShell and curl
+    #: The archived pilot instructions show `destination` in both its PowerShell and curl
     #: examples, and this model did not declare it -- so pydantic discarded it
     #: before anything could read it. Every pilot that followed the instructions
     #: was sending a field that went nowhere.
@@ -111,7 +111,7 @@ class EventPayload(BaseModel):
     destination: str | None = Field(default=None, max_length=2048)
     #: WHAT MAKES A CAUSAL CHAIN POSSIBLE, and dropped until now for the same
     #: reason `destination` was: not declared, so pydantic discarded it.
-    #: `docs/history/PILOT_README.md` shows `eventId` in both its PowerShell and curl
+    #: The archived pilot instructions show `eventId` in both its PowerShell and curl
     #: examples, so pilots have been sending an identifier that went nowhere.
     #:
     #: Without these three there is no execution graph to build. An event with

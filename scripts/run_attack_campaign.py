@@ -46,7 +46,7 @@ from sentinel.domain.attack_campaign import (  # noqa: E402
     summarise,
 )
 
-OUT = ROOT / "docs" / "evidence" / "attack_campaign.json"
+OUT = ROOT / "reports" / "evidence" / "attack_campaign.json"
 
 #: Techniques the table does not attempt. Written down rather than omitted: a
 #: campaign of passing cases says nothing about the technique nobody wrote a

@@ -96,7 +96,8 @@ def drill() -> dict:
 
 if __name__ == "__main__":
     result = drill()
-    out = Path("docs/dr_sqlite_drill.json")
+    out = Path("reports/dr_sqlite_drill.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
     raise SystemExit(0 if result["ok"] else 1)

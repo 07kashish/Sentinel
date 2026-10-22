@@ -155,7 +155,7 @@ of care on the read path could have caught this.
 
 `scripts/profile_ingest.py` attributes cost per SQL statement by hooking
 SQLite's trace callback and driving real requests at increasing table sizes.
-Raw: `docs/ingest_profile.json`. Single-threaded, so table growth is isolated
+Raw: `archive/pre-cleanup:docs/ingest_profile.json`. Single-threaded, so table growth is isolated
 from lock contention:
 
 | rows | ingest p50 | ingest p95 |
@@ -208,7 +208,7 @@ None of it was ever reclaimed, because:
 
 `sentinel/infrastructure/sql/retention.py`, run by `MaintenanceLoop` every
 `SENTINEL_RETENTION_INTERVAL`. Controlled single-variable experiment —
-`scripts/measure_retention_effect.py`, raw in `docs/retention_effect.json` —
+`scripts/measure_retention_effect.py`, raw in `archive/pre-cleanup:docs/retention_effect.json` —
 against a database seeded to 55k rows with operational work aged past the
 window, measuring the real HTTP ingest path before and after one sweep in the
 same process:

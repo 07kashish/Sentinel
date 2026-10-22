@@ -51,7 +51,7 @@ from sentinel.infrastructure.soft_detection import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-FALSE_POSITIVE_RECORD = ROOT / "docs" / "benign_tool_call_false_positives.json"
+FALSE_POSITIVE_RECORD = ROOT / "reports" / "benign_tool_call_false_positives.json"
 
 
 def _event(**over) -> dict:

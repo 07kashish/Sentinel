@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_postgres_pitr_drill_script_unverifiable_without_dsn(tmp_path, monkeypatch):
     monkeypatch.delenv("SENTINEL_TEST_POSTGRES_DSN", raising=False)
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "docs").mkdir()
+    (tmp_path / "reports").mkdir()
     script = ROOT / "scripts" / "run_dr_postgres_pitr_drill.py"
     proc = subprocess.run(
         [sys.executable, str(script)],
@@ -24,7 +24,7 @@ def test_postgres_pitr_drill_script_unverifiable_without_dsn(tmp_path, monkeypat
     )
     assert proc.returncode == 2
     out = json.loads(
-        (tmp_path / "docs" / "dr_postgres_pitr_drill.json").read_text(encoding="utf-8")
+        (tmp_path / "reports" / "dr_postgres_pitr_drill.json").read_text(encoding="utf-8")
     )
     assert out["status"] == "UNVERIFIED"
     assert out["measured"] is None

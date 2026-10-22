@@ -135,7 +135,7 @@ variable "backup_retention_days" {
     Automated backup retention, which is also the PITR window.
 
     ZERO DISABLES POINT-IN-TIME RECOVERY ENTIRELY, so it is refused. The DR
-    drills in this repository (docs/evidence/dr_postgres_wal_pitr_s3_drill.json)
+    drills in this repository (scripts/run_dr_postgres_wal_pitr_drill.py --archive-to s3)
     measure recovery against this window; a zero here makes those drills
     describe a capability the deployment does not have.
   EOT
