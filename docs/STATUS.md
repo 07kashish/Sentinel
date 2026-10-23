@@ -494,7 +494,7 @@ It will not say *production-ready*, *market-leading*, *compliant*, *secure*, *su
 <a id="risk_register--r-010--packaged-console-repaired-locally-release-verification-pending"></a>
 #### R-010 — Packaged console repaired locally; release verification pending
 
-- **Description:** The wheel now explicitly includes the default policy and three advertised console assets. A fresh Python 3.13 installation served these over localhost HTTP. The optional ML classifier remains repository-only and is disabled for the wheel smoke.
+- **Description:** The wheel now explicitly includes the default policy and three advertised console assets. A fresh Python 3.13 installation served these over localhost HTTP.
 
 - **Impact:** Pip-installed operators can load the console. CI on the exact release and signed distribution remain required.
 

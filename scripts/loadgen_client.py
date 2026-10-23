@@ -56,17 +56,9 @@ def _payload(n: int, action: str = "read_file") -> dict:
     `action` IS THE VARIABLE THAT DECIDES WHAT IS BEING MEASURED, and that only
     became clear after a run that measured the wrong thing.
 
-    `SoftAugmentedPolicy` falls back to `payload["action"]` when there is no
-    `metadata.prompt` and `eventType` is `tool_call`. The default "read_file"
-    scores **0.5409** on the shipped classifier -- above the 0.5 threshold -- so
-    with detection enabled EVERY request fires an incident and writes rows to
-    incidents, incident_transitions, domain_events, work_queue and outbox.
-
-    A detector-on/off comparison using that payload therefore measures
-    INCIDENT CREATION, not classifier inference, and overstates the classifier's
-    cost by an order of magnitude. Pass a benign action (e.g. "list_dir",
-    scoring 0.3502) to measure the marginal cost of running the classifier
-    without the incident-write path underneath it.
+    The action and resource determine whether deterministic rules create an
+    incident. Compare equivalent verdicts and database row counts when measuring
+    policy cost; an incident-write workload measures additional work.
     """
     return {
         "eventId": f"loadgen-{n}",

@@ -36,7 +36,7 @@ One JSON object per line:
      "payload": {<an event as POST /v1/protect/evaluate accepts it>}}
 
 `detected` means the shipped deterministic policy FIRED on the payload for an
-unsigned caller. The optional soft classifier is not part of this measure.
+unsigned caller. This measures deterministic policy behavior.
 """
 
 from __future__ import annotations
@@ -182,7 +182,7 @@ def run(path: Path, *, acknowledge_rerun: bool = False, out: Path = BLIND,
         "recall_by_class": {name: _interval(sum(v), len(v)) for name, v in sorted(by_class.items())},
         "benign_false_positive_rate": _interval(benign_fired, benign_total),
         "limitations": [
-            "deterministic policy only; the optional soft classifier is not measured",
+            "deterministic policy only",
             "unsigned caller; a verified caller sees uncapped severity but the same rule matches",
             "one corpus from one assembler is one sample of the world, not the world",
         ],

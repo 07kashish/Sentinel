@@ -300,3 +300,35 @@ def test_the_release_gate_no_longer_blames_a_missing_key():
     )
 
     assert "needs a signing key this runner does not hold" not in source
+
+
+def test_signed_sbom_is_the_artifact_produced_by_this_build(workflow):
+    """Do not sign a checked-in dependency snapshot for a newly built image."""
+    from pathlib import PurePosixPath
+    import re
+
+    producer = workflow["jobs"]["docker"]
+    signer = workflow["jobs"]["sign-image"]
+    assert "docker" in signer["needs"]
+    uploads = [step["with"] for step in producer["steps"]
+               if step.get("uses", "").startswith("actions/upload-artifact@")]
+    steps = signer["steps"]
+    attach_index = next(i for i, step in enumerate(steps)
+                        if "cosign attest" in step.get("run", ""))
+    predicate = re.search(r"--predicate\s+([^\s\\]+)",
+                          steps[attach_index]["run"]).group(1)
+    downloads = [step["with"] for step in steps[:attach_index]
+                 if step.get("uses", "").startswith("actions/download-artifact@")]
+    candidates = [(upload, download) for upload in uploads for download in downloads
+                  if upload["name"] == download["name"]
+                  and "run-id" not in download
+                  and "repository" not in download
+                  and str(PurePosixPath(download.get("path", ".")) /
+                          PurePosixPath(upload["path"].strip()).name) == predicate]
+    assert candidates, "the attested SBOM must come from this run's docker job"
+    upload, _ = candidates[0]
+    assert upload.get("if-no-files-found") == "error"
+    filename = PurePosixPath(upload["path"].strip()).name
+    assert any("cyclonedx-py requirements requirements.txt" in step.get("run", "")
+               and "--output-file " + filename in step["run"]
+               for step in producer["steps"]), "the artifact needs a current producer"

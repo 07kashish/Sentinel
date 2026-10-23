@@ -1,5 +1,10 @@
 # Performance report
 
+> Historical measurements from before Phase 1 classifier removal. These are
+> not measurements of the current deterministic-only service. The 31/60 figure
+> below was a raw-model diagnostic, not the current service false-positive rate.
+> Phase 1 before/after results are recorded in `CLEANUP_PLAN.md`.
+
 **Honesty rule:** only numbers produced by runnable harnesses in this tree.
 
 ## Detection evaluation latency (this run)
@@ -104,7 +109,7 @@ Four runs, 8,000 rows, 6 writers, back-to-back on an otherwise idle machine:
 | **Incident creation** triggered by the false positive | **+236.36 ms** |
 
 **So the detection-quality defect and the latency defect are the same defect.**
-F-10 in `docs/SECURITY.md` records that the classifier fires on **51.7% of
+Historical F-10 in `archive/pre-cleanup:docs/THREAT_MODEL.md` recorded that the classifier fires on **51.7% of
 ordinary tool-call actions** (31 of 60). Each false positive is a full incident
 write. Fixing F-10 removes the great majority of this row's cost; tuning the
 classifier's inference speed would recover about 8 ms.

@@ -114,12 +114,19 @@ time, whatever the deployment looks like.
 <a id="deployment--local-kind--k3d-validation-operator"></a>
 ### Local kind / k3d validation (operator)
 
+Set `SENTINEL_HELM_VALUES` to the deployment-specific values file. Set
+`corsOrigins` to the console origin and acknowledge
+`externalPostgres.archiveTimeoutConfirmed` only after verifying that the
+database actually archives WAL within the required interval. The default
+chart intentionally refuses to render without these settings.
+
 ```bash
 # kind example
 kind create cluster --name sentinel
-helm lint deploy/helm/sentinel --strict
-helm template sentinel deploy/helm/sentinel > /tmp/sentinel-rendered.yaml
-kubeconform -strict -summary /tmp/sentinel-rendered.yaml
+helm lint deploy/helm/sentinel --strict -f "$SENTINEL_HELM_VALUES"
+helm template sentinel deploy/helm/sentinel -f "$SENTINEL_HELM_VALUES" > /tmp/sentinel-rendered.yaml
+CRD='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+kubeconform -strict -summary -schema-location default -schema-location "$CRD" /tmp/sentinel-rendered.yaml
 # After secrets exist for postgres/auth/metrics/signer:
 # helm upgrade --install sentinel deploy/helm/sentinel -n sentinel --create-namespace
 # kubectl -n sentinel rollout status deploy/sentinel
@@ -607,7 +614,7 @@ conflating them is how a DR posture becomes a slide instead of a capability.
 
 Step 5 is the one specific to Sentinel. Any database restore proves rows came
 back. Only passport verification proves the *evidence* came back intact, and
-`sentinel passport verify` runs without a Sentinel server, so it works on a
+`sentinel passport-verify <passport.json> <key.pem>` runs without a Sentinel server, so it works on a
 restored dataset before the service is up.
 
 <a id="dr_runbook--recovery-procedure"></a>
@@ -627,15 +634,25 @@ independently — evidence is in S3, and the database holds digests that
 <a id="dr_runbook--2-restore-the-database"></a>
 #### 2. Restore the database
 
-Restore to the latest consistent point, or a specific instant:
+Stop application writers and isolate the recovery destination from application
+traffic. Recover the affected deployment using its PostgreSQL base backup and
+archived WAL, or the managed database service's native point-in-time restore.
+Select a target covered by the archive and follow the deployment's tested
+restore procedure. For a self-managed PostgreSQL restore, configure its
+`restore_command`, `recovery.signal` and, when selecting a point in time,
+`recovery_target_time`. Keep application traffic disconnected until verification
+has completed. Use the PostgreSQL documentation for the deployment's major
+version: [continuous archive recovery](https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-PITR-RECOVERY).
+The base backup, archive credentials and destination belong to that deployment;
+this repository cannot infer them.
+
+The retained script below is a **synthetic drill**, using a temporary database
+and generated workload. It chooses its own recovery target and promotes its
+temporary restored instance. It does not restore an existing Sentinel deployment:
 
 ```bash
-python scripts/run_dr_postgres_wal_pitr_drill.py --target-time "<ISO-8601>"
+python scripts/run_dr_postgres_wal_pitr_drill.py --out reports/wal-pitr-drill.json
 ```
-
-The restore is configured to **pause** and listen on its own port, so it can be
-inspected before anything is promoted. A restore that immediately becomes
-authoritative is a restore you cannot check.
 
 **A restore never archives into the archive it came from.** That is tested,
 because a restored instance writing WAL into the source archive corrupts the
@@ -645,7 +662,7 @@ thing you are recovering from.
 #### 3. Verify the evidence chain
 
 ```bash
-python -m sentinel.interface.cli passport verify <passport.json>
+python -m sentinel.interface.cli passport-verify <passport.json> <key.pem>
 ```
 
 Restored rows with a broken hash chain are not recovered evidence. Check
@@ -656,12 +673,39 @@ not that recovery succeeded.
 <a id="dr_runbook--4-confirm-tenant-isolation-survived"></a>
 #### 4. Confirm tenant isolation survived
 
-Row-level security is schema state and comes back with the schema. **Confirm it
-rather than assume it:**
+Connect directly to the restored database using the deployment's application
+role, with application traffic still disconnected. Inspect the role and restored
+catalogues read-only:
 
-```bash
-pytest tests_arch/test_tenant_isolation_rls.py
+```sql
+BEGIN READ ONLY;
+SELECT current_database(), current_user;
+SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user;
+SELECT n.nspname, c.relname, c.relrowsecurity, c.relforcerowsecurity,
+       p.polname, p.polcmd, p.polroles,
+       pg_get_expr(p.polqual, p.polrelid) AS using_expression,
+       pg_get_expr(p.polwithcheck, p.polrelid) AS check_expression
+FROM pg_class AS c
+JOIN pg_namespace AS n ON n.oid = c.relnamespace
+LEFT JOIN pg_policy AS p ON p.polrelid = c.oid
+WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
+ORDER BY c.relname, p.polname;
+ROLLBACK;
 ```
+
+Confirm that the connection identifies the intended restored database, that the
+application role is neither superuser nor `BYPASSRLS`, and that every table in
+`PROTECTED_TABLES` in `sentinel/infrastructure/sql/schema.py` has both RLS flags and the
+expected tenant policies. Compare `USING` and `WITH CHECK` expressions and policy
+roles with that release's definitions; an empty result is not success. Verify
+representative tenant-scoped reads against known restored rows before cutover.
+The catalogue fields are documented in PostgreSQL's
+[pg_policy](https://www.postgresql.org/docs/current/catalog-pg-policy.html) and
+[pg_roles](https://www.postgresql.org/docs/current/view-pg-roles.html) references.
+
+`pytest tests_arch/test_tenant_isolation_rls.py` is implementation regression
+coverage: its fixtures create fresh databases, so it does **not** inspect the
+restored deployment.
 
 A restore that dropped `FORCE` on a policy would leave the database working and
 the isolation boundary gone — the worst possible combination, because nothing
@@ -688,7 +732,7 @@ gate that measured nothing.
 
 | Not automated | Why |
 |---|---|
-| Infrastructure reconstruction | Terraform is `plan`-only; nothing has been applied |
+| Infrastructure reconstruction | Rebuild the deployment from its reviewed infrastructure and independently restored secrets |
 | Cross-region failover | The second domain does not exist |
 | DNS cutover | Deployment-specific |
 | Tenant-selective restore | Restore is whole-database; per-tenant would need export/import per tenant |
@@ -893,9 +937,9 @@ throttle-exempt now.
 Something downstream is refusing delivery. **The events are not lost** — that is
 what the outbox is for.
 
-```bash
-python -m sentinel.interface.cli dlq list
-```
+Inspect the tenant-scoped `dead_letters` count in authenticated
+`GET /v1/dashboard`, and correlate it with the worker logs. There is no
+`dlq list` CLI command.
 
 A `siem` record in the DLQ usually means an unresolvable `credential_ref`. The
 error names the variable. `SiemNotConfigured` is **retryable** on purpose: the

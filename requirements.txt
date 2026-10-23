@@ -27,7 +27,8 @@ pydantic==2.13.4
 # Six DISTINCT, eight ROWS. pip-audit prints one row per (advisory, fixed
 # version) pair, so an advisory with two fix branches appears twice, and counting
 # rows overstates it. Across all three flagged packages the report was 18 rows
-# and 14 unique advisories -- cryptography 8/7, starlette 8/6, scikit-learn 2/1.
+# and 14 unique advisories in that historical report. The classifier dependency
+# was removed in Phase 1; this is not an inventory of current advisories.
 # Written down because that row count was miscounted twice while writing this
 # up.
 #

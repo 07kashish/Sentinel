@@ -61,8 +61,8 @@
       "version": "23.0.0"
     },
     {
-      "bom-ref": "requirements-L120",
-      "description": "requirements line 120: opentelemetry-exporter-otlp-proto-http==1.44.0",
+      "bom-ref": "requirements-L95",
+      "description": "requirements line 95: opentelemetry-exporter-otlp-proto-http==1.44.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -76,8 +76,8 @@
       "version": "1.44.0"
     },
     {
-      "bom-ref": "requirements-L119",
-      "description": "requirements line 119: opentelemetry-sdk==1.44.0",
+      "bom-ref": "requirements-L94",
+      "description": "requirements line 94: opentelemetry-sdk==1.44.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -142,21 +142,6 @@
       "version": "8.0.1"
     },
     {
-      "bom-ref": "requirements-L116",
-      "description": "requirements line 116: scikit-learn==1.9.0",
-      "externalReferences": [
-        {
-          "comment": "implicit dist url",
-          "type": "distribution",
-          "url": "https://pypi.org/simple/scikit-learn/"
-        }
-      ],
-      "name": "scikit-learn",
-      "purl": "pkg:pypi/scikit-learn@1.9.0",
-      "type": "library",
-      "version": "1.9.0"
-    },
-    {
       "bom-ref": "requirements-L39",
       "description": "requirements line 39: starlette==1.6.0",
       "externalReferences": [
@@ -189,15 +174,6 @@
   ],
   "dependencies": [
     {
-      "ref": "requirements-L116"
-    },
-    {
-      "ref": "requirements-L119"
-    },
-    {
-      "ref": "requirements-L120"
-    },
-    {
       "ref": "requirements-L17"
     },
     {
@@ -223,10 +199,21 @@
     },
     {
       "ref": "requirements-L91"
+    },
+    {
+      "ref": "requirements-L94"
+    },
+    {
+      "ref": "requirements-L95"
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-25T17:44:50.834410+00:00",
+    "properties": [
+      {
+        "name": "cdx:reproducible",
+        "value": "true"
+      }
+    ],
     "tools": {
       "components": [
         {
@@ -330,7 +317,6 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:f3693ed4-1477-432e-81a6-09f6573e2004",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",

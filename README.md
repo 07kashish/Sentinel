@@ -12,8 +12,8 @@ path, against which resource, under which policy, and with what evidence.
 
 **Status: pre-production.** Not a SOC replacement. Not "production-ready".
 Durable storage, fail-closed auth, execution fencing, and honest attestation
-dispositions are in place. Detection is a configurable policy engine plus an
-advisory statistical path that is **not** in the control plane.
+dispositions are in place. Detection uses a configurable deterministic policy
+engine. Optional LLM advice carries no decision authority.
 
 ## Five-minute quickstart
 
@@ -117,9 +117,9 @@ classifier in the gate). Decisions: `allow`, `warn`, `require_approval`, `block`
 ## Detection (honest)
 
 Measured performance against labeled corpora is published by the evaluation gate,
-not asserted as marketing. Cross-source statistical AUC remains limited; expected
-calibration error is high. The classifier is a second opinion alongside
-deterministic rules — never merged into the control path.
+not asserted as marketing. Detection uses deterministic rules; corpus results
+do not establish real-world precision or recall. The optional LLM advisor
+provides narrative advice without authority over severity or decisions.
 
 ```bash
 PYTHONPATH=. py evaluation/metrics.py --json evaluation/metrics.json

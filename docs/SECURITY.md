@@ -232,18 +232,16 @@ absence of failure:
 - the DSN helpers are tested against both DSN shapes as pure strings, so a
   Windows developer catches a Linux-only regression without a Linux machine;
 - the DAST job's schema endpoint is asserted to return 200 and 18,124 bytes;
-- the promotion-floor artifact is regenerated in CI rather than assumed present.
+- the classifier promotion-floor check was retired with the classifier;
+  deterministic evaluation remains a separate retained check.
 
 <a id="adversarial_review--what-was-not-done-and-is-the-honest-residual"></a>
 #### What was NOT done, and is the honest residual
 
-**There is no general mechanism that would catch a fifth.** Nothing checks that
-a gate is doing work. A plausible next step is a meta-test asserting every
-`test_*` name cited in `docs/` resolves to a collected test, plus a convention
-that any gate whose subject can be empty must assert a non-zero denominator —
-but neither exists, and claiming otherwise would repeat the mistake this section
-is about. It is recorded as residual risk 13 in
-`docs/STATUS.md`.
+The retained `tests_arch/test_documentation_cites_real_tests.py` checks that
+documented test names resolve to collected cases. It does not prove every gate
+performed meaningful work: retain each gate's positive denominator and mutation
+checks rather than treating the existence of a named test as assurance.
 
 
 <a id="asi_threat_control_matrix"></a>
@@ -387,7 +385,6 @@ engagement.
 | **Per-server MCP usage** | No usage table, so shadow-server detection cannot fire. The endpoint says so in its response rather than reporting zero |
 | **Asset declarations** | No persistent store; blast radius takes declarations per request and reports `coverage` so a low score over low coverage cannot read as "safe" |
 | **ECDSA recovery** | The secp256k1 recovery primitive is unaudited |
-| **Base image CVEs** | 16 unfixed (3 CRITICAL, 13 HIGH) in `python:3.12-slim`, no upstream patch. Recorded in `release/gates/gate_container_scanning.json` |
 | **`/health/ready` throttling** | Exempt from rate limiting, which is only safe because the probe is memoised for 1s. Attack the cache, not just the endpoint |
 | **Detection model** | Advisory only. It cannot move a triage state or authorize anything. If you find a path where an ML score alone causes a destructive action, that is a critical finding and it is the single most valuable thing you could find |
 
@@ -433,7 +430,7 @@ gate reads the retest, not the report.
 <a id="pentest_package--related"></a>
 ### Related
 
-- [`attack_surface.json`](attack_surface.json) — generated route inventory
+- [`scripts/dev/route_inventory.py`](../scripts/dev/route_inventory.py) — retained route inventory collector
 - [`SECURITY.md`](SECURITY.md#threat_model)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - [`STATUS.md`](STATUS.md#release_gates) — how evidence is bound to a build

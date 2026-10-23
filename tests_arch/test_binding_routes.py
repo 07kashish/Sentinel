@@ -339,7 +339,7 @@ def test_the_detail_states_the_declaration_residual(client):
     ).json()
 
     assert "DECLARED" in body["residual"]
-    assert "EXECUTION_TRUST_ARCHITECTURE" in body["residual"]
+    assert "docs/ARCHITECTURE.md#execution_trust_architecture" in body["residual"]
 
 
 def test_the_detail_reports_whether_a_delegation_chain_was_bound(client):
