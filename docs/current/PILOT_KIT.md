@@ -78,4 +78,4 @@ whether they will keep it on.
 An unexplained gap between observed and routed changes; an approval that was
 recorded by the requester; a witness run that exits 1; an `unknown_after_effect`
 operation older than a day. Each is a finding against Sentinel first and the
-deployment second, and goes into `RISK_REGISTER.json` the same day.
+deployment second, and goes into `STATUS.md` the same day.

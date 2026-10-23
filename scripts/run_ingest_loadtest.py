@@ -3,7 +3,7 @@
 
 THE PROBLEM WITH THE TWO NUMBERS THIS REPLACES
 ------------------------------------------------
-`docs/PRODUCTION_READINESS_REPORT.md` has carried an ingest p95 gate row twice,
+`docs/STATUS.md` has carried an ingest p95 gate row twice,
 and both figures came from `scripts/profile_ingest.py`, which drives the app
 through an in-process `TestClient` with N Python THREADS:
 

@@ -284,7 +284,7 @@ jobs:
           # `--skip-schema-validation`, breaking this job with
           # `Error: unknown flag` on a commit that changed no Kubernetes code.
           #
-          # 3.16.3 is the version docs/READINESS.md records as verified against
+          # 3.16.3 is the version docs/STATUS.md records as verified against
           # this chart, and `--skip-schema-validation` exists from 3.16.0.
           #
           # This repository already pins gitleaks and trivy by image digest.
@@ -424,7 +424,7 @@ jobs:
         # `templates/tests/postgres-archive-check.yaml` carries
         # `helm.sh/hook: test`, which means `helm upgrade --wait` does NOT
         # install it -- only `helm test` does, and nothing invoked `helm test`.
-        # docs/PRODUCTION_READINESS_REPORT.md recorded it as blocked on cluster
+        # docs/STATUS.md recorded it as blocked on cluster
         # access; it was not. This job has had real docker, kind, helm and
         # kubectl all along. It was a wiring gap, and this is the wire.
         #
@@ -892,7 +892,7 @@ jobs:
           # `--skip-schema-validation`, breaking this job with
           # `Error: unknown flag` on a commit that changed no Kubernetes code.
           #
-          # 3.16.3 is the version docs/READINESS.md records as verified against
+          # 3.16.3 is the version docs/STATUS.md records as verified against
           # this chart, and `--skip-schema-validation` exists from 3.16.0.
           #
           # This repository already pins gitleaks and trivy by image digest.

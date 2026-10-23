@@ -4,7 +4,7 @@ For the person giving the demo. `TRY_SENTINEL.md` is the page you hand to the pe
 
 **The one-sentence pitch.** *AI agents now change real systems; Sentinel is the checkpoint between the agent and the change — it decides allow, ask a human, or block, proves who approved what, and shows which AI tools are on your machines.*
 
-**Say this, not more.** Developer preview. Demonstrated on one cloud host. No customer in production. Do not say production-ready, secure, compliant or market-leading; `RELEASE_STATUS.md` is what is actually established.
+**Say this, not more.** Developer preview. Demonstrated on one cloud host. No customer in production. Do not say production-ready, secure, compliant or market-leading; `STATUS.md` is what is actually established.
 
 ---
 
@@ -104,7 +104,7 @@ Operating notes that have already cost time: every `tofu apply` on `proof` must 
 | 4 | Windows app never opened on a real PC | It is built and self-tested only on a hosted runner | Anyone with a Windows machine | Minutes |
 | 5 | No sign-up, billing, terms or privacy notice | Nobody can become a customer without you in the loop, and the scanner needs a privacy notice before strangers run it | Owner | Days to weeks |
 | 6 | One region, single-AZ database, no on-call | An outage has nobody watching and no failover | Owner | Weeks |
-| 7 | No external security test, no customer evidence | The tiers `production_observed` and `externally_verified` in `RELEASE_STATUS.md` are empty | Owner: OWNER_ACTIONS 1, 4, 8, 10 | Weeks to months |
+| 7 | No external security test, no customer evidence | The tiers `production_observed` and `externally_verified` in `STATUS.md` are empty | Owner: OWNER_ACTIONS 1, 4, 8, 10 | Weeks to months |
 | 8 | The advisor runs on one person's Google account | Usage, quota and continuity depend on that account | Owner: a provider key or a service account | Days |
 
 The accurate external sentence until 1, 2 and 5 are done: **"Invite-only developer preview with tested execution control, demonstrated on one cloud host."**

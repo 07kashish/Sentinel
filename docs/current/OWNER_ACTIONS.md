@@ -1,7 +1,7 @@
 # What only the owner can do
 
 Everything a repository and a laptop can close has been closed or is listed in
-`RISK_REGISTER.json` with the evidence that would close it. The items below
+`STATUS.md` with the evidence that would close it. The items below
 need an account, a contract, money or a person. They are ordered by how much
 each one unblocks.
 

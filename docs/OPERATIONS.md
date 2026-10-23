@@ -704,7 +704,7 @@ offer it.
 
 - [`DISASTER_RECOVERY.md`](OPERATIONS.md#disaster_recovery) — drill detail and artifacts
 - [`PRODUCTION_RUNBOOK.md`](OPERATIONS.md#production_runbook)
-- [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — why this gate stays UNVERIFIED
+- [`STATUS.md`](STATUS.md#release_readiness) — why this gate stays UNVERIFIED
 - [`aws/ARCHITECTURE.md`](ARCHITECTURE.md#aws_architecture)
 
 
@@ -936,7 +936,7 @@ column.
 ### Related
 
 - [`DR_RUNBOOK.md`](OPERATIONS.md#dr_runbook) · [`SOAK_RUNBOOK.md`](OPERATIONS.md#soak_runbook)
-- [`OBSERVABILITY.md`](OPERATIONS.md#observability) · [`RELEASE_GATES.md`](RELEASE_GATES.md)
+- [`OBSERVABILITY.md`](OPERATIONS.md#observability) · [`STATUS.md`](STATUS.md#release_gates)
 - [`aws/ARCHITECTURE.md`](ARCHITECTURE.md#aws_architecture)
 
 
@@ -1062,4 +1062,4 @@ only appears under sustained load from one source.
 - [`OBSERVABILITY.md`](OPERATIONS.md#observability) — the SLI table and both soak records
 - [`PERFORMANCE_REPORT.md`](PERFORMANCE_REPORT.md)
 - [`PRODUCTION_RUNBOOK.md`](OPERATIONS.md#production_runbook)
-- [`RELEASE_READINESS.md`](RELEASE_READINESS.md)
+- [`STATUS.md`](STATUS.md#release_readiness)

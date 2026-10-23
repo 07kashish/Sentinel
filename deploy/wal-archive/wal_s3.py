@@ -7,7 +7,7 @@ WHY THIS EXISTS
 volume is a directory on the same host, and usually the same physical disk, as
 `pgdata`. Losing the database node loses both, which means the archive cannot
 recover from the one failure it exists to recover from.
-`docs/PRODUCTION_READINESS_REPORT.md` carries that as a `fail` row:
+`docs/STATUS.md` carries that as a `fail` row:
 "WAL archive survives loss of the database node".
 
 This script is the documented, working path off that host. It reuses

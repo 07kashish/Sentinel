@@ -428,7 +428,7 @@ def test_retention_is_constructed_by_the_composition_root(container):
 
 # ── Incident history: the second policy, off unless an operator turns it on ──
 #
-# This is the row `docs/PRODUCTION_READINESS_REPORT.md` carried as "open -- needs
+# This is the row `docs/STATUS.md` carried as "open -- needs
 # a human". The human decision is WHICH NUMBER, and that has not been made and is
 # not made here. What is implemented is the mechanism plus the guarantee that
 # without a number, nothing is deleted.

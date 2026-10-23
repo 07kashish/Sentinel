@@ -131,7 +131,7 @@ There is no module-level `app`. Importing any module starts nothing.
 
 ## Phase 0 baseline
 
-See `docs/ARCHITECTURE.md` and `docs/REMEDIATION_MATRIX.md` for the Eighth Review F-1..F-12 status against this tree. Do not conflate with `docs/SECURITY.md` F-numbers.
+See `docs/ARCHITECTURE.md` and `docs/STATUS.md` for the Eighth Review F-1..F-12 status against this tree. Do not conflate with `docs/SECURITY.md` F-numbers.
 
 ## Protect gate (F-11)
 
@@ -140,7 +140,7 @@ helper agents can call before a tool side effect. The HTTP route
 `POST /v1/protect/evaluate` uses the same object from the container.
 `enforced=true` only when `SENTINEL_PROTECT_ENFORCE` is set and the decision
 stops the action; `run_if_allowed` then skips the callback. This is not an
-inline interceptor -- see `docs/REMEDIATION_MATRIX.md`.
+inline interceptor -- see `docs/STATUS.md`.
 
 ## Protected tool runner (F-11)
 
@@ -148,4 +148,4 @@ In-process agents should call container.tool_runner.execute(...) before any
 tool side effect. The runner always delegates to ProtectGate.run_if_allowed
 and fail-closes when enforcement is on and evaluation fails. External agents
 that never call the wrapper are outside this control -- see
-docs/REMEDIATION_MATRIX.md.
+docs/STATUS.md.

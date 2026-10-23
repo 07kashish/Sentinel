@@ -160,7 +160,7 @@ See `.github/workflows/ci.yml`.
 ## Docs
 
 - `docs/ARCHITECTURE.md` — current vs target, API surface, risks
-- `docs/REMEDIATION_MATRIX.md` — Eighth Review F-1..F-12 status
+- `docs/STATUS.md` — Eighth Review F-1..F-12 status
 - `sentinel/ARCHITECTURE.md` — enforced dependency rules
 - `docs/SECURITY.md` — edge findings (**different** F-numbering)
 - `docs/INTEGRATIONS.md` — MCP server trust, tool pinning, description poisoning
@@ -193,6 +193,6 @@ is not a licence to use it; production use requires a written agreement.
 ## Status documentation
 
 - Branch protection status: [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) — **currently unenforced**, and the document explains why
-- Pre-production readiness: [docs/PRODUCTION_READINESS_REPORT.md](docs/PRODUCTION_READINESS_REPORT.md)
-- Eighth Review F-1..F-12: [docs/REMEDIATION_MATRIX.md](docs/REMEDIATION_MATRIX.md)
+- Pre-production readiness: [docs/STATUS.md](docs/STATUS.md#production_readiness_report)
+- Eighth Review F-1..F-12: [docs/STATUS.md](docs/STATUS.md#remediation_matrix)
 - Historical artifacts (**not current truth**): [docs/history/](docs/history)

@@ -2,7 +2,7 @@
 
 For someone who has never seen the product and wants to know, in an hour, what it does. Four things you can do, from least to most effort. Every command here was run on 2026-10-03 at the commit that added this file.
 
-**What Sentinel is.** A control point for AI agents: before an agent's tool call changes something, Sentinel decides *allow / needs a human / block* by deterministic policy, records who approved what, and refuses replays. It also keeps an inventory of the agents and AI tools it is told about. It is a developer preview (see `RELEASE_STATUS.md`); nothing here is a production claim.
+**What Sentinel is.** A control point for AI agents: before an agent's tool call changes something, Sentinel decides *allow / needs a human / block* by deterministic policy, records who approved what, and refuses replays. It also keeps an inventory of the agents and AI tools it is told about. It is a developer preview (see `STATUS.md`); nothing here is a production claim.
 
 **What it is not.** It does not watch your screen, read your files, or intercept network traffic. It governs the calls an agent *sends through it*, and it lists the AI tools you *choose to report*.
 

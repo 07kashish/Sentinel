@@ -8,7 +8,7 @@ empty-module CI gate, CONTRIBUTING branching notes below.
 **Correction (2026-08-12).** An earlier revision of this file claimed classic
 branch protection was *applied and verified* on `Loksjain/Sentinel` `main`, and
 that the repository had been made **public** to allow it. That claim was not
-supported by any executed command and is retracted. `docs/REMEDIATION_MATRIX.md`
+supported by any executed command and is retracted. `docs/STATUS.md`
 carried the same false claim and has been corrected in the same change.
 
 Remote enforcement is **UNVERIFIED**. Missing precondition: an authenticated

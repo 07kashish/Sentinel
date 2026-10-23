@@ -118,6 +118,6 @@ outcome.
 
 ## Related
 
-- [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — the two scoreboards
+- [`STATUS.md`](STATUS.md#release_readiness) — the two scoreboards
 - [`INTEGRATIONS.md`](INTEGRATIONS.md#connector_matrix) — coverage per connector
 - [`OPERATIONS.md`](OPERATIONS.md#observability) — what a partner can measure

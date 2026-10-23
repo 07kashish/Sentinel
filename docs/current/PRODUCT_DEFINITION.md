@@ -32,7 +32,7 @@ Tiers: **integration** = passes on PostgreSQL and SQLite in the recorded suite; 
 | Object-version checks for Kubernetes | UID/resourceVersion preconditions on the Kubernetes path | `tests_arch/test_kubernetes_outcome.py` | Kubernetes only |
 | A lost response is marked uncertain and resolved from the target | Durable operations; `unknown_after_effect` state; bounded reconciliation for Kubernetes, GitHub contents, brokered AWS | A7, A12; console view *Outcomes that need a human* | Other targets need a person (R-012) |
 | Keep a record the business can review | Receipts, per-tenant transparency log, offline bundle verifier, customer-side witness; console views for approved-vs-executed and transparency | A14; `standard/execution-passport-v1/`; the demo tenant witnessed from the developer's laptop on 2026-10-11 (`sentinel_program_evidence/2026-10-11-production-evidence/`) | A root published to object-locked storage is being enabled for the demo tenant; no customer witness exists |
-| Pre-production; value to be proven in customer use | Evidence tiers in `RELEASE_STATUS.md`: `production_observed` 0, `externally_verified` 0 | — | Exactly as the definition says |
+| Pre-production; value to be proven in customer use | Evidence tiers in `STATUS.md`: `production_observed` 0, `externally_verified` 0 | — | Exactly as the definition says |
 | First product: the Kubernetes change workflow | `FIRST_WORKFLOW.md`, `PILOT_KIT.md`, `deploy/protected-changes/`, `scripts/run_deployed_journey.py` | Two-pod kind deployment journey passed locally | No customer cluster |
 
 ## What "production-ready" would mean here, and the state of each condition

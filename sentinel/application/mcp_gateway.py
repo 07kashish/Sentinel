@@ -31,7 +31,7 @@ FAIL CLOSED, AND SAY SO
 Every refusal here raises `McpCallRefused` rather than returning a falsy value.
 `sentinel/interface/http.py` and `InlineToolProxy` both establish that pattern:
 a security decision that can be ignored by a caller who forgets to check a
-return value is not a security decision. `docs/PRODUCTION_READINESS_REPORT.md`
+return value is not a security decision. `docs/STATUS.md`
 records what this codebase costs itself when a gate returns quietly instead.
 
 WHERE THE WIRE LIVES

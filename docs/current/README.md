@@ -4,7 +4,7 @@ This directory distinguishes current program decisions from measured evidence. G
 
 | File | What it is | How it is kept true |
 |---|---|---|
-| `RISK_REGISTER.md` / `.json` | Every known risk with severity, owner, mitigation, the evidence that closes it and a review date | The JSON is the source; the markdown is rendered from it by the same script |
+| `STATUS.md` / `.json` | Every known risk with severity, owner, mitigation, the evidence that closes it and a review date | The JSON is the source; the markdown is rendered from it by the same script |
 | `DECISION_LOG.md` | Every place the code deliberately departs from fail-closed, with owner, scope, expiry, metric and customer approval | Hand-maintained; a new exception may not ship without a row |
 | `INCIDENT_ROTATION_CHECKLIST.md` | What to do the moment a credential is found where it should not be | Hand-maintained |
 | `PRODUCTION_ACCEPTANCE.md` | The measurable conditions under which a deployment is accepted, and which are unmet | Hand-maintained; each condition names its evidence artifact |
@@ -25,7 +25,7 @@ This directory distinguishes current program decisions from measured evidence. G
    sentence.
 2. The words *production-ready*, *market-leading*, *compliant*, *secure* and
    *superior to <competitor>* do not appear here as assertions. The generator
-   refuses to write `RELEASE_STATUS.md` if they do.
+   refuses to write `STATUS.md` if they do.
 3. When a document elsewhere in `docs/` contradicts one here, verify the underlying code, dated artifact and source commit; neither document wins merely because of its directory.
 
 ## Regenerate

@@ -34,7 +34,7 @@ services:
     # is a directory on THIS host, usually on the same disk as `pgdata`. Losing
     # the node loses both, so the default archive cannot recover from the one
     # failure a WAL archive exists for. It is a development default and it is
-    # labelled `fail` in docs/PRODUCTION_READINESS_REPORT.md, not a recommendation.
+    # labelled `fail` in docs/STATUS.md, not a recommendation.
     #
     # The supported production path is object storage, which puts the archive in
     # a different failure domain from the database's disk. Uncomment the

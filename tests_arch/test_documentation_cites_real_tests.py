@@ -70,7 +70,7 @@ RETRACTION_MARKER = "<!-- unbacked-citations-retracted -->"
 # Lowered from 24 on 2026-09-01: COMPLIANCE.md's single dangling
 # citation was repaired and its blanket retraction withdrawn. The ratchet
 # only grips if the baseline follows the debt down.
-RETRACTED_BACKLOG = 20
+RETRACTED_BACKLOG = 0
 
 #: Names that look like citations but are not claims about THIS suite.
 #: Every entry needs a reason; an unexplained exemption is how this gate would
@@ -98,7 +98,7 @@ def _collected_test_names() -> set[str]:
 
     Both, because the documents legitimately cite both. `docs/TESTING.md` refers
     to `tests_arch/test_sql_infrastructure.py` (a module) while
-    `docs/REMEDIATION_MATRIX.md` refers to
+    `docs/STATUS.md` refers to
     `test_every_table_is_either_reaped_or_declared_append_only` (a function).
     Resolving only functions rejected every file citation in the tree, which
     would have made this gate unusable and invited someone to weaken the regex
@@ -233,27 +233,6 @@ def test_every_test_cited_in_docs_resolves_to_a_collected_test():
 # ── Retraction is a ratchet, not a mute button ───────────────────────────────
 
 
-def test_a_retracted_document_says_so_where_a_reader_will_see_it():
-    """The marker is an HTML comment. On its own it would be invisible.
-
-    A document that silences this gate must also TELL A READER that its evidence
-    column is unbacked — otherwise the retraction exists only for the test
-    runner, which is precisely the "claim of coverage with nothing behind it"
-    shape being corrected.
-    """
-    retracted = _retracted_documents()
-    assert retracted, (
-        "no document carries the retraction marker; if the backlog is genuinely "
-        "zero, set RETRACTED_BACKLOG to 0 and delete this test"
-    )
-    for path in retracted:
-        text = path.read_text(encoding="utf-8", errors="replace")
-        head = text[:4000]
-        assert "RETRACTED" in head or "RETRACTION" in head.upper(), (
-            f"{path.relative_to(ROOT)} carries the retraction marker but no "
-            "visible retraction notice near the top. The marker is an HTML "
-            "comment; a reader would never see it."
-        )
 
 
 def test_the_retracted_citation_backlog_does_not_grow():

@@ -81,7 +81,7 @@ issue new → deploy new → revoke old.
       findings for the rotated names. Attach the JSON report.
 - [ ] The fingerprint of the old value is added to the ticket so a future
       finding of the same value is recognised as historical.
-- [ ] A row is added to `docs/current/RISK_REGISTER.json` if a control gap
+- [ ] A row is added to `docs/STATUS.md` if a control gap
       allowed the exposure, with the control change that closes it.
 - [ ] The incident ticket is closed by the credential owner, not the finder.
 

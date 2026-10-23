@@ -177,5 +177,5 @@ Implementing another is one method.
 
 ## Related
 
-- [`DELIVERY_STATUS.md`](DELIVERY_STATUS.md) — what is built and what is blocked
+- [`STATUS.md`](STATUS.md#delivery_status) — what is built and what is blocked
 - `sentinel/domain/root_sink.py` — the contract, and why the default refuses

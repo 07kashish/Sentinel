@@ -10,7 +10,7 @@ Canonical dependency rules, ports, CQRS and fitness tests live in
 **Status:** pre-production engineering baseline. Not a production-readiness claim.
 
 Eighth Review F-numbers (review archived at archive/pre-cleanup) are tracked here and in
-docs/REMEDIATION_MATRIX.md. Do not conflate them with docs/SECURITY.md F-numbers.
+docs/STATUS.md. Do not conflate them with docs/SECURITY.md F-numbers.
 
 <a id="architecture_baseline--current-architecture-verified-against-tree"></a>
 ### Current architecture (verified against tree)
@@ -85,7 +85,7 @@ fitness tests; chaos/concurrency/mutation suites.
 ### Related docs
 
 - sentinel/ARCHITECTURE.md -- enforced dependency rules
-- docs/REMEDIATION_MATRIX.md -- F-1..F-12 status
+- docs/STATUS.md -- F-1..F-12 status
 - docs/SECURITY.md -- different F-numbering
 - docs/ARCHITECTURE.md
 

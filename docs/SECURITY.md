@@ -243,7 +243,7 @@ a gate is doing work. A plausible next step is a meta-test asserting every
 that any gate whose subject can be empty must assert a non-zero denominator —
 but neither exists, and claiming otherwise would repeat the mistake this section
 is about. It is recorded as residual risk 13 in
-`docs/PRODUCTION_READINESS_REPORT.md`.
+`docs/STATUS.md`.
 
 
 <a id="asi_threat_control_matrix"></a>
@@ -436,7 +436,7 @@ gate reads the retest, not the report.
 - [`attack_surface.json`](attack_surface.json) — generated route inventory
 - [`SECURITY.md`](SECURITY.md#threat_model)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md)
-- [`RELEASE_GATES.md`](RELEASE_GATES.md) — how evidence is bound to a build
+- [`STATUS.md`](STATUS.md#release_gates) — how evidence is bound to a build
 
 
 <a id="security_assurance"></a>

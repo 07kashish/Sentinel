@@ -179,7 +179,7 @@ APPEND_ONLY_TABLES: Mapping[str, str] = MappingProxyType({
         "because a deleted row would make chain verification fail rather than "
         "pass over a redacted one. KNOWN CONSEQUENCE: it therefore survives its "
         "incident and keeps growing with incident volume. That is a named "
-        "residual in docs/PRODUCTION_READINESS_REPORT.md, not an oversight."
+        "residual in docs/STATUS.md, not an oversight."
     ),
     "approvals": (
         "The record of a human authorising a remediation. Deleting it would leave "

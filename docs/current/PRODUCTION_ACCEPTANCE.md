@@ -2,7 +2,7 @@
 
 A deployment of Sentinel is accepted for the first workflow only when every
 condition in this document is met by the named evidence. Each row states
-whether the evidence exists at the commit in `RELEASE_STATUS.json`. A row
+whether the evidence exists at the commit in `STATUS.md`. A row
 with "no evidence" is not a soft pass.
 
 Conditions are grouped by what they protect. Targets marked *proposed* have
