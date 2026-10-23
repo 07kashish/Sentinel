@@ -144,4 +144,4 @@ offer it.
 - [`DISASTER_RECOVERY.md`](DISASTER_RECOVERY.md) — drill detail and artifacts
 - [`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md)
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — why this gate stays UNVERIFIED
-- [`aws/AWS_ARCHITECTURE.md`](aws/AWS_ARCHITECTURE.md)
+- [`aws/ARCHITECTURE.md`](ARCHITECTURE.md#aws_architecture)

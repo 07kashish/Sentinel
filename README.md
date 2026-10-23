@@ -159,7 +159,7 @@ See `.github/workflows/ci.yml`.
 
 ## Docs
 
-- `docs/ARCHITECTURE_BASELINE.md` — current vs target, API surface, risks
+- `docs/ARCHITECTURE.md` — current vs target, API surface, risks
 - `docs/REMEDIATION_MATRIX.md` — Eighth Review F-1..F-12 status
 - `sentinel/ARCHITECTURE.md` — enforced dependency rules
 - `docs/THREAT_MODEL.md` — edge findings (**different** F-numbering)
@@ -195,4 +195,4 @@ is not a licence to use it; production use requires a written agreement.
 - Branch protection status: [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) — **currently unenforced**, and the document explains why
 - Pre-production readiness: [docs/PRODUCTION_READINESS_REPORT.md](docs/PRODUCTION_READINESS_REPORT.md)
 - Eighth Review F-1..F-12: [docs/REMEDIATION_MATRIX.md](docs/REMEDIATION_MATRIX.md)
-- Historical artifacts (**not current truth**): [docs/history/](docs/history/)
+- Historical artifacts (**not current truth**): [docs/history/](docs/history)

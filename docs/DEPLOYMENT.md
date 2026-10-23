@@ -59,7 +59,7 @@ reverted rather than adopted. Same reasoning as
 
 Migrate call sites to `execute_bound`, then set this to `true`. Until it is
 `true`, do not describe the deployment as binding authorization to execution —
-see [`EXECUTION_TRUST_ARCHITECTURE.md`](EXECUTION_TRUST_ARCHITECTURE.md) for the
+see [`ARCHITECTURE.md`](ARCHITECTURE.md#execution_trust_architecture) for the
 residual that remains even when it is.
 
 ### The process count is observed, not declared

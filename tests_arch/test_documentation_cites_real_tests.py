@@ -70,7 +70,7 @@ RETRACTION_MARKER = "<!-- unbacked-citations-retracted -->"
 # Lowered from 24 on 2026-09-01: COMPLIANCE_MAP.md's single dangling
 # citation was repaired and its blanket retraction withdrawn. The ratchet
 # only grips if the baseline follows the debt down.
-RETRACTED_BACKLOG = 23
+RETRACTED_BACKLOG = 20
 
 #: Names that look like citations but are not claims about THIS suite.
 #: Every entry needs a reason; an unexplained exemption is how this gate would

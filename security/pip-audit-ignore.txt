@@ -16,7 +16,7 @@
 #
 # Example (not active):
 #   GHSA-xxxx-xxxx-xxxx  2026-10-01  no fixed release; vulnerable code path unreachable
-#   (we never call the affected parser -- see docs/ARCHITECTURE_DECISIONS.md)
+#   (we never call the affected parser -- see docs/ARCHITECTURE.md)
 
 # (no active exceptions)
 #

@@ -667,7 +667,7 @@ def _report() -> int:
         "the tool, action and resource are what the CALLER DECLARED, compared "
         "against the authorization. A caller that lies about them AND executes "
         "something else is not caught here -- see "
-        "docs/EXECUTION_TRUST_ARCHITECTURE.md",
+        "docs/ARCHITECTURE.md",
         "the transparency root is not published to S3 in this run, so the log "
         "catches a mistake and not a determined operator -- see "
         "docs/TRANSPARENCY_SINK.md",

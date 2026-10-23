@@ -236,6 +236,6 @@ def register_binding_routes(
                 "The tool, action and resource in this record are what the "
                 "caller DECLARED, compared against the authorization. A caller "
                 "that lied about them and executed something else is not "
-                "caught here -- see docs/EXECUTION_TRUST_ARCHITECTURE.md."
+                "caught here -- see docs/ARCHITECTURE.md."
             ),
         }

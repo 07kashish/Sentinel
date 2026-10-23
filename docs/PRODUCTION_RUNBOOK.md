@@ -159,4 +159,4 @@ column.
 
 - [`DR_RUNBOOK.md`](DR_RUNBOOK.md) · [`SOAK_RUNBOOK.md`](SOAK_RUNBOOK.md)
 - [`OBSERVABILITY.md`](OBSERVABILITY.md) · [`RELEASE_GATES.md`](RELEASE_GATES.md)
-- [`aws/AWS_ARCHITECTURE.md`](aws/AWS_ARCHITECTURE.md)
+- [`aws/ARCHITECTURE.md`](ARCHITECTURE.md#aws_architecture)

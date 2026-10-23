@@ -206,7 +206,7 @@ variable "require_execution_binding" {
     ExecutionAuthorization.
 
     False leaves `ProtectedToolRunner.execute` usable, and that path binds
-    nothing. See docs/EXECUTION_TRUST_ARCHITECTURE.md for what is and is not
+    nothing. See docs/ARCHITECTURE.md for what is and is not
     closed even when this is true.
   EOT
   type        = bool

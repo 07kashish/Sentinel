@@ -44,7 +44,7 @@ Three statuses, used strictly:
 - **Implemented, not production-verified** â€” the code runs and is unit-tested, but
   no live third-party system has been driven by it.
 - **Out of scope** â€” a decision, with a reason, recorded in
-  [`ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md).
+  [`ARCHITECTURE.md`](ARCHITECTURE.md#architecture_decisions).
 
 Test counts as of this report: **280 standard + 31 live**. Run the live suite with `SENTINEL_REQUIRE_LIVE=1` so unavailable infrastructure FAILS instead of skipping quietly.
 
@@ -233,4 +233,3 @@ running the code against something real: live PostgreSQL found two schema bugs,
 third-party data found that the detection numbers were off by 25Ã—, and a
 ten-line probe found that a 1.000 multilingual score was a language detector.
 None of them were found by adding more unit tests to code that already passed.
-

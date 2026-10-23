@@ -162,7 +162,7 @@ Gateway is not.
 
 ## Related
 
-- [`AWS_ARCHITECTURE.md`](AWS_ARCHITECTURE.md)
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md#aws_architecture)
 - [`AWS_COST_MODEL.md`](AWS_COST_MODEL.md)
 - [`COMPUTE_DECISION.md`](COMPUTE_DECISION.md)
 - [`../SECURITY.md`](../SECURITY.md)

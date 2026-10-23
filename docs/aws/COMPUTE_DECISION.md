@@ -163,7 +163,7 @@ Each paid component states what would justify removing it:
 
 ## Related
 
-- [`AWS_ARCHITECTURE.md`](AWS_ARCHITECTURE.md)
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md#aws_architecture)
 - [`AWS_COST_MODEL.md`](AWS_COST_MODEL.md)
 - [`AWS_SECURITY_MODEL.md`](AWS_SECURITY_MODEL.md)
 - [`FINOPS_RUNBOOK.md`](FINOPS_RUNBOOK.md)

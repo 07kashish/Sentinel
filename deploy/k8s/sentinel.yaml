@@ -112,7 +112,7 @@ spec:
             # service, but it is a real trade-off, which is why the application
             # refuses to guess it and this is stated rather than omitted.
             - {name: SENTINEL_RATE_LIMIT_FAIL_OPEN, value: "false"}
-            # See docs/EXECUTION_TRUST_ARCHITECTURE.md before setting this true.
+            # See docs/ARCHITECTURE.md before setting this true.
             - {name: SENTINEL_REQUIRE_EXECUTION_BINDING, value: "true"}
             - name: SENTINEL_DATABASE_URL
               valueFrom:

@@ -106,7 +106,7 @@ tool, action, resource and MCP server identity are what the *caller declares*,
 compared against the authorization. A caller that both lies about them and
 executes something else is not caught — an in-process wrapper cannot observe a
 closure's syscalls. Full detail in
-[`EXECUTION_TRUST_ARCHITECTURE.md`](EXECUTION_TRUST_ARCHITECTURE.md).
+[`ARCHITECTURE.md`](ARCHITECTURE.md#execution_trust_architecture).
 
 **Enforcement is opt-in and defaults off.** `SENTINEL_REQUIRE_EXECUTION_BINDING`
 defaults `false` because enabling it stops any call site not yet migrated, and
@@ -213,7 +213,7 @@ Then the four external gates that engineering cannot touch.
 It is the lowest-scoring dimension, it unblocks four others (performance,
 chaos at the infrastructure level, cross-region DR, measured cost), and the
 work to get there is already done and validated. Order of operations is in
-[`AWS_PRODUCTION_ARCHITECTURE.md`](AWS_PRODUCTION_ARCHITECTURE.md); apply
+[`ARCHITECTURE.md`](ARCHITECTURE.md#aws_production_architecture); apply
 `identity/` first, because it is free and it retires the static access key.
 
 ## 10. Recommended next business action
@@ -243,12 +243,12 @@ documentation worse, so it has not been done.
 | `SECURITY_ARCHITECTURE.md` | [`SECURITY.md`](SECURITY.md), [`SECURITY_ASSURANCE.md`](SECURITY_ASSURANCE.md) |
 | `THREAT_MODEL.md` | [`THREAT_MODEL.md`](THREAT_MODEL.md) |
 | `MCP_SECURITY.md` | [`MCP_GATEWAY.md`](MCP_GATEWAY.md) |
-| `EXECUTION_TRUST_ARCHITECTURE.md` | [`EXECUTION_TRUST_ARCHITECTURE.md`](EXECUTION_TRUST_ARCHITECTURE.md) |
+| `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#execution_trust_architecture) |
 | `EXECUTION_PASSPORT_SPEC.md` | `../standard/execution-passport-v1/SPEC.md` |
 | `AI_BOM_SPEC.md` | `sentinel/domain/ai_bom.py`, `sentinel.cdx.json` |
 | `AGENT_IDENTITY_SPEC.md` | [`ENTERPRISE_CONTROLS.md`](ENTERPRISE_CONTROLS.md) |
 | `ENTERPRISE_DISCOVERY.md` | [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) |
-| `AWS_PRODUCTION_ARCHITECTURE.md` | [`AWS_PRODUCTION_ARCHITECTURE.md`](AWS_PRODUCTION_ARCHITECTURE.md) |
+| `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#aws_production_architecture) |
 | `DR_RUNBOOK.md` | [`DR_RUNBOOK.md`](DR_RUNBOOK.md) |
 | `PENTEST_READINESS.md` | [`PENTEST_PACKAGE.md`](PENTEST_PACKAGE.md) |
 | `RELEASE_CHECKLIST.md` | [`RELEASE_GATES.md`](RELEASE_GATES.md) |

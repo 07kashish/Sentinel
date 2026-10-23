@@ -142,5 +142,5 @@ green gate that measured nothing.
 
 - [`COMPUTE_DECISION.md`](COMPUTE_DECISION.md) — why Fargate ARM, not EKS
 - [`FINOPS_RUNBOOK.md`](FINOPS_RUNBOOK.md) — optimisation order, circuit breakers
-- [`AWS_ARCHITECTURE.md`](AWS_ARCHITECTURE.md)
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md#aws_architecture)
 - [`AWS_SECURITY_MODEL.md`](AWS_SECURITY_MODEL.md)

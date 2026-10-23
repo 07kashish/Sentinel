@@ -1,7 +1,7 @@
 # NOTE: Redis was removed. Nothing in the codebase ever read SENTINEL_REDIS_URL;
 # it was provisioned infrastructure with no consumer. The work queue it would
 # have backed lives in PostgreSQL instead (app/queue/durable_queue.py), so that
-# queue state and incident state cannot diverge. See docs/ARCHITECTURE_DECISIONS.md
+# queue state and incident state cannot diverge. See docs/ARCHITECTURE.md
 # Full self-hosted stack. Every component here is open-source and requires NO
 # vendor account. Only optional threat-intel keys come from outside (see .env).
 #

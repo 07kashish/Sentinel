@@ -192,7 +192,7 @@ class Settings:
     #: proxy and approved remediation -- now runs bound, so the unbound path
     #: has no production caller left to protect. Production still refuses to
     #: start unless the value is stated, same reasoning as
-    #: `rate_limit_fail_open`. See docs/EXECUTION_TRUST_ARCHITECTURE.md.
+    #: `rate_limit_fail_open`. See docs/ARCHITECTURE.md.
     require_execution_binding: bool
     #: Ed25519 public keys that may sign delegation hops, as
     #: `(key_id, base64 raw public key)` pairs from `SENTINEL_DELEGATION_KEYS`.
