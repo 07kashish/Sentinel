@@ -159,6 +159,6 @@ escapes, which is clearer anyway, since the one thing a reader needs from
   verified in this tree
 - [`attack_surface.json`](attack_surface.json) — every route and the capability
   it declares; the input to a pentest scope, and not pentest evidence
-- [`COMPLIANCE_MAP.md`](COMPLIANCE_MAP.md) — control coverage, with the standing
+- [`COMPLIANCE.md`](COMPLIANCE.md#compliance_map) — control coverage, with the standing
   caveat that SOC 2, ISO 27001 and NIST certify an organisation and not a
   codebase

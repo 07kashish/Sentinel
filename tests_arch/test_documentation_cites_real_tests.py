@@ -67,7 +67,7 @@ RETRACTION_MARKER = "<!-- unbacked-citations-retracted -->"
 #: A ratchet, not an exemption. The alternative -- listing every name in
 #: `NOT_A_CITATION` -- would have gone stale silently and given no signal when
 #: the backlog grew.
-# Lowered from 24 on 2026-09-01: COMPLIANCE_MAP.md's single dangling
+# Lowered from 24 on 2026-09-01: COMPLIANCE.md's single dangling
 # citation was repaired and its blanket retraction withdrawn. The ratchet
 # only grips if the baseline follows the debt down.
 RETRACTED_BACKLOG = 20
@@ -80,7 +80,7 @@ NOT_A_CITATION = {
     # point of the sentence is that this test does NOT exist, so requiring it to
     # exist would invert the correction.
     "test_failure_classes_are_structural",
-    # Same case. `COMPLIANCE_MAP.md` and `conftest.py` both name this test in
+    # Same case. `COMPLIANCE.md` and `conftest.py` both name this test in
     # prose whose entire point is that it does NOT exist -- it was inherited
     # from the predecessor implementation and cited for months. Requiring it to
     # resolve would invert the correction and force the record to be deleted
