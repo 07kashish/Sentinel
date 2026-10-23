@@ -2,7 +2,7 @@
 
 WHY THIS SCRIPT EXISTS
 ----------------------
-`docs/OBSERVABILITY.md` carried an SLI/SLO table whose Status column was prose:
+`docs/OPERATIONS.md` carried an SLI/SLO table whose Status column was prose:
 **UNVERIFIED**, **MET on PostgreSQL**, **MISSED on SQLite**. Nothing computed
 those words, so nothing could contradict them. This computes them from a soak
 artifact and exits non-zero when a target is violated.
@@ -56,7 +56,7 @@ from sentinel.domain.slo import (
 
 THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60
 
-#: The targets `docs/OBSERVABILITY.md` states, as numbers. `availability` is a
+#: The targets `docs/OPERATIONS.md` states, as numbers. `availability` is a
 #: RATIO, not a percentage: `SloTarget` refuses 99.9 for exactly this field,
 #: because a threshold of 99.9 compared against a ratio would be satisfied by
 #: every possible measurement and would look like a stricter target.
@@ -111,7 +111,7 @@ def _observations(payload: dict) -> dict[str, dict]:
     )
     measured = payload.get("measured") or {}
 
-    # `/health/ready` is the availability SLI named in docs/OBSERVABILITY.md.
+    # `/health/ready` is the availability SLI named in docs/OPERATIONS.md.
     ready = measured.get("ready") or {}
     attempts = int(ready.get("attempts", 0) or 0)
     if attempts:

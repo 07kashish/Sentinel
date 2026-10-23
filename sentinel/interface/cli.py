@@ -216,7 +216,7 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
 
         if command == "backup-help":
             stream.write(
-                "Disaster recovery outline (see docs/DISASTER_RECOVERY.md):\n"
+                "Disaster recovery outline (see docs/OPERATIONS.md):\n"
                 "  1. Scale writers to 0\n"
                 "  2. Restore base backup + WAL (PostgresBackup.restore_to)\n"
                 "  3. python -m sentinel.interface.cli verify\n"

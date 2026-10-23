@@ -76,7 +76,7 @@ def test_multi_tenant_concurrent_ingest_soak(tmp_path):
         success_rate = (total - failures) / total if total else 0.0
         sorted_ms = sorted(latencies_ms)
         p95 = sorted_ms[int(0.95 * (total - 1))] if total else 0.0
-        # Local TestClient soak — not a 30d production SLO. Targets from OBSERVABILITY.md.
+        # Local TestClient soak — not a 30d production SLO. Targets from OPERATIONS.md.
         assert success_rate >= 0.99, f"soak success_rate={success_rate} failures={failures}"
         # Soft ceiling for in-process client; production ingest SLO is <500ms at stated load.
         assert p95 < 2000.0, f"soak ingest p95_ms={p95}"

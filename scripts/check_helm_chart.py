@@ -7,7 +7,7 @@ The chart carries two deliberate refusals that fire on the default values:
 
   * `externalPostgres.archiveTimeoutConfirmed` must be the literal `true`.
     The chart does not deploy PostgreSQL -- it consumes a DSN -- so the RPO
-    promised in DISASTER_RECOVERY.md depends on archive settings this chart
+    promised in OPERATIONS.md depends on archive settings this chart
     cannot apply. Before the guard, the only thing saying so was a line in
     NOTES.txt printed after a successful install, which is after it is too
     late. Measured: RPO ~57s with `archive_timeout` set, unbounded without.

@@ -806,7 +806,7 @@ def main() -> int:  # noqa: PLR0915 - a drill is a linear script; splitting it h
                     "as unverified for the same reason the kind/Helm row is.",
                     "No cross-region replication, object-lock or lifecycle policy "
                     "is exercised. Those are bucket-side configuration and are "
-                    "documented in docs/DISASTER_RECOVERY.md, not measured here.",
+                    "documented in docs/OPERATIONS.md, not measured here.",
                 ]
                 if args.archive_to == "s3"
                 else None

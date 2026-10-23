@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Sustained soak that measures the SLIs `docs/OBSERVABILITY.md` names.
+"""Sustained soak that measures the SLIs `docs/OPERATIONS.md` names.
 
 WHAT THIS IS, AND MORE IMPORTANTLY WHAT IT IS NOT
 --------------------------------------------------
-`docs/OBSERVABILITY.md` states an API availability SLO of 99.9% over 30 days and
+`docs/OPERATIONS.md` states an API availability SLO of 99.9% over 30 days and
 an ingest p95 under 500 ms. Neither had a measurement behind it; the only
 evidence was `tests_arch/test_multi_tenant_soak.py`, which issues 80 requests and
 takes under a second. Eighty requests cannot distinguish 99.9% from 97%.

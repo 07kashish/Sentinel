@@ -249,7 +249,7 @@ documentation worse, so it has not been done.
 | `AGENT_IDENTITY_SPEC.md` | [`ENTERPRISE_CONTROLS.md`](ENTERPRISE_CONTROLS.md) |
 | `ENTERPRISE_DISCOVERY.md` | [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) |
 | `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#aws_production_architecture) |
-| `DR_RUNBOOK.md` | [`DR_RUNBOOK.md`](DR_RUNBOOK.md) |
+| `OPERATIONS.md` | [`OPERATIONS.md`](OPERATIONS.md#dr_runbook) |
 | `PENTEST_READINESS.md` | [`SECURITY.md`](SECURITY.md#pentest_package) |
 | `RELEASE_CHECKLIST.md` | [`RELEASE_GATES.md`](RELEASE_GATES.md) |
 | `DESIGN_PARTNER_RUNBOOK.md` | [`DESIGN_PARTNER_RUNBOOK.md`](DESIGN_PARTNER_RUNBOOK.md) |

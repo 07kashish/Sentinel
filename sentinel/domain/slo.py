@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS
 ---------------
-`docs/OBSERVABILITY.md` carried an SLI/SLO table whose Status column was
+`docs/OPERATIONS.md` carried an SLI/SLO table whose Status column was
 written by hand: **UNVERIFIED**, **MET on PostgreSQL**, **MISSED on SQLite**.
 Nothing computed those words. A hand-authored verdict on a generated
 measurement is the same defect as a hand-authored count of a generated ledger,

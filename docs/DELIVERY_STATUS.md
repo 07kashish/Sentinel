@@ -59,7 +59,7 @@ one too.
 |---|---|---|
 | AWS deployment (discovery, blast radius, JIT) | `UNVERIFIED` | Terraform written and `terraform validate` passes. **Deliberately not applied**: applying provisions billable resources, and the instruction for this work was setup only with no cost. No `plan` either, since that needs credentials |
 | Third-party penetration test | `UNVERIFIED` | No external party has examined this system. `SECURITY.md` is the material a tester would need, not a report from one |
-| Production soak / availability | `UNVERIFIED` | A 99.9%/30-day figure requires 30 days. `SOAK_RUNBOOK.md` describes the procedure that has not been run |
+| Production soak / availability | `UNVERIFIED` | A 99.9%/30-day figure requires 30 days. `OPERATIONS.md` describes the procedure that has not been run |
 | Design-partner outcomes | `UNVERIFIED` | There are no design partners. No customer results, no time-to-value, no case studies. Generating any would be fabrication |
 | Bedrock, Foundry, Copilot Studio, Entra, Vertex, OpenAI, Cursor connectors | `NEEDS SDK` | Each needs a vendor SDK, credential chain or inventory API this repository has no access to and no test surface for. Listed in `CONNECTOR_MATRIX.md` because the specification names them, **not** because they are planned |
 | SOC 2 / ISO 27001 / ISO 42001 certification | `NOT_APPLICABLE` to a codebase | Those certify an organisation. Access reviews, onboarding, vendor management, IR drills and change-management approvals are organisational and none is in this repository. `COMPLIANCE.md` shows the technical subset an audit would sample |

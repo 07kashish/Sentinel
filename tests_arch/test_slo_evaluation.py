@@ -2,7 +2,7 @@
 
 WHAT THIS GUARDS
 ----------------
-`docs/OBSERVABILITY.md` carried an SLI/SLO table whose Status column was prose
+`docs/OPERATIONS.md` carried an SLI/SLO table whose Status column was prose
 somebody typed: **UNVERIFIED**, **MET on PostgreSQL**, **MISSED on SQLite**.
 Nothing computed those words, so nothing could contradict them, and a
 hand-authored verdict on a generated measurement drifts in one direction --

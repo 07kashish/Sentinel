@@ -27,7 +27,7 @@ services:
     # archive_command refuses to overwrite (`test ! -f`) as the manual requires;
     # an archive that silently clobbers a segment stops being a recovery source.
     # Measured behaviour of exactly this configuration:
-    # scripts/run_dr_postgres_wal_pitr_drill.py --quiet, docs/DISASTER_RECOVERY.md.
+    # scripts/run_dr_postgres_wal_pitr_drill.py --quiet, docs/OPERATIONS.md.
     #
     # ── FAILURE DOMAIN: READ THIS BEFORE RELYING ON THE DEFAULT ──────────────
     # The default below archives to `pgwalarchive`, a named Docker volume. That

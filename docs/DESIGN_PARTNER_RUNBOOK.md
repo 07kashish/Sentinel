@@ -120,4 +120,4 @@ outcome.
 
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — the two scoreboards
 - [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) — coverage per connector
-- [`OBSERVABILITY.md`](OBSERVABILITY.md) — what a partner can measure
+- [`OPERATIONS.md`](OPERATIONS.md#observability) — what a partner can measure

@@ -23,7 +23,7 @@ evidenceEncryption:
 # This chart does NOT deploy PostgreSQL -- it consumes a DSN from the secret
 # above, the same way it consumes the Redis and metrics credentials. That is a
 # deliberate shape (the database outlives any one release), but it left a real
-# gap: the RPO promised in docs/DISASTER_RECOVERY.md depends on archive settings
+# gap: the RPO promised in docs/OPERATIONS.md depends on archive settings
 # this chart cannot apply, and the only thing pointing that out was a line in
 # NOTES.txt printed after a successful install -- i.e. after it was too late.
 #

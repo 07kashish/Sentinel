@@ -2,7 +2,7 @@
 
 `reports/dr_postgres_pitr_drill.json` records a `pg_dump` round-trip whose RPO is
 0 by construction: nothing is written between the backup and the "failure". That
-number is real but it does not test the claim `docs/DISASTER_RECOVERY.md` makes,
+number is real but it does not test the claim `docs/OPERATIONS.md` makes,
 which is about a continuously running system losing a node without warning.
 
 `scripts/run_dr_postgres_wal_pitr_drill.py` measures that instead. These tests
@@ -31,7 +31,7 @@ SCRIPT = ROOT / "scripts" / "run_dr_postgres_wal_pitr_drill.py"
 RESULT = ROOT / "reports" / "dr_postgres_wal_pitr_drill.json"
 QUIET_RESULT = ROOT / "reports" / "dr_postgres_wal_pitr_quiet_drill.json"
 
-#: Targets stated in docs/DISASTER_RECOVERY.md.
+#: Targets stated in docs/OPERATIONS.md.
 RPO_TARGET_SECONDS = 300
 RTO_TARGET_SECONDS = 1800
 

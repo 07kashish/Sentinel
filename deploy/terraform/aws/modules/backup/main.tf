@@ -35,7 +35,7 @@
 # paying to store recovery points you cannot delete for as long as you set.
 # Turn it on for production, after deciding the retention.
 #
-# NOT MARKED VERIFIED. A backup plan is not a restore. `docs/DR_RUNBOOK.md`
+# NOT MARKED VERIFIED. A backup plan is not a restore. `docs/OPERATIONS.md`
 # and scripts/run_dr_postgres_wal_pitr_drill.py do the restoring, and the
 # independent-failure-domain exercise remains an open external gate.
 #############################################################################

@@ -9,7 +9,7 @@ Usage (PowerShell):
   $env:PYTHONPATH = "."
   py -3 scripts/run_dr_postgres_pitr_drill.py
 
-Suggested targets (docs/DISASTER_RECOVERY.md): RPO ≤ 5m, RTO ≤ 30m.
+Suggested targets (docs/OPERATIONS.md): RPO ≤ 5m, RTO ≤ 30m.
 """
 
 from __future__ import annotations

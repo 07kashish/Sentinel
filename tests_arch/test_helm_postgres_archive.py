@@ -2,7 +2,7 @@
 
 THE GAP THIS CLOSES
 -------------------
-`docs/DISASTER_RECOVERY.md` promises a bounded RPO. That promise rests entirely
+`docs/OPERATIONS.md` promises a bounded RPO. That promise rests entirely
 on `archive_mode`, `archive_command` and `archive_timeout` being set on the
 PostgreSQL server. `docker-compose.yml` sets them. The Helm chart **cannot** --
 it does not deploy PostgreSQL, it consumes a DSN from a secret -- so for every
@@ -105,7 +105,7 @@ def test_the_declared_bound_is_within_the_documented_rpo_target():
     bound = schema["maxArchiveTimeoutSeconds"]
     assert bound["maximum"] <= 300, (
         "maxArchiveTimeoutSeconds may exceed the ≤5m RPO target in "
-        "docs/DISASTER_RECOVERY.md; worst-case RPO is approximately this value"
+        "docs/OPERATIONS.md; worst-case RPO is approximately this value"
     )
     assert _values()["externalPostgres"]["maxArchiveTimeoutSeconds"] == 60
 

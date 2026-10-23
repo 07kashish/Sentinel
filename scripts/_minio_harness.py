@@ -109,7 +109,7 @@ def start_minio(
     # archive_command reaches the store through the NIC, the routing table and a
     # real TCP path rather than through the loopback shortcut. That is a
     # STRICTLY WEAKER claim than "separate failure domain" -- it is still one
-    # host, and `docs/DISASTER_RECOVERY.md` says so -- but it removes one
+    # host, and `docs/OPERATIONS.md` says so -- but it removes one
     # specific shortcut, and the difference is worth being able to measure.
 
     environment = {
