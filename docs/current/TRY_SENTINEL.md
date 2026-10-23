@@ -18,20 +18,7 @@ http://sentinel-proof-557842222.ap-south-1.elb.amazonaws.com/console
 
 What to look at: **Agent requests** (two waiting for a human), **Approved vs executed** (what ran against what was approved; one replay refused), **Execution graph** (three detected chains), **Containment** (one agent paused, with a reason and expiry), **Overview → open incident** (the report, with the advisory note), **Pilot setup** (a real device's AI inventory). The data is a seeded sample tenant. The address is plain HTTP, so the console refuses operator sign-in there by design; that is why step 3 runs on your own machine.
 
-## 2. Find the AI tools on your laptop (2 minutes, double-click)
-
-**Sentinel AI Scan** is the same scanner behind a window, for people who will not open a terminal.
-
-* **macOS** (Apple Silicon and Intel): unzip `Sentinel-AI-Scan-macOS.zip`, then right-click **Sentinel AI Scan** → **Open** → **Open**. The right-click is needed the first time because the app is not yet signed with an Apple Developer ID; a plain double-click will say the developer cannot be verified.
-* **Windows**: run `Sentinel-AI-Scan-Windows.exe`. SmartScreen will warn for the same reason: **More info** → **Run anyway**.
-
-Tick what you agree to check (nothing is pre-ticked), press **Scan**, read the list, and press **Save report…** if you want the readable page and the `.json` a Sentinel console imports. The app contains no networking code; nothing leaves the computer unless you send the file yourself. Each download has a `.sha256` file beside it.
-
-Where to get it: **Windows** — `https://sentinel-downloads-024330900387.s3.ap-south-1.amazonaws.com/downloads/windows/Sentinel-AI-Scan-Windows.exe` (the checksum and a short guide, `README-Windows.txt`, sit beside it in the same folder). **macOS** — the owner sends you the zip; there is no public link for it yet.
-
-
-
-### The same scan from a terminal
+## 2. Find the AI tools from a terminal
 
 The scanner is one Python file with no dependencies. Download it from the console (**Pilot setup → Download discovery script**) or use `sentinel/sdk/discovery.py` from a checkout. Requires Python 3.9+ (`python3 --version`).
 
@@ -55,7 +42,7 @@ Open `my-device.html` in a browser. Windows: use `py` instead of `python3`; appl
 
 ## 3. Run your own Sentinel and see your device in the dashboard (10 minutes)
 
-Needs a checkout and Python 3.12+. The commands below are for macOS and Linux; on **Windows** (PowerShell) use `py -m venv .venv`, then `.venv\Scripts\pip install -e ".[server]"`, then `.venv\Scripts\python scripts\try_sentinel.py --scan --demo`. The Windows path is run on a hosted Windows machine by `.github/workflows/desktop.yml`.
+Needs a checkout and Python 3.12+. The commands below are for macOS and Linux; on **Windows** (PowerShell) use `py -m venv .venv`, then `.venv\Scripts\pip install -e ".[server]"`, then `.venv\Scripts\python scripts\try_sentinel.py --scan --demo`.
 
 ```bash
 python3 -m venv .venv

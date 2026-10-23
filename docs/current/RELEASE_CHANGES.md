@@ -242,10 +242,6 @@ Checked at the owner's request ("no SDK of any language published"): this projec
 
 What IS reachable by anyone with a link: the Windows scanner app (the owner's request) and, through the public demo's read-only key, the scanner's Python source via the console's download button.
 
-## 2026-10-04: a public download link for the Windows app
-
-Bucket `sentinel-downloads-024330900387` (ap-south-1, tagged Project=sentinel, created by hand, NOT in the Terraform stack): public read of objects under `downloads/` only, TLS required, no listing, ACLs blocked, versioned. It holds `downloads/windows/Sentinel-AI-Scan-Windows.exe`, its `.sha256` and `README-Windows.txt`. Fetched from outside: the file downloads and matches its checksum; the bucket root, another prefix and plain HTTP are refused (403). The executable is unsigned. Anyone with the link can download it; nothing else in the account is reachable through this bucket.
-
 ## 2026-10-04: three wire bugs in the Python SDK
 
 **The Python SDK could not perform a bound execution against a real server, and nobody knew.** `scripts/smoke_sdks.py` starts a real Sentinel and runs one journey through `SentinelClient` (allow, require approval, refused before approval, approve, execute once, replay refused, wrong key is no decision). Its first run failed, and the cause was in `sentinel/sdk/remote.py`:
@@ -260,12 +256,6 @@ A JavaScript/TypeScript client was drafted alongside (it is what first exposed t
 
 **HTTPS.** A certificate for `app.joinsentinelai.com` is requested in ACM (ap-south-1) and is waiting on the owner's DNS records; the provisioning role gained ACM-only permissions for this.
 
-## 2026-10-03 (Windows, and a window smoke test)
-
-**The product runs on Windows.** `.github/workflows/desktop.yml` (run 37137147058) installed it the way `TRY_SENTINEL.md` says, ran the scanner against the Windows machine itself (38 checks, none `unsupported` or `inaccessible`), and ran `scripts/try_sentinel.py --scan --demo --check` end to end: migrate, serve, scan, import (HTTP 201), the sample story (two executed, one rejected, one replay refused, two pending, one containment), read back.
-
-**The app's real window is smoke-tested on both platforms.** `discovery_app --smoke-gui=<file>` opens the actual window, confirms the consent boxes start unticked, ticks them, presses Scan and records what the window shows; `archive/pre-cleanup:scripts/build_desktop_app.py` runs it against the PACKAGED app and refuses to ship on failure. macOS: found five tools on the developer's Mac. Windows: the window opened, scanned and showed "None of the known AI tools was found" — correct for a machine with none installed. The first Windows check looked for a window title on the started process and could never pass: a one-file build's first process is a bootstrap that owns no window.
-
 **Live smoke of the AWS deployment** the same hour: console, liveness and readiness 200; the published key is refused a decision (403); no key is refused (401); a freshly seeded incident's report carries the `antigravity-cli:gemini-3.1-pro-high` note.
 
 Not established: a person using the app on their own Windows PC; the Windows install-folder list against real installed tools; either app signed.
@@ -273,10 +263,6 @@ Not established: a person using the app on their own Windows PC; the Windows ins
 ## 2026-10-03 (runbook)
 
 `docs/current/DEMO_RUNBOOK.md`: how the owner prepares and gives the demo, a minute-by-minute script using the console's real view names, how to show a live approval locally, what to send people, how to run it for a partner, and the gaps between an invited preview and a public launch. `scripts/try_sentinel.py --demo` loads the sample story into the local trial. `TRY_SENTINEL.md` named two views that do not exist (*Protected changes*, *Incidents*); corrected to the console's labels. First fully green hosted run on `main` since mid-September: run 37117421791, all 18 jobs.
-
-## 2026-10-03 (desktop app)
-
-**Sentinel AI Scan** (`sentinel/sdk/discovery_app.py`): the consent-based presence scanner behind a tkinter window, standard library only, no networking code, consent boxes unticked by default, reports saved under a new name and never overwritten. `archive/pre-cleanup:scripts/build_desktop_app.py` packages only that file and `discovery.py` with PyInstaller, runs the packaged app's `--self-test` against an empty temporary home, and writes a SHA-256 beside the artifact. macOS: a universal (arm64 + x86_64) `.app`, built, unpacked and launched on the developer's Mac. Windows: `.github/workflows/desktop.yml` builds and self-tests the `.exe` on a hosted runner, on demand or when its sources change.
 
 The scanner gains Windows checks: per-user install folders for the applications and `.exe`/`.cmd`/`.ps1` commands in the per-user command folders (`tests_arch/test_pilot_onboarding.py`, synthetic home).
 

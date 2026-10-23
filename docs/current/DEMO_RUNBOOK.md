@@ -24,7 +24,6 @@ For the person giving the demo. `TRY_SENTINEL.md` is the page you hand to the pe
    http://sentinel-proof-557842222.ap-south-1.elb.amazonaws.com/console
    ```
 
-3. **Have the two apps ready to send**: `sentinel_program_evidence/2026-10-03-desktop-app/Sentinel-AI-Scan-macOS.zip` and `Sentinel-AI-Scan-Windows.exe`.
 
 4. **If you will approve something live** (Part 3), start the local copy now, because the AWS link is read-only:
 
@@ -75,11 +74,8 @@ Then click *Overview* and back to *Agent requests*. Approve promptly: the countd
 | They are | Send them | They do |
 |---|---|---|
 | Anyone | The console link | Click around, read-only |
-| Mac user | `Sentinel-AI-Scan-macOS.zip` + `TRY_SENTINEL.md` | Unzip, right-click → Open, tick, Scan |
-| Windows user | `Sentinel-AI-Scan-Windows.exe` + `TRY_SENTINEL.md` | Run, *More info → Run anyway*, tick, Scan |
 | A developer | Repository access + `TRY_SENTINEL.md` | `scripts/try_sentinel.py --scan --demo`, then gate one action (section 4 there) |
 
-Warn them first: both apps are unsigned and the operating system will say so. Ask them to send back the saved `.html` page and to tell you which AI tool the scan missed.
 
 ## Part 5 — Running it for a design partner
 
