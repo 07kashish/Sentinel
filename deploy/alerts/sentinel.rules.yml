@@ -13,37 +13,7 @@
 groups:
   - name: sentinel-detection
     rules:
-      # Detection has fallen back to the deterministic rules alone. Measured
-      # independent English recall for that path is ~0.067, against ~0.855 for
-      # soft+rules -- so the product is nominally up and missing roughly nine
-      # attacks in ten. It is the one condition here that is unambiguously a
-      # page: the service will not tell anyone else that it happened.
-      - alert: SentinelDetectionDegraded
-        expr: sentinel_detection_degraded == 1
-        # Long enough to ride out a rollout, short enough to matter. The gauge is
-        # set once at composition time, so a restarting pod briefly has no series
-        # at all rather than a wrong one.
-        for: 2m
-        labels:
-          severity: critical
-          page: "true"
-        annotations:
-          summary: "Sentinel detection degraded to rules-only"
-          description: >-
-            The soft prompt classifier did not load, so this instance is
-            detecting with the deterministic rules alone (~0.067 measured
-            independent English recall vs ~0.855 with the classifier).
-            Check the mode with sentinel_detection_mode, and the startup log for
-            detection_degraded_soft_prompt_missing / _unloadable.
-          runbook: >-
-            Confirm evaluation/artifacts/soft_prompt_model.pkl is present in the
-            image and that scikit-learn==1.4.0 is installed (they are a matched
-            pair -- see requirements.txt). Restart after fixing; the mode is
-            decided once at startup.
-
-      # The rule above can only fire if the series exists. If a build renames or
-      # drops the metric, `== 1` quietly never matches and the alert becomes
-      # decoration. This is the guard for that.
+      # The authenticated detector metric must remain observable.
       - alert: SentinelDetectionMetricMissing
         expr: absent(sentinel_detection_degraded)
         for: 15m
@@ -54,7 +24,7 @@ groups:
           description: >-
             No instance is exposing sentinel_detection_degraded. Either every
             Sentinel target is down (check up{job="sentinel"}), or the metric was
-            renamed and SentinelDetectionDegraded can no longer fire.
+            renamed and detector status is no longer observable.
 
   - name: sentinel-protect
     rules:

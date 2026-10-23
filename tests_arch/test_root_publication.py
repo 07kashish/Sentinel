@@ -112,7 +112,6 @@ def _container(engine_config, tmp_path, sink, **extra):
     env = {
         "SENTINEL_ENV": "development",
         "SENTINEL_API_KEYS": f"{TENANT}:{VIEWER}:viewer",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         # A bucket is named so the settings accept the publish list; the sink
         # itself is injected, so no S3 client is ever built.
         "SENTINEL_S3_ROOT_BUCKET": "acme-transparency-roots",

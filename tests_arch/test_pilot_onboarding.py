@@ -82,7 +82,7 @@ def test_cli_requires_consent_and_does_not_overwrite(tmp_path, capsys):
 @pytest.fixture
 def pilot(engine_config):
     env = {"SENTINEL_API_KEYS": f"acme:{ADMIN}:admin,other:{OTHER}:admin,acme:{VIEWER}:viewer,acme:{INGEST}:ingest",
-           "SENTINEL_SOFT_PROMPT_DETECT": "false", "SENTINEL_CREDENTIAL_LIMIT": "1000"}
+           "SENTINEL_CREDENTIAL_LIMIT": "1000"}
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn
     else:

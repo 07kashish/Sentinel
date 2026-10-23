@@ -19,8 +19,7 @@ from scripts.scan_release_for_secrets import scan_bytes, WHEEL_ALLOWED_DATA  # n
 
 EXACT = frozenset({
     "Dockerfile", ".dockerignore", "requirements.lock", "docker-entrypoint.sh", "LICENSE",
-    "config/default_policy.json", "evaluation/__init__.py", "evaluation/soft_prompt.py",
-    "evaluation/artifacts/soft_prompt_model.pkl", "evaluation/artifacts/soft_prompt_model_card.json",
+    "config/default_policy.json",
     "standard/execution-passport-v1/verify_passport.py",
     "standard/execution-passport-v1/verify_evidence_bundle.py",
     "standard/execution-passport-v1/witness_root.py",

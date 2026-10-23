@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
         port = probe.getsockname()[1]
     env = {**os.environ, "PYTHONPATH": str(ROOT), "SENTINEL_ENV": "development", "SENTINEL_DATABASE_URL": args.dsn,
            "SENTINEL_API_KEYS": f"acme:{key}:ingest", "SENTINEL_CORS_ORIGINS": "https://console.local.invalid",
-           "SENTINEL_PROTECT_ENFORCE": "true", "SENTINEL_SOFT_PROMPT_DETECT": "false",
+           "SENTINEL_PROTECT_ENFORCE": "true",
            "SENTINEL_TOOL_BUDGET_PER_MINUTE": "1000000", "SENTINEL_CREDENTIAL_LIMIT": "10000000",
            "SENTINEL_ADDRESS_LIMIT": "10000000"}
     subprocess.run([sys.executable, "-m", "sentinel.interface.cli", "migrate"], env=env, check=True, capture_output=True)

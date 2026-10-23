@@ -50,7 +50,7 @@ class _Upstream:
 @pytest.fixture
 def world(engine_config, monkeypatch):
     env = {"SENTINEL_API_KEYS": f"acme:{INGEST}:ingest,acme:{ANALYST}:analyst,acme:{ADMIN}:admin,other:{OTHER}:admin",
-           "SENTINEL_SOFT_PROMPT_DETECT": "false", "SENTINEL_CREDENTIAL_LIMIT": "1000",
+           "SENTINEL_CREDENTIAL_LIMIT": "1000",
            "SENTINEL_PROTECT_ENFORCE": "true", "SENTINEL_PROTECTION_MODE": "protect",
            "SENTINEL_DATA_KEY_K1": DATA_KEY, "SENTINEL_ACTIVE_KEY_ID": "K1"}
     if engine_config.dialect is Dialect.POSTGRES:
@@ -226,7 +226,7 @@ def test_a_lost_answer_on_a_mutation_becomes_an_unknown_operation_for_a_person(w
 
 
 def test_without_a_data_key_a_secret_cannot_be_stored(engine_config):
-    env = {"SENTINEL_API_KEYS": f"acme:{ADMIN}:admin", "SENTINEL_SOFT_PROMPT_DETECT": "false"}
+    env = {"SENTINEL_API_KEYS": f"acme:{ADMIN}:admin"}
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn
     else:

@@ -141,7 +141,6 @@ def test_startup_failure_closes_the_trace_worker(tmp_path, engine_config):
         settings = Settings.from_environment({
             "SENTINEL_DB_PATH": str(tmp_path / "startup.db"),
             "SENTINEL_API_KEYS": "tenant:" + "x" * 40 + ":admin",
-            "SENTINEL_SOFT_PROMPT_DETECT": "false",
             "SENTINEL_OTLP_ENDPOINT": endpoint,
             "SENTINEL_OIDC_ISSUER": "https://issuer.example.invalid",
             "SENTINEL_OIDC_AUDIENCE": "sentinel",

@@ -66,39 +66,6 @@ jobs:
           key: benchmark-corpus-${{ hashFiles('evaluation/benchmark.py') }}
           restore-keys: benchmark-corpus-
 
-      - name: Regenerate the independent-English soft benchmark
-        # `test_independent_english_soft_benchmark_meets_promotion_floor` asserts
-        # `evaluation/results/benchmark_test_english_soft.json` exists -- and
-        # `evaluation/results/` is in .gitignore, so in CI it never did. The test
-        # failed on every run with "regenerate with: ..." and the promotion floor
-        # it exists to enforce has therefore never been checked here.
-        #
-        # Regenerating beats committing the artifact: the floor is a claim about
-        # the CURRENT model, and a committed JSON keeps passing after the model
-        # changes underneath it. ~90s warm.
-        #
-        # WHY THIS STEP IS ALLOWED TO GIVE UP.
-        # The corpus comes from a third-party service, and the first run of this
-        # step in CI died on `urllib.error.HTTPError: HTTP Error 500` from that
-        # service. Failing the build there would mean every merge in this
-        # repository depends on HuggingFace's uptime -- a worse property than the
-        # one being fixed, and not a statement about this codebase at all.
-        #
-        # So: three attempts, and if the corpus is genuinely unreachable the step
-        # emits a warning and continues. The promotion-floor test then reports
-        # UNVERIFIED rather than passing -- it does NOT quietly go green. That
-        # matches the convention `tests_arch/conftest.py` already uses for a
-        # missing PostgreSQL: "Skipping is reported, never silent."
-        run: |
-          for attempt in 1 2 3; do
-            if python evaluation/run_benchmark.py --test --english --soft; then
-              exit 0
-            fi
-            echo "attempt ${attempt} failed" >&2
-            sleep 15
-          done
-          echo "::warning title=Promotion floor UNVERIFIED::benchmark corpus unreachable after 3 attempts; the independent-English promotion floor was NOT checked in this run"
-
       - name: Detection evaluation gate
         # Fails the build on any regression not marked a known gap.
         #

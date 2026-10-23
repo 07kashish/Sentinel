@@ -34,15 +34,12 @@ one measured functional defect in a gate row that had been marked `pass`:
 | **A permanently-failing static scan was hiding that finding.** `bandit -r sentinel -ll` reported 100 issues; 99 were the same false positive (every statement is an f-string because the placeholder token is dialect-specific), so the job could never pass and its output went unread. | `.github/workflows/ci.yml` | B608 skipped in `bandit.yaml` and **replaced** by a stricter AST gate, `test_sql_is_never_built_from_data.py`; the skip list is itself asserted to be exactly `[B608]` |
 | **The DAST job had never fuzzed a single operation.** `expose_api_docs` is off by default, so `/openapi.json` was 404 and `--wait-for-schema 30` timed out — which is exactly the 30s the job took to fail. | `.github/workflows/ci.yml` | 404 → 200 (18,124 bytes) with the flag. First real run selected 25 operations, 651 test cases, and found `/metrics/prometheus` returning 503 for want of a configured token |
 | **Two jobs failing on causes outside this repository.** `minio/mc:RELEASE.2024-11-17T19-35-38Z` was deleted upstream; kubeconform ships no Istio CRD schemas. | `.github/workflows/ci.yml` | `manifest unknown`; `could not find schema for PeerAuthentication`. Bucket is now a directory (image dependency removed); kubeconform pointed at the CRD catalogue rather than `-ignore-missing-schemas` |
-| **The shipped detection model carried 158,615 discarded training tokens.** scikit-learn's `TfidfVectorizer` retains every training token in `stop_words_` (PYSEC-2024-110); the committed artifact had 158,615 of them against a working vocabulary of 107,199, and that file is copied into the runtime image. | `evaluation/artifacts/soft_prompt_model.pkl` | Stripped; predictions **bit-identical** (the tool refuses to write if any probe probability moves); artifact 7,106,450 → 5,131,568 bytes. Held by `test_model_artifact_carries_no_training_data.py` |
-| **14 distinct dependency advisories across three pinned packages**, with `starlette` not pinned at all — it floated in behind FastAPI's uncapped `starlette>=0.46.0`. | `requirements.txt` | `cryptography` 42.0.5 → **50.0.0** (7 advisories), `starlette` → **pinned 1.6.0** (6 advisories; no 0.x release clears them), `scikit-learn` pin retained with a dated exception. `pip-audit` now reports *"No known vulnerabilities found, 2 ignored"* |
 | **The example enrolled-agent manifest ran as root with a writable root filesystem** — in a directory whose entire purpose is constraining agent egress. An agent running as root can rewrite its own proxy configuration. | `deploy/agent-egress/example-enrolled-agent.yaml` | Trivy KSV-0118 ×3, KSV-0014 ×2. Now non-root, `allowPrivilegeEscalation: false`, read-only rootfs, all capabilities dropped, seccomp RuntimeDefault. Verified with Trivy 0.74.0: **0 misconfigurations**, whole tree clean at HIGH,CRITICAL |
 
 ### Session 2026-08-19 (second) — the four brief items
 
 | Finding | Where | Evidence |
 |---|---|---|
-| **The ingest-latency diagnosis was wrong.** GIL contention was blamed for the whole miss; it was 23% of it. The soft-prompt classifier is 96% of the remainder, running TF-IDF + logistic regression on every event synchronously on the request path. | `scripts/run_ingest_loadtest.py` (new) | Out-of-process, 6 OS processes, real TCP, 55k rows: **p95 763.6 ms** (detector on) vs **31.3 ms** (detector off) vs **995.2 ms** (old in-process harness). Row still **fails** `<500 ms` |
 | **The `helm test` hook had never executed anywhere**, and was recorded as blocked on cluster access. It was a wiring gap: `helm upgrade --wait` does not install `helm.sh/hook: test` resources and nothing called `helm test`. | `.github/workflows/ci.yml` | Now invoked; the kind PostgreSQL configured to actually archive so the hook has something true to verify; a second step asserts the chart declares a hook at all, since `helm test` exits 0 for a release with none |
 | **Site loss and node loss were conflated** under one bare UNVERIFIED. | `scripts/run_dr_postgres_wal_pitr_drill.py` | Three topologies now recorded with `proves_node_loss`/`proves_site_loss`. Re-measured off loopback on a real interface: **RPO 17.61 s, RTO 137.15 s**, 157,204,312 B of `pgdata` destroyed first. `--object-store-url` added; the exact command and missing precondition for site loss are documented |
 | **26 documented citations pointed at tests that do not exist** — not the 3 already known. `docs/READINESS.md` claims "Every row states a status and the command that proves it" while citing a `tests/` directory absent from this repository, backing 32 **Verified** rows. | `docs/READINESS.md`, `ARCHITECTURE_REVIEW.md`, `ARCHITECTURE_DECISIONS.md`, `COMPLIANCE_MAP.md` | `tests_arch/test_documentation_cites_real_tests.py`. Four retraction banners added; backlog ratcheted at 24 and may only shrink |
@@ -63,9 +60,7 @@ GIL contention.
 
 | Finding | Where | Evidence |
 |---|---|---|
-| **The soft detector fires on 51.7% of ordinary tool calls.** `SoftAugmentedPolicy` classifies the tool-call `action` field when an event has no `metadata.prompt` — so it judges tool NAMES as prompts. | `sentinel/infrastructure/soft_detection.py` | 31 of 60 benign actions fire at the shipped 0.5 threshold: `http_get` 0.709, `post_message` 0.685, `write_file` 0.657, `db_insert` 0.651, `send_email` 0.602. `scripts/measure_benign_tool_call_false_positives.py`, raw in `archive/pre-cleanup:docs/benign_tool_call_false_positives.json`. Recorded as **F-10 (high)** in THREAT_MODEL.md. **NOT fixed** — the three options all change detection coverage |
 | **The ingest latency defect and the detection defect are the SAME defect.** | `docs/PERFORMANCE_REPORT.md` | Controlled 4-way A/B, 8k rows: classifier alone **+7.99 ms p95**; incident creation from the false positive **+236.36 ms**. Each false positive writes across four tables |
-| **The 0.48 calibration error was unreproducible AND invalidly pooled.** `validate.py --model semantic` imports `app.detection.semantic_features`; there is no `app` package in this tree. And ECE was computed by pooling across single-class folds — the same pooling the module refuses to publish for AUC, calling it "its own dishonesty". | `evaluation/validate.py` | Reproducible n-gram path: **ECE 0.1872** over mixed-class folds (0.1122 / 0.2622), vs **0.5524** pooled. Single-class folds score 0.88/0.67/0.67/0.30 — class balance, not model. Cross-source AUC **0.7495**. Pooled value kept as `expected_calibration_error_pooled_INVALID` |
 | **"p95 at 55k rows" was ambiguous** — which rows depends on whether the detector fires, and no run recorded its database state. | `scripts/run_ingest_loadtest.py` | Now emits a 7-table census. Worst case: 56,796 incidents → **p95 786.0 ms, FAILS**. Benign: ~0 incidents → **p95 58.1 ms, passes**. Different workloads, not a range |
 | **The `helm test` hook executed for the first time anywhere.** | `.github/workflows/ci.yml` | CI run 32263476024, 11/11 green: `Phase: Succeeded`, `OK: continuous archiving is configured; worst-case RPO ~60s`, `test hooks declared by the chart: 1` |
 
@@ -79,19 +74,6 @@ guard. The pattern is worth naming because it is not a knowledge failure — it 
 publishing an A/B before checking that exactly one variable moved.
 
 ### A note on counting
-
-The advisory count above is **distinct advisories**, not report rows. `pip-audit`
-prints one row per *(advisory, fixed version)* pair, so an advisory with two fix
-branches appears twice: the report was **18 rows / 14 unique** — cryptography
-8/7, starlette 8/6, scikit-learn 2/1. That distinction was got wrong twice while
-writing this up, in both directions, before the IDs were counted with `sort -u`.
-It is recorded here because a security document that inflates its own numbers is
-a security document nobody can cite.
-
-Likewise "clean" is **"clean with one recorded exception"**. PYSEC-2024-110
-remains open against the `scikit-learn` pin, with a review-by date of
-2026-11-19 and a named action, and — unusually for an ignore entry — its stated
-justification is checked on every run by a test.
 
 ### The pattern worth naming
 
@@ -124,7 +106,6 @@ risk 13 in `docs/PRODUCTION_READINESS_REPORT.md` rather than papered over.
 | F-7 | Fake MONITORING LIVE | **CLOSED** (removed) | Opaque `/health/*`; console LIVE/STALE/DISCONNECTED from poll age |
 | F-8 | O(tenants) queue | **CLOSED** | SqlWorkQueue sharding + tests |
 | F-9 | TERMINAL_ERRORS builtins | **CLOSED** | `failure_is_retryable`; mutation |
-| F-10 | Detection efficacy | **CLOSED** | Independently sourced third-party corpus (`evaluation/benchmark.py`, Apache-2.0/MIT/CC-BY-SA sources; manifest verified). SoftAugmentedPolicy on English held-out test: recall **0.855**, precision **0.972**, promotion **allowed** (`evaluation/results/benchmark_test_english_soft.json`; `tests_arch/test_soft_detection_independent.py`). Floor still 0.70. Rules-only independent EN recall 0.067 does **not** close alone. Soft model on product path when artifact present (`SENTINEL_SOFT_PROMPT_DETECT`, default true). Multilingual claim still refused. |
 | F-11 | Protect mode | **CLOSED** (deployment-contract bar) | Inline `POST /v1/tools/execute` + kill switch + SDK `require_enrolled` refuse path + pageable enrolled `possible_bypass` + NetworkPolicy default-deny/`enrolled=true` allowlist + ValidatingAdmissionPolicy Fail/Deny (`deploy/agent-egress/admission/`) + fail-closed egress-proxy stub + in-repo `admit_agent_workload` (`tests_arch/test_security_bypass_detection.py`). Non-enrolled/off-SDK/silent agents are preventably or detectably fail-closed under the documented contract; wire-level OS transparent intercept **not claimed** (operator breach to leave contract). See `docs/PROTECT_ENFORCEMENT.md`. |
 | F-12 | Narrow mutation harness | **CLOSED** | Critical invariants covered by behavioural probes (fence, epoch, UNAVAILABLE, hydration, idempotency, kill switch, enforce honesty, errors, tool proxy); campaign floor remains |
 

@@ -32,7 +32,6 @@ informative but satisfies nothing for the current build.
 | Kubernetes and AWS IAM discovery connectors | `infrastructure/platforms/` | `test_connectors.py` | `PASS` |
 | Adoption funnel, computed locally with no egress | `domain/adoption.py` | `test_adoption.py` (27) | `PASS` |
 | Labelled sequence corpus | `evaluation/sequence_corpus.py` | `test_sequence_corpus.py` (26) | `PASS` (synthetic) |
-| Prompt-injection classifier | `evaluation/` | `BENCHMARK.md`, `metrics.json` | `PASS` |
 | Five-minute local experience | `scripts/quickstart.py` | `test_quickstart.py` (9) | `PASS` |
 | Analyst console, ten views | `interface/console/` | `test_console_bundle.py` (27) | `PASS` |
 | Guard mutation testing | `scripts/verify_guards.py` | 26 mutations, all detected | `PASS` |
@@ -80,10 +79,6 @@ reporting it the whole time — but the `type_check` gate ran only against
 package surfaced 71 errors, now zero, including a CLI command that always
 reported zero enrolled agents and a ports layer narrower than both its
 implementations and its callers.
-
-**A soft detector fired on 51.7% of ordinary tool calls.** Measured and disabled by default. The runtime logs its independent
-English recall (0.067) when disabled, so nobody re-enables it believing it is
-free.
 
 ## Checking any of this
 

@@ -163,65 +163,6 @@ and the ledger exported.
 These are honest NOs. Engineering did not move them, and claiming otherwise
 would be the failure this whole exercise exists to prevent.
 
-### Red team — *"I can still get past this"*
-Cross-source AUC is **0.763**. Roughly one in four attacks from a corpus the
-model has not seen ranks below a benign prompt. A red team does not need a
-sophisticated bypass; it needs a phrasing the training corpora did not contain.
-
-**Not fixable by engineering.** It needs attack data from a distribution nobody
-here authored — ideally real traffic from a design partner.
-
-### Gartner analyst — *"where is the operational evidence?"*
-No production traffic has ever been processed. No customer has run this.
-
-> **CORRECTION 2026-08-19 — the 0.48 calibration figure is withdrawn.**
->
-> This paragraph said "the expected calibration error of 0.48 means the
-> confidence scores cannot be used to set an operational threshold". Two things
-> were wrong with that number.
->
-> **1. It came from a script that cannot run in this repository.** The 0.4836
-> lives in `evaluation/results/leave_one_source_out_semantic.json`, produced by
-> `evaluation/validate.py --model semantic`. That path imports
-> `app.detection.semantic_features`, and **there is no `app` package in this
-> tree** — it is the predecessor's namespace, the same way the `tests/`
-> directory is. The command exits `ModuleNotFoundError`. The artifact is also
-> under `evaluation/results/`, which is gitignored, so it was never committed
-> and cannot be regenerated here.
->
-> **2. It was computed by a pooling this very module refuses to publish.**
-> `leave_one_source_out()` carries a long comment explaining that ROC/AP must
-> **not** be pooled across folds, because four of the six sources are
-> single-class and "reporting it as a headline would be its own dishonesty".
-> It then computed `expected_calibration_error` from exactly that pooled set.
-> Calibration compares predicted probability against an *observed positive
-> rate*, and in a single-class fold that rate is 1.0 or 0.0 in every bin **by
-> construction** — so the pooled figure is governed by the class balance of the
-> concatenation, not by the model.
->
-> **What is actually measured**, from the reproducible n-gram path
-> (`PYTHONPATH=. python evaluation/validate.py --model ngram`):
->
-> | | ECE |
-> |---|---|
-> | **Mean over mixed-class folds — the headline** | **0.1872** |
-> | `deepset/prompt-injections` (mixed) | 0.1122 |
-> | `jackhhao/jailbreak-classification` (mixed) | 0.2622 |
-> | Pooled across all six folds *(the old method)* | 0.5524 |
-> | *single-class folds, for illustration:* MultiJail 0.8841, xquad 0.6746, synthetic 0.6652, gandalf 0.3035 | — |
->
-> Cross-source AUC over the mixed folds is **0.7495**, so the model does rank
-> meaningfully on sources it was not trained on.
->
-> **The conclusion survives in direction, not in magnitude.** 0.187 is still
-> poor calibration — a well-calibrated model is under ~0.05 — so an operator
-> still cannot read a probability off this model and set a threshold on it. But
-> it is roughly a third of what was claimed, and the claimed figure was an
-> artefact of invalid pooling reported by a script that does not run here.
-> `validate.py` now reports the per-fold value as the headline and keeps the
-> pooled one under `expected_calibration_error_pooled_INVALID` with a note,
-> rather than deleting it.
-
 ### YC partner — *"why does this win?"*
 No wedge against funded incumbents. Lakera, Protect AI and Prompt Security are
 inside Check Point, Palo Alto and SentinelOne. The clearest opening the market
@@ -288,28 +229,6 @@ not.**
    **Limit, stated:** the two pools share an interpreter, so a real cluster's
    interleavings are a superset of those reachable here. What is established is
    that the server-side protocol holds when two independent pools contend.
-
-3. **Detection that cannot be tuned** — ~~calibration error 0.48 means the
-   probability is not a probability, and no threshold is defensible.~~
-   **PARTIALLY CLOSED 2026-08-19, and the number was wrong.** See the Gartner
-   correction above. The 0.48 came from a script that cannot execute in this
-   repository (`--model semantic` imports `app.detection.semantic_features`;
-   there is no `app` package) and was computed by pooling across single-class
-   folds — a pooling the same module refuses to publish for AUC.
-
-   The reproducible figure, from `validate.py --model ngram`, is **0.1872**
-   ECE over the folds where calibration is a meaningful question, with
-   cross-source AUC **0.7495**.
-
-   **What that does and does not settle.** 0.187 is still poor — a
-   well-calibrated model is under ~0.05 — so the direction of the original
-   objection stands: an operator cannot read a probability off this model and
-   set a threshold on it. What is now false is the magnitude, and the claim
-   that the figure was evidence at all. What remains genuinely open is
-   *improving* calibration, and that part still needs attack data from a
-   distribution nobody here authored — isotonic or Platt scaling fitted on
-   in-distribution data does not fix out-of-distribution calibration, which is
-   precisely what leave-one-source-out measures.
 
 A fifth review would now have to find a class outside all of these.
 

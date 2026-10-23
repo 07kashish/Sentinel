@@ -51,9 +51,7 @@ same nominal size. For a Python service that is I/O-bound on PostgreSQL, the
 per-core performance difference is not the deciding factor — cost is.
 
 Sentinel's dependency set is ARM-clean: `cryptography` and `psycopg` both ship
-manylinux aarch64 wheels. `scikit-learn` does too, and it is only on the
-advisory detection path, never on the authorization path, so even a slower
-inference there cannot affect the latency an agent waits on.
+manylinux aarch64 wheels.
 
 CI builds `linux/amd64` and `linux/arm64`. Nothing forces a choice at deploy
 time.

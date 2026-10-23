@@ -163,40 +163,25 @@ def test_no_two_decisions_share_a_value():
 # ── an ML score alone must never reach a destructive decision ────────────────
 
 
-def test_the_soft_classifier_cannot_reach_a_blocking_severity():
-    """THE Phase 6 non-negotiable, and it was held by coincidence.
+def test_composed_detection_uses_deterministic_rules_for_protect():
+    from sentinel.composition.adapters import _detection_policy_for
+    from sentinel.composition.settings import Settings
+    from sentinel.domain.primitives import TrustLevel
+    from sentinel.infrastructure.detection import DeterministicPolicy
+    from tests_arch.doubles import RecordingLogger
 
-    `SoftAugmentedPolicy` caps its verdict at severity 75. `decide_protect`
-    blocks at 85. So an advisory classifier score can escalate to
-    REQUIRE_APPROVAL — a human looks at it — and can never, by itself, produce
-    a BLOCK.
-
-    That is correct and it was UNGUARDED: two constants in two modules with
-    nothing connecting them. Raising the soft severity to 85, or lowering
-    `_BLOCK_AT` to 75, would have handed an irreversible enforcement decision to
-    a statistical model and no test would have failed.
-
-    This is the connection. If it fails, do not adjust the numbers to make it
-    pass — work out which side moved and whether anybody meant it to.
-    """
-    import inspect
-
-    from sentinel.domain.protect import _BLOCK_AT
-    from sentinel.infrastructure import soft_detection
-
-    source = inspect.getsource(soft_detection.SoftAugmentedPolicy.evaluate)
-    severities = [
-        int(m) for m in __import__("re").findall(r"Severity\((\d+)\)", source)
-    ]
-    assert severities, "the soft policy no longer names its severity literally"
-    assert max(severities) < _BLOCK_AT, (
-        f"the soft classifier can reach severity {max(severities)} and "
-        f"blocking starts at {_BLOCK_AT}: an advisory statistical score would "
-        "produce an irreversible enforcement decision on its own"
-    )
+    policy, _mode = _detection_policy_for(Settings.from_environment({}), logger=RecordingLogger())
+    rules = DeterministicPolicy.default()
+    for payload, fired in (
+        ({"eventType": "prompt", "action": "http_get", "metadata": {"prompt": "http_get"}}, False),
+        ({"eventType": "file_access", "action": "read_file", "resource": "/root/.aws/credentials"}, True),
+    ):
+        verdict = policy.evaluate(payload=payload, trust=TrustLevel.UNSIGNED)
+        assert verdict.fired is fired
+        assert verdict == rules.evaluate(payload=payload, trust=TrustLevel.UNSIGNED)
 
 
-def test_a_soft_only_verdict_lands_on_a_human_not_on_a_refusal():
+def test_an_advisory_verdict_lands_on_a_human_not_on_a_refusal():
     """The positive statement of the same rule: what the ML path CAN do is ask
     a person, which is the correct amount of authority for a probability.
     """
@@ -207,8 +192,8 @@ def test_a_soft_only_verdict_lands_on_a_human_not_on_a_refusal():
         verdict=ProtectVerdict(
             fired=True,
             severity=Severity(75),
-            detector_version="soft-only",
-            matched_rules=("soft-prompt-classifier",),
+            detector_version="advisory-score",
+            matched_rules=("advisory-signal",),
         ),
         trust=TrustLevel.UNSIGNED,
         enforce=True,

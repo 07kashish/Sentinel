@@ -100,7 +100,6 @@ def _make(tmp_path: Path, engine_config, monkeypatch, *, enforce: bool, **extra)
         ),
         "SENTINEL_CORS_ORIGINS": "https://console.example.com",
         "SENTINEL_PROTECT_ENFORCE": "true" if enforce else "false",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
     }
     env.update(extra)
     settings = replace(Settings.from_environment(env), engine=engine_config)

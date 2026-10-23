@@ -142,7 +142,6 @@ def _fresh_client() -> Iterator[Any]:
                 "SENTINEL_API_KEYS": (
                     f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer"
                 ),
-                "SENTINEL_SOFT_PROMPT_DETECT": "false",
             }
         )
 

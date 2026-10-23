@@ -131,13 +131,7 @@ def main() -> int:  # noqa: PLR0915 - a measurement is a linear script
     parser.add_argument(
         "--action",
         default="read_file",
-        help=(
-            "the tool-call action sent in every event. DECIDES WHAT IS MEASURED: "
-            "the default 'read_file' scores 0.5409 and FIRES the detector, so "
-            "every request creates an incident. Use a benign action such as "
-            "'list_dir' (0.3502) to measure classifier cost without the "
-            "incident-write path underneath it."
-        ),
+        help="the tool-call action evaluated by the deterministic rules",
     )
     parser.add_argument(
         "--server-workers",
@@ -148,16 +142,6 @@ def main() -> int:  # noqa: PLR0915 - a measurement is a linear script
             "uvicorn gives -- but the shipped Dockerfile runs `gunicorn "
             "--workers 4`, so 1 UNDER-REPRESENTS production for any workload "
             "whose cost is GIL-held. Use 4 to measure the shipped process model."
-        ),
-    )
-    parser.add_argument(
-        "--no-soft-detect",
-        action="store_true",
-        help=(
-            "disable the soft-prompt classifier. OFF BY DEFAULT: the shipped "
-            "configuration has it on, and profile_ingest.py (which produced the "
-            "995 ms figure this is compared against) leaves it on too. Use this "
-            "only to isolate the detector's own cost."
         ),
     )
     args = parser.parse_args()
@@ -187,21 +171,6 @@ def main() -> int:  # noqa: PLR0915 - a measurement is a linear script
             "SENTINEL_ADDRESS_LIMIT": "5000000",
             "SENTINEL_CREDENTIAL_LIMIT": "5000000",
         }
-        # THE SOFT-PROMPT DETECTOR IS ON BY DEFAULT HERE, DELIBERATELY.
-        #
-        # The first run of this script disabled it, and that was a confound of
-        # exactly the kind this script exists to remove. `profile_ingest.py`,
-        # which produced the 995 ms figure being compared against, does NOT
-        # disable it -- so a run with it off would have attributed the
-        # detector's cost to the harness change and overstated the improvement.
-        # Caught by reading profile_ingest.py's environment rather than assuming
-        # it matched.
-        #
-        # On is also the SHIPPED default (`SENTINEL_SOFT_PROMPT_DETECT` defaults
-        # to true), so this measures the configuration a deployment actually
-        # runs. `--no-soft-detect` exists to isolate the detector's own cost.
-        if args.no_soft_detect:
-            env["SENTINEL_SOFT_PROMPT_DETECT"] = "false"
         child_env = {**os.environ, **env, "PYTHONPATH": str(ROOT)}
 
         print("migrating ...", flush=True)
@@ -356,15 +325,9 @@ def main() -> int:  # noqa: PLR0915 - a measurement is a linear script
                     f"real uvicorn server, {args.server_workers} worker "
                     "process(es), in its own OS process tree"
                 ),
-                "soft_prompt_detector": (
-                    "disabled" if args.no_soft_detect else "ENABLED (shipped default, matching profile_ingest.py)"
-                ),
+                "detector": "deterministic rules",
                 "transport": "HTTP over loopback TCP",
                 "action_sent": args.action,
-                "detector_fires_on_this_action": args.action in {
-                    "read_file", "get_status", "fetch_metrics",
-                    "http_get", "db_query", "retrieve record",
-                },
                 "database": (
                     f"PostgreSQL {server.version.split(',')[0]}, non-superuser role "
                     "so FORCE row-level security is enforced"

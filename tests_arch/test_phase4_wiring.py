@@ -171,7 +171,6 @@ def _container(engine_config, env_extra):
     env = {
         "SENTINEL_ENV": "development",
         "SENTINEL_API_KEYS": "acme:analyst-key-0000000000000000000:analyst",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
     }
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn

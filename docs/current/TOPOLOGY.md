@@ -30,8 +30,6 @@ GitHub Actions remains deferred until 2026-10-02. The future kind smoke deploys 
 - SQLite in production (refused at startup).
 - A single-region PostgreSQL with no WAL archive as the only copy of the
   evidence chain.
-- Running the soft prompt classifier from a pip install: the artifact is a
-  repository and image asset (RISK R-010).
 
 ## Portable local database verification
 

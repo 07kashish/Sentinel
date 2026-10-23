@@ -292,34 +292,20 @@ ingress, load balancer, second replica or rolling deploy is exercised.
 Short local soak (80 requests, CI-cheap):
 `PYTHONPATH=. pytest -q tests_arch/test_multi_tenant_soak.py -s`
 
-## Detection degradation (page on this)
-
-The soft prompt classifier is the difference between ~0.855 and ~0.067 measured
-independent English recall. Losing it used to be silent: `build_container`
-returned the rules-only policy and nothing anywhere said so. It is now reported
-on three surfaces, and the metric is the one to bind an alert to because it
-stays true for as long as the condition does:
+## Detection status
 
 | Signal | Surface | Auth |
 |---|---|---|
-| `sentinel_detection_degraded 1.0` | `/metrics/prometheus` | Bearer |
-| `sentinel_detection_mode{mode="…"} 1.0` | `/metrics/prometheus` | Bearer |
+| `sentinel_detection_mode{mode="rules-only-configured"} 1.0` | `/metrics/prometheus` | Bearer |
 | `detection_mode`, `detector_version` | `/health/diagnostics` | capability |
 | `detection_mode` | `/health/ready` | none — **opt-in only** |
-| `detection_degraded_soft_prompt_{missing,unloadable}` at CRITICAL | logs | n/a |
-
-Modes: `soft+rules` (healthy) · `rules-only-degraded` (the artifact was wanted
-and did not load — **page**) · `rules-only-configured` (an operator turned it off
-on purpose — do not page, or the alert becomes noise nobody reads).
 
 `SENTINEL_READY_EXPOSE_DETECTION_MODE` defaults to **false**. Readiness is
-unauthenticated, and "the ML detector is down right now" is exactly the
-reconnaissance that tells an attacker when to act. Enable it only where the
-readiness port is genuinely cluster-internal.
+unauthenticated. Enable it only where the readiness port is genuinely
+cluster-internal.
 
 ## Alerts (suggested)
 
-- `sentinel_detection_degraded == 1` — detection silently fell back to rules-only
 - Ready probe failing on all replicas
 - Metrics scrape auth failures spike (token rotation)
 - Protect kill switch engaged (`diagnostics.protect_kill_switch`)

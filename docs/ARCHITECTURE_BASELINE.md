@@ -57,7 +57,6 @@ No HTML UI. No /ingest/*. No /simulation/start.
 
 ## Risks accepted at Phase 0
 
-1. Detection efficacy: English independent soft path CLOSED (F-10); multilingual not claimed.
 2. Protect enforced=true is a configured contractual gate, not packet interception.
 3. Human passkey identity schema may still be WIP; directory SCIM Users + org
    HTTP APIs are behind `MANAGE_USERS` (agent enrolment remains CLI-only).

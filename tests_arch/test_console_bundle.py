@@ -583,7 +583,6 @@ def test_operator_console_live_routes_and_actions(engine_config, tmp_path: Path)
                 f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{ADMIN_KEY}:admin"
             ),
             "SENTINEL_BOOTSTRAP_TENANT": TENANT,
-            "SENTINEL_SOFT_PROMPT_DETECT": "false",
         }
     )
     _migrate(db_path, env)

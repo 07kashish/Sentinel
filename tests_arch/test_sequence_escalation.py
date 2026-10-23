@@ -89,10 +89,6 @@ def _settings(engine_config) -> Settings:
     env = {
         "SENTINEL_ENV": "development",
         "SENTINEL_API_KEYS": f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer",
-        # The classifier is irrelevant here and dominates container build time.
-        # Stated rather than left to a default, so nobody reads a fast suite as
-        # evidence the detector is cheap.
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
     }
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn

@@ -111,8 +111,8 @@ class McpToolDefinition:
 
     All three matter, and the description matters most. It is prose the model
     reads and acts on, supplied by the server, so it is attacker-controlled text
-    on the instruction path. `sentinel/infrastructure/soft_detection.py` already
-    knows how to judge such text; this type exists so it can be pointed at it.
+    on the instruction path. The deterministic detection policy evaluates this
+    text through the payload's metadata.prompt field.
     """
 
     name: str

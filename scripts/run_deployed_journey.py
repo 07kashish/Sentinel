@@ -263,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one linear journ
             "SENTINEL_ENV": "production", "SENTINEL_CORS_ORIGINS": "https://console.local.invalid",
             "SENTINEL_RATE_LIMIT_FAIL_OPEN": "false", "SENTINEL_REQUIRE_EXECUTION_BINDING": "true",
             "SENTINEL_PROTECT_ENFORCE": "true", "SENTINEL_PROTECTION_MODE": "protect",
-            "SENTINEL_REQUIRE_WORKLOAD_IDENTITY": "true", "SENTINEL_SOFT_PROMPT_DETECT": "false",
+            "SENTINEL_REQUIRE_WORKLOAD_IDENTITY": "true",
             "SENTINEL_KUBERNETES_API_SERVER": "https://kubernetes.default.svc",
             "SENTINEL_KUBERNETES_TOKEN_FILE": "/var/run/secrets/kubernetes.io/serviceaccount/token",
             "SENTINEL_KUBERNETES_CA_FILE": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",

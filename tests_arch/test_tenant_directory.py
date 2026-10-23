@@ -24,7 +24,6 @@ def _container(tmp_path, engine_config, **extra):
     env = {
         "SENTINEL_ENV": "development", "SENTINEL_DB_PATH": str(tmp_path / "t.db"),
         "SENTINEL_API_KEYS": "acme:" + "a" * 40 + ":ingest,globex:" + "g" * 40 + ":admin,acme:" + "b" * 40 + ":analyst",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         "SENTINEL_AGENT_IDP_JSON": json.dumps([{"name": "idp", "kind": "generic", "issuer": issuer.issuer,
                                                 "audience": AUDIENCE, "tenant": "initech", "jwks": issuer.jwks}]),
         **extra,

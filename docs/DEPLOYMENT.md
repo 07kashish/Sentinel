@@ -157,27 +157,3 @@ $ curl -s -o /dev/null -w "HTTP %{http_code}\n" \
     "https://api.github.com/repos/Loksjain/Sentinel/actions/runs?per_page=5"
 HTTP 404
 ```
-
-### One reason to expect it was NOT green before 2026-08-12
-
-This is a deduction from locally verified facts, not an observation of CI.
-
-`deploy/helm/sentinel/templates/deployment.yaml` does not set
-`SENTINEL_SOFT_PROMPT_DETECT`, so it defaults to `true`. `.dockerignore` does not
-exclude `evaluation/artifacts/`, and the 7 MB model pickle is tracked in git, so
-`docker build` puts the artifact in the image. But `requirements.txt` did **not**
-list `scikit-learn` until this change — so the image contained the pickle and not
-the library that reads it. Unpickling then raises inside `build_container`,
-before gunicorn can serve anything. Reproduced locally by hiding the module:
-
-```console
-$ python -c "<block sklearn imports>; SoftPromptClassifier.load_default()"
-RESULT: RAISED ModuleNotFoundError -> No module named 'sklearn'
-```
-
-With `/health/live` as the startup probe, that is a pod that never becomes ready
-and a `rollout status` that times out. Two changes in this commit address it:
-`scikit-learn==1.4.0` is now a declared runtime dependency, and an unloadable
-artifact now degrades to `rules-only-degraded` with a CRITICAL log instead of
-killing the process (`sentinel/composition/container.py`). **Neither has been
-confirmed against a real cluster** — that still needs the preconditions above.

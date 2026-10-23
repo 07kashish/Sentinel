@@ -6,9 +6,6 @@
 !LICENSE
 !config/default_policy.json
 !docker-entrypoint.sh
-!evaluation/artifacts/soft_prompt_model.pkl
-!evaluation/artifacts/soft_prompt_model_card.json
-!evaluation/soft_prompt.py
 !requirements.lock
 !scripts/_embedded_postgres.py
 !scripts/_minio_harness.py
@@ -54,7 +51,6 @@
 !scripts/seed_console_demo.py
 !scripts/smoke_clean_install.py
 !scripts/smoke_sdks.py
-!scripts/strip_model_stop_words.py
 !scripts/try_sentinel.py
 !scripts/verify_guards.py
 !scripts/verify_image_signature.py
@@ -244,7 +240,6 @@
 !sentinel/infrastructure/siem_transports.py
 !sentinel/infrastructure/skill_scanner.py
 !sentinel/infrastructure/soar.py
-!sentinel/infrastructure/soft_detection.py
 !sentinel/infrastructure/sql/__init__.py
 !sentinel/infrastructure/sql/authorization_store.py
 !sentinel/infrastructure/sql/connected_apps.py

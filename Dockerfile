@@ -42,8 +42,8 @@ RUN python3.12 -B scripts/check_container_context.py --root /context
 
 FROM cgr.dev/chainguard/wolfi-base@sha256:1d95114038f76513a9ace6fca107d5582b08c65981f81f61cb56bf7fd2ef216d AS runtime
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PATH=/opt/venv/bin:$PATH
-# Python, and libstdc++ for the scikit-learn/scipy wheels. Nothing else.
-RUN apk add --no-cache python-3.12 libstdc++ \
+# Python runtime.
+RUN apk add --no-cache python-3.12 \
     && rm -rf /var/cache/apk/*
 # Run as non-root. A security product running as root fails its own review.
 RUN addgroup -g 10001 sentinel && adduser -D -u 10001 -G sentinel -h /app sentinel
@@ -53,7 +53,6 @@ COPY requirements.lock .
 COPY --from=source --chown=sentinel:sentinel /context/sentinel ./sentinel
 COPY --from=source --chown=sentinel:sentinel /context/config ./config
 COPY --from=source --chown=sentinel:sentinel /context/scripts ./scripts
-COPY --from=source --chown=sentinel:sentinel /context/evaluation ./evaluation
 COPY --from=source --chown=sentinel:sentinel /context/standard ./standard
 COPY --from=source --chown=sentinel:sentinel /context/docker-entrypoint.sh /context/LICENSE ./
 # Durable state lives on a volume, not in the image layer.
@@ -73,7 +72,7 @@ USER sentinel
 # Import as the same non-root UID used by Helm before accepting the image.
 # The compiled dependencies are imported too: a missing shared library shows up
 # here, at build time, and not as a crash on the first request that needs it.
-RUN python -c "import sentinel.composition.container, sentinel.interface.http, sentinel.interface.cli, psycopg, cryptography.hazmat.bindings._rust, sklearn, gunicorn, uvicorn"
+RUN python -c "import sentinel.composition.container, sentinel.interface.http, sentinel.interface.cli, psycopg, cryptography.hazmat.bindings._rust, gunicorn, uvicorn"
 EXPOSE 8000
 # /health/live is the only unauthenticated route, so it is the correct probe target.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

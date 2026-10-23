@@ -149,7 +149,7 @@ Severity: **critical** = customer data or an unauthorised consequential action i
 
 - **Severity / likelihood / status:** medium / certain / open
 - **Owner:** VP Product
-- **Description:** evaluation/metrics.json and the independent-English soft benchmark are reproducible but not blind: the corpus was assembled by the people tuning the detector. Real-world precision and recall are unknown.
+- **Description:** evaluation/metrics.json is reproducible but not blind: the corpus was assembled by the people tuning the detector. Real-world precision and recall are unknown.
 - **Impact:** Detection claims must carry the corpus, date and limitations; no headline number may be published.
 - **Mitigation:** Phase 6 blind evaluation set held by someone other than the detector's author; report per-class with confidence intervals.
 - **Closes when:** docs/current/DETECTION_EVIDENCE.md with a sealed-corpus digest committed before the run and results bound to the commit

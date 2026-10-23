@@ -90,9 +90,6 @@ from sentinel.domain.events import (
 )
 from sentinel.domain.primitives import TenantId
 from sentinel.application.ports import DetectionPolicy
-from sentinel.infrastructure.soft_detection import (
-    DetectionMode,
-)
 from sentinel.infrastructure.directory import SqlDirectory
 from sentinel.infrastructure.orgs import SqlOrgRegistry
 from sentinel.infrastructure.observability import MetricsRegistry, OtelHooks
@@ -160,9 +157,7 @@ from sentinel.composition.adapters import (  # noqa: E402,F401
     # travelled with them. RE-EXPORTED, not merely imported: callers and tests
     # already reach for these on `container`, and a split that broke those
     # imports would be a migration wearing a refactor's name.
-    DEFAULT_SOFT_PROMPT_ARTIFACT,
-    _RULES_ONLY_RECALL,
-    _SOFT_AND_RULES_RECALL,
+    DetectionMode,
     _attestation_for,
     _default_subscribers,
     _detection_policy_for,
@@ -598,11 +593,7 @@ def build_container(
         directory = SqlDirectory(pool=pool)
         orgs = SqlOrgRegistry(pool=pool)
         metrics = MetricsRegistry()
-        # The always-on alerting surface for detection degradation. The CRITICAL
-        # log says it once at startup; this says it for as long as it is true,
-        # which is what an alert rule needs. `sentinel_detection_degraded` is the
-        # one to page on -- it is 1 only when detection fell back unintentionally,
-        # never when an operator chose rules-only.
+        # Preserve the authenticated detector metrics for existing scrapers.
         metrics.set_gauge(
             "sentinel_detection_mode",
             1.0,
@@ -610,7 +601,7 @@ def build_container(
         )
         metrics.set_gauge(
             "sentinel_detection_degraded",
-            1.0 if detection_mode is DetectionMode.RULES_ONLY_DEGRADED else 0.0,
+            0.0,
         )
         otel = OtelHooks(endpoint=settings.otlp_endpoint, metrics=metrics,
                          allow_http=not settings.is_production)

@@ -18,7 +18,7 @@ changed.
 
 from __future__ import annotations
 
-from pathlib import Path
+from enum import Enum
 from typing import Any, Callable, Mapping, Sequence
 
 from sentinel.application.ports import (
@@ -40,11 +40,6 @@ from sentinel.infrastructure.attestation import (
 )
 from sentinel.application.ports import DetectionPolicy
 from sentinel.infrastructure.detection import DeterministicPolicy
-from sentinel.infrastructure.soft_detection import (
-    DetectionMode,
-    SoftAugmentedPolicy,
-    SoftPromptScorer,
-)
 from sentinel.infrastructure.persistence.cache import (
     InProcessCache,
     RateLimiter,
@@ -94,94 +89,21 @@ def _limiter_for(settings: Settings, *, logger: Any) -> RateLimiter:
     )
 
 
-#: Measured on the independent English held-out split. Quoted in the CRITICAL
-#: log so the operator reading it at 3am does not have to find the benchmark to
-#: learn what the fallback costs.
-_RULES_ONLY_RECALL = 0.067
-_SOFT_AND_RULES_RECALL = 0.855
+class DetectionMode(str, Enum):
+    """The detector selected by composition and exposed by diagnostics."""
 
-#: Mirrors `evaluation.soft_prompt.DEFAULT_ARTIFACT`. Duplicated rather than
-#: imported because this value is needed to *report* a failure whose cause may be
-#: that `evaluation` is not importable at all. The duplication is held to the
-#: original by `test_detection_mode.py::test_default_artifact_path_matches_loader`.
-DEFAULT_SOFT_PROMPT_ARTIFACT = Path("evaluation/artifacts/soft_prompt_model.pkl")
+    RULES_ONLY_CONFIGURED = "rules-only-configured"
 
 
 def _detection_policy_for(
     settings: Settings, *, logger: Logger
 ) -> tuple[DetectionPolicy, DetectionMode]:
-    """Deterministic rules, optionally OR'd with the soft prompt classifier.
-
-    Returns the mode alongside the policy because the caller cannot otherwise
-    tell them apart: `SoftAugmentedPolicy(base, soft=None)` and the bare
-    `DeterministicPolicy` behave identically, which is exactly how the silent
-    fallback stayed invisible. Every path out of here either logs CRITICAL or
-    returns `SOFT_AND_RULES`.
-    """
-    base = DeterministicPolicy.default()
-    if not settings.soft_prompt_detect:
-        logger.warning(
-            "detection_soft_prompt_disabled",
-            detection_mode=DetectionMode.RULES_ONLY_CONFIGURED.value,
-            reason="SENTINEL_SOFT_PROMPT_DETECT is false",
-            independent_english_recall=_RULES_ONLY_RECALL,
-        )
-        return base, DetectionMode.RULES_ONLY_CONFIGURED
-
-    path = (
-        Path(settings.soft_prompt_model_path)
-        if settings.soft_prompt_model_path
-        else DEFAULT_SOFT_PROMPT_ARTIFACT
-    )
-    try:
-        # Load outside sentinel/infrastructure so pickle stays out of that tree.
-        from evaluation.soft_prompt import SoftPromptClassifier
-
-        clf = SoftPromptClassifier.load(path)
-    except Exception as exc:  # noqa: BLE001 - any load failure degrades detection
-        # Reached when the runtime lacks scikit-learn, when the pickle was
-        # written by an incompatible version, or when the file is corrupt. The
-        # process still starts -- refusing to serve would turn a detection
-        # regression into a full outage -- but it starts loudly.
-        logger.critical(
-            "detection_degraded_soft_prompt_unloadable",
-            detection_mode=DetectionMode.RULES_ONLY_DEGRADED.value,
-            artifact_path=str(path),
-            error_type=type(exc).__name__,
-            error=str(exc),
-            independent_english_recall=_RULES_ONLY_RECALL,
-            expected_recall_when_loaded=_SOFT_AND_RULES_RECALL,
-            remedy=(
-                "install the pinned scikit-learn, restore the artifact, or set "
-                "SENTINEL_SOFT_PROMPT_DETECT=false to make rules-only explicit"
-            ),
-        )
-        return base, DetectionMode.RULES_ONLY_DEGRADED
-    if clf is None:
-        logger.critical(
-            "detection_degraded_soft_prompt_missing",
-            detection_mode=DetectionMode.RULES_ONLY_DEGRADED.value,
-            artifact_path=str(path),
-            independent_english_recall=_RULES_ONLY_RECALL,
-            expected_recall_when_loaded=_SOFT_AND_RULES_RECALL,
-            remedy=(
-                "restore the artifact or point SENTINEL_SOFT_PROMPT_MODEL at it"
-            ),
-        )
-        return base, DetectionMode.RULES_ONLY_DEGRADED
-    soft = SoftPromptScorer(
-        score_fn=clf.predict_proba,
-        version=str(clf.meta.get("version") or clf.path.name),
-        threshold=settings.soft_prompt_threshold,
-    )
-    logger.info(
-        "detection_soft_prompt_loaded",
-        detection_mode=DetectionMode.SOFT_AND_RULES.value,
-        artifact_path=str(clf.path),
-        model_version=soft.version,
-        threshold=soft.threshold,
-    )
-    return SoftAugmentedPolicy(base=base, soft=soft), DetectionMode.SOFT_AND_RULES
+    """Construct the deterministic rules policy used by the service."""
+    policy = DeterministicPolicy.default()
+    mode = DetectionMode.RULES_ONLY_CONFIGURED
+    logger.info("detection_rules_configured", detection_mode=mode.value,
+                detector_version=policy.version())
+    return policy, mode
 
 
 def _attestation_for(settings: Settings) -> AttestationGateway:

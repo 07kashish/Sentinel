@@ -222,7 +222,6 @@ def main() -> int:
                 "SENTINEL_API_KEYS": (
                     f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer"
                 ),
-                "SENTINEL_SOFT_PROMPT_DETECT": "false",
                 "SENTINEL_BOOTSTRAP_TENANT": TENANT,
             }
         )

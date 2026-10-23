@@ -175,7 +175,6 @@ tests actually assert — the count is **seven**:
 | MCP server timeout | ✅ | `test_a_timeout_is_transient_and_a_refusal_is_not` |
 | tool adapter failure | ✅ | `test_a_timed_out_action_is_audited_as_failed` |
 | duplicate events | ✅ | `test_a_replayed_signed_event_is_refused_and_writes_no_incident` |
-| bad model | ✅ | `test_unreadable_artifact_degrades_loudly_instead_of_killing_the_process` |
 | partial deployment | ✅ | `test_the_service_refuses_to_serve_against_an_unknown_schema` |
 | PostgreSQL unavailable | ✅ | `test_the_engine_translates_driver_failures_into_transient_failures` |
 | Redis unavailable | ✅ | `test_an_allow_from_a_dead_cache_is_marked_degraded` |

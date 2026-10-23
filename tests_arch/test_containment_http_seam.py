@@ -48,7 +48,6 @@ def client(engine_config):
             f"{TENANT}:{VIEWER_KEY}:viewer,"
             f"{TENANT}:{INGEST_KEY}:ingest"
         ),
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
     }
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn

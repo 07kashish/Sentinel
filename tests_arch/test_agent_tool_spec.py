@@ -61,7 +61,7 @@ def test_the_document_is_importable_and_offers_no_way_to_assert_trust():
 @pytest.fixture
 def gate(engine_config):
     env = {"SENTINEL_API_KEYS": f"acme:{INGEST}:ingest,acme:{ANALYST}:analyst,acme:{ADMIN}:admin",
-           "SENTINEL_SOFT_PROMPT_DETECT": "false", "SENTINEL_CREDENTIAL_LIMIT": "1000",
+           "SENTINEL_CREDENTIAL_LIMIT": "1000",
            "SENTINEL_PROTECT_ENFORCE": "true", "SENTINEL_PROTECTION_MODE": "protect"}
     if engine_config.dialect is Dialect.POSTGRES:
         env["SENTINEL_DATABASE_URL"] = engine_config.dsn

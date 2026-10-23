@@ -321,28 +321,8 @@ class Settings:
     #: Silence window (seconds) before an enrolled agent with no observed events
     #: raises a `possible_bypass` signal. Not packet interception.
     bypass_idle_seconds: int
-    #: When True, load SoftAugmentedPolicy (DeterministicPolicy OR soft prompt
-    #: classifier) if the model artifact exists. English independent held-out
-    #: promotion depends on this path; disable only for rules-only experiments.
-    soft_prompt_detect: bool
-    #: Probability threshold for soft prompt classifier fire.
-    soft_prompt_threshold: float
-    #: Path to soft prompt model pickle. Empty → default evaluation/artifacts path.
-    soft_prompt_model_path: str
-    #: Publish `detection_mode` on the UNAUTHENTICATED `/health/ready` body.
-    #:
-    #: Default False, and the default is the security position. Readiness is the
-    #: one surface a kubelet can reach without a credential, so everything on it
-    #: is readable by anyone who can reach the port -- and "the ML detector is
-    #: currently down" is precisely the reconnaissance an attacker would use to
-    #: choose when to act. `tests_arch/test_security_edge.py` pins the default
-    #: body to booleans for that reason.
-    #:
-    #: Operators whose readiness endpoint is genuinely reachable only from the
-    #: cluster, and who want to alert on detection degradation from the probe
-    #: rather than from the authenticated `/health/diagnostics` or the metrics
-    #: scrape, can turn it on knowingly. It is opt-in so that turning it on is a
-    #: decision someone made rather than a default nobody reviewed.
+    #: Publish detection mode on unauthenticated readiness only with opt-in.
+    #: Diagnostics and metrics retain their authenticated disclosure boundary.
     ready_exposes_detection_mode: bool
     #: OIDC issuer URL. Empty disables the JWT auth path.
     oidc_issuer: str
@@ -594,13 +574,6 @@ class Settings:
             bypass_idle_seconds=_parsers.positive_int(
                 source, "SENTINEL_BYPASS_IDLE_SECONDS", 15 * 60
             ),
-            soft_prompt_detect=_parsers.flag(source, "SENTINEL_SOFT_PROMPT_DETECT", default=True),
-            soft_prompt_threshold=_parsers.float_value(
-                source, "SENTINEL_SOFT_PROMPT_THRESHOLD", 0.5
-            ),
-            soft_prompt_model_path=source.get(
-                "SENTINEL_SOFT_PROMPT_MODEL", ""
-            ).strip(),
             ready_exposes_detection_mode=_parsers.flag(source, "SENTINEL_READY_EXPOSE_DETECTION_MODE", default=False),
             oidc_issuer=source.get("SENTINEL_OIDC_ISSUER", "").strip(),
             oidc_audience=source.get("SENTINEL_OIDC_AUDIENCE", "").strip(),

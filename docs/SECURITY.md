@@ -34,6 +34,5 @@
 
 - Full enterprise IdP (hosted SAML IdP, SCIM Groups sync productization): incomplete.
   **SAML in this tree validates signed assertions; it is not an IdP.**
-- Detection efficacy CLOSED for English independent soft path (F-10); multilingual not claimed.
 - Remote GitHub branch protection UNVERIFIED until an operator runs
   `python scripts/apply_branch_protection.py OWNER/REPO --apply`.

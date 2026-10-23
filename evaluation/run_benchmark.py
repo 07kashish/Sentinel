@@ -1,12 +1,11 @@
 """Score detectors against the external third-party benchmark.
 
-Uses the production DeterministicPolicy path (and optional soft prompt
-classifier) — not a reimplemented harness.
+Uses the production DeterministicPolicy path, not a reimplemented harness.
 
 Usage:
     py evaluation/run_benchmark.py            # train split (development)
     py evaluation/run_benchmark.py --test     # held-out split (report this)
-    py evaluation/run_benchmark.py --test --english --soft
+    py evaluation/run_benchmark.py --test --english
 """
 
 from __future__ import annotations
@@ -101,24 +100,7 @@ def _to_payload(case: benchmark.Case) -> dict[str, Any]:
     }
 
 
-def _soft_fires(text: str, *, threshold: float) -> bool:
-    from evaluation.soft_prompt import SoftPromptClassifier
-
-    clf = SoftPromptClassifier.load_default()
-    if clf is None:
-        raise SystemExit(
-            "soft classifier artifact missing; run: "
-            "PYTHONPATH=. py evaluation/train_classifier.py"
-        )
-    return clf.predict_proba(text) >= threshold
-
-
-def score(
-    cases: list[benchmark.Case],
-    *,
-    soft: bool = False,
-    soft_threshold: float = 0.5,
-) -> dict:
+def score(cases: list[benchmark.Case]) -> dict:
     policy = DeterministicPolicy.default()
     overall = Confusion()
     by_category: dict[str, Confusion] = defaultdict(Confusion)
@@ -132,8 +114,6 @@ def score(
             fired = policy.evaluate(
                 payload=payload, trust=TrustLevel.UNSIGNED
             ).fired
-            if soft and not fired:
-                fired = _soft_fires(case.text, threshold=soft_threshold)
         except Exception:  # noqa: BLE001
             fired = False
 
@@ -166,26 +146,7 @@ def score(
             )
 
     return {
-        "detector": (
-            f"DeterministicPolicy+SoftPrompt@{soft_threshold}"
-            if soft
-            else policy.version()
-        ),
-        # THE THRESHOLD THIS RUN USED, RECORDED IN THE ARTIFACT.
-        #
-        # `--soft-threshold` overwrites the SAME file the promotion-floor gate
-        # reads, and the artifact used to carry no record of which threshold
-        # produced it. A threshold sweep therefore silently replaced the gate's
-        # evidence with numbers from a configuration the product does not ship.
-        #
-        # That is not hypothetical: a sweep at 0.70 left recall 0.6909 in this
-        # file, and `test_independent_english_soft_benchmark_meets_promotion_floor`
-        # duly failed against a floor of 0.70 -- a regression that did not exist,
-        # in a build where nothing was wrong. The test could not tell, because
-        # the artifact did not say.
-        #
-        # Recorded here so the gate can check it, which it now does.
-        "soft_threshold": soft_threshold if soft else None,
+        "detector": policy.version(),
         "overall": overall.as_dict(),
         "by_category": {k: v.as_dict() for k, v in sorted(by_category.items())},
         "by_language": {k: v.as_dict() for k, v in sorted(by_language.items())},
@@ -208,19 +169,13 @@ def main() -> None:
         action="store_true",
         help="restrict to English cases (defensible claim per BENCHMARK.md)",
     )
-    parser.add_argument(
-        "--soft",
-        action="store_true",
-        help="OR soft prompt classifier with DeterministicPolicy",
-    )
-    parser.add_argument("--soft-threshold", type=float, default=0.5)
     args = parser.parse_args()
 
     split = "test" if args.test else "train"
     cases = [c for c in benchmark.load() if c.split == split]
     if args.english:
         cases = [c for c in cases if c.language == "en"]
-    result = score(cases, soft=args.soft, soft_threshold=args.soft_threshold)
+    result = score(cases)
     result["split"] = split
     result["n_cases"] = len(cases)
     result["english_only"] = bool(args.english)
@@ -239,8 +194,6 @@ def main() -> None:
     suffix = split
     if args.english:
         suffix += "_english"
-    if args.soft:
-        suffix += "_soft"
     out = RESULTS / f"benchmark_{suffix}.json"
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
 

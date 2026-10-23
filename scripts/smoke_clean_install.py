@@ -233,10 +233,6 @@ def check_server(wheel: Path, work: Path) -> list[Step]:
         "SENTINEL_DB_PATH": str(work / "smoke.db"),
         "SENTINEL_API_KEYS": f"acme:{key}:admin",
         "SENTINEL_CORS_ORIGINS": "https://console.example.com",
-        # The classifier artifact is an evaluation asset, not a wheel member;
-        # a clean install runs the deterministic policy only. Recorded as
-        # such in RELEASE_STATUS: the soft detector is repository-only.
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         "SENTINEL_PROTECT_ENFORCE": "true",
     }
     cwd = work / "cwd"

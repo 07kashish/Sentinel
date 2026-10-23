@@ -109,7 +109,6 @@ def _app(engine_config, issuer: _Issuer, **extra_env):
             f"{TENANT}:" + ("i" * 40) + ":ingest," f"{TENANT}:" + ("v" * 40) + ":viewer"
         ),
         "SENTINEL_PROTECT_ENFORCE": "true",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         "SENTINEL_AGENT_IDP_JSON": _registration(issuer),
     }
     if engine_config.dialect is Dialect.SQLITE:

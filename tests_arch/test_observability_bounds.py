@@ -55,7 +55,7 @@ def test_ten_thousand_unknown_http_paths_use_one_bucket(tmp_path, engine_config)
     settings = Settings.from_environment({"SENTINEL_ENV": "development",
         "SENTINEL_DB_PATH": str(tmp_path / "metrics.db"),
         "SENTINEL_API_KEYS": "acme:" + "a" * 40 + ":viewer",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false"})
+        })
     settings = replace(settings, engine=engine_config)
     pool = build_engine(settings.engine)
     migrate(pool)

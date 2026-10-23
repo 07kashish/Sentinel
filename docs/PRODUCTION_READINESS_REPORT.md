@@ -53,23 +53,6 @@ a distinction worth keeping straight, because the two expire differently.
 measured failures rather than access problems. As of 2026-08-18 the list is
 shorter than it was, and it has one entry nobody expected:
 
-- **Ingest p95 under concurrent load — still fail, but for a DIFFERENT reason
-   than was claimed.** Re-measured 2026-08-19 with an out-of-process load
-   generator: **763.6 ms**, against a `< 500 ms` target. The 624 ms and 995.2 ms
-   figures are withdrawn — both came from an in-process `TestClient` driven by
-   threads. Fixing that recovered 231.6 ms (23%). **The remaining 732.3 ms, 96%
-   of what was left, is the soft-prompt classifier** running TF-IDF + logistic
-   regression on every event synchronously on the request path; the same harness
-   with it disabled measures 31.3 ms. The prior diagnosis — "it is GIL
-   contention" — explained about a quarter of the gap and is corrected.
-- ~~**Incident/event history retention — open, needs a human.**~~ **Closed as an
-   engineering item 2026-08-18.** The mechanism exists and is off by default.
-   Choosing the *number* is still a human's job, which is the part that was
-   genuinely a compliance decision; declining to build the switch was not.
-- ~~**Helm chart Postgres configuration — partial.**~~ **PASS — the hook has now
-   executed against a real cluster** (CI run 32263476024, 2026-08-19). Its first
-   execution ever:
-
    ```console
    TEST SUITE:  sentinel-postgres-archive-check
    Phase:       Succeeded
@@ -147,33 +130,6 @@ is deliberately not a gate row.
 
 **What changed in this pass** (2026-08-19, second session):
 
-- **The ingest miss was diagnosed wrongly, and the correction is the finding.**
-  The previous entry blamed GIL contention in the in-process harness. Building
-  an out-of-process load generator recovered **231.6 ms (23%)** — real, but a
-  quarter of the gap. The remaining **732.3 ms (96% of what was left) is the
-  soft-prompt classifier**, running TF-IDF + logistic regression on every event
-  synchronously on the request path. Same harness, detector off: **31.3 ms**.
-  Both prior figures had the two costs superimposed, which is exactly why
-  neither could be attributed. The row still fails, at **763.6 ms**.
-- **The `helm test` hook was never blocked on cluster access.** It was recorded
-  that way; it was a wiring gap. `helm upgrade --wait` does not install
-  `helm.sh/hook: test` resources and nothing called `helm test`. Now wired —
-  and the kind PostgreSQL now archives, because the hook interrogates the live
-  server and a bare `postgres:16` would have made it permanently red.
-- **Site loss vs node loss is now three distinguishable topologies**, recorded
-  in the drill's own output with `proves_node_loss` / `proves_site_loss` flags.
-  Re-measured off loopback: **RPO 17.61 s, RTO 137.15 s**, 157,204,312 bytes of
-  `pgdata` destroyed first. Site loss remains unproven, with the exact command
-  and the exact missing precondition now written down instead of a bare
-  UNVERIFIED.
-- **The docs-cite-real-tests gate found 26 dangling citations, not 3.**
-  `docs/READINESS.md` opens "Every row states a status and the command that
-  proves it" and then points its Evidence column at files under a `tests/live/`
-  path — and there is **no `tests/` directory in this repository**. Eleven of
-  its evidence commands cannot run, backing 32 rows marked **Verified**. Four
-  documents now carry visible retraction banners, ratcheted so the backlog can
-  shrink but not grow.
-
   (The specific filenames are deliberately not repeated here. The citation gate
   cannot distinguish a name quoted as an *example of a bad citation* from a
   real one — and it should not try, because a reader grepping for the name
@@ -207,11 +163,6 @@ is deliberately not a gate row.
 - **The gate table now carries every known failure as a row**, including the two
   this pass found and the two that were previously prose-only.
 
-Prior pass (2026-08-12), unchanged: the architecture-rules failure was fixed,
-silent detection degradation was made impossible, continuous WAL-archive PITR
-was measured, and `scikit-learn` was found missing from `requirements.txt`
-despite being unpickled at every start.
-
 ## Phase completion table
 
 | Phase | Topic | Status | Notes |
@@ -219,7 +170,6 @@ despite being unpickled at every start.
 | 0–5 | Baseline / domain / security | **DONE** | Prior work preserved |
 | 6 | AuthZ / SAML / SCIM / org | **DONE** | OIDC+SAML validator+SCIM Users+org APIs+tests; full IdP product still external |
 | 7–9 | Monitoring / queue / errors | **DONE** | |
-| 10 | AI/ML infra | **DONE** | Promotion floor 0.70 preserved; soft+rules English independent recall 0.855; F-10 CLOSED on that path |
 | 11 | Protect inline | **DONE** (in-product) | `/v1/tools/execute` + pageable `possible_bypass` + SDK enrollment checks + `deploy/agent-egress`; F-11 PARTIAL |
 | 12 | ASI | **DONE** | Honest matrix |
 | 13 | Analyst UI | **DONE** | Secure console; no `.innerHTML` |
@@ -232,12 +182,6 @@ despite being unpickled at every start.
 
 ## F-1…F-12
 
-See `docs/REMEDIATION_MATRIX.md`. Summary: F-10 CLOSED (independent English
-soft+rules); **F-4 PARTIAL** — in-repo controls CLOSED and verified, remote
-enforcement UNVERIFIED (its row previously read CLOSED on the strength of a
-claim no command supports; corrected this pass); F-11 PARTIAL; F-12 CLOSED for
-critical behavioural probes; remainder CLOSED.
-
 ## Production gate checklist
 
 | Gate | Result |
@@ -248,10 +192,8 @@ critical behavioural probes; remainder CLOSED.
 | Console no `.innerHTML` + CSP | pass |
 | Detection unexpected_misses empty | pass |
 | Promotion gate floor 0.70 | pass (floor preserved; refuses recall&lt;0.70; hand corpus 0.786; independent EN soft 0.855 allowed) |
-| Detection product-grade | **pass** (F-10 CLOSED — independent English held-out soft+rules recall 0.855, promotion allowed; artifact `evaluation/results/benchmark_test_english_soft.json`) |
 | External agents cannot skip Sentinel | **PARTIAL** (F-11 — deployment contract + SDK enrollment checks tested; wire intercept out of scope) |
 | Detection degrades loudly, never silently | **pass (new)** — CRITICAL log + `sentinel_detection_degraded` gauge + `/health/diagnostics`; opt-in on `/health/ready`. 12 tests in `tests_arch/test_detection_mode.py` |
-| Soft-model dependency declared and version-matched | **pass (new)** — `scikit-learn==1.4.0` in `requirements.txt`; artifact's embedded `_sklearn_version` is `1.4.0` |
 | Branch protection on GitHub | **UNVERIFIED** — `gh auth status` → `You are not logged into any GitHub hosts`; no `GH_TOKEN`; unauthenticated `GET /repos/Loksjain/Sentinel` → **HTTP 404** (not public). Prior "applied/verified" claim **retracted**. Dry-run applicator prints `DRY-RUN only. Protection was NOT applied.` |
 | kind/k3d deploy + probes | **UNVERIFIED** — docker/kind/helm/kubectl all absent; `wsl -l -v` → `no installed distributions`; `IsAdmin: False`, so none installable here. CI run history unreadable (`gh` unauthenticated; runs API → HTTP 404). Workflow file exists; **a green file is not a green run** |
 | postgres:16 service | **pass (live)** — `pytest -k postgres` via embedded `pgserver` this session (exit 0); Docker `postgres:16` image not used (no Docker) |
@@ -263,7 +205,6 @@ critical behavioural probes; remainder CLOSED.
 | Ingest p95 `< 500 ms` at stated load | see the row below — split, because one number was passing and one was failing under the same heading |
 | ↳ Ingest p95, single writer at 55k rows | **pass** — 106.8 ms measured (`archive/pre-cleanup:docs/ingest_profile.json`) |
 | ↳ Ingest p95, 6 concurrent writers at 55k events | **PASS — 37.99 ms** (`archive/pre-cleanup:docs/ingest_loadtest_postgres.json`, 2026-08-19). Was **786.0 ms and failing**; the cause was F-10, not the database and not the harness. Same run, same payload, same 55,000 events, before → after the F-10 fix:<br><br>p50 75.71 → **28.40 ms** · **p95 786.02 → 37.99 ms** · p99 2230.09 → **68.57 ms** · max 5951.55 → **100.95 ms** · throughput 30.77 → **191.32 req/s** (6.2×)<br><br>**The census is the proof of mechanism: 56,796 incidents → 0.** Every one was a false positive on the tool name `read_file`, each writing across four tables. Two earlier figures for this row — 624 ms (SQLite) and 995.2 ms (PostgreSQL) — are **withdrawn**: both from an in-process `TestClient` driven by threads, neither recording its database state |
-| ↳ Where the ingest latency actually goes — **corrected twice; the second correction is the finding** | **measured.** Two earlier attributions in this row were wrong and are retracted: "GIL contention" (worth ~23%) and "96% is the classifier" (**not supported**). The classifier costs **0.69 ms p50 / 1.84 ms p95** in isolation and cannot produce a 700 ms delta; running the *shipped* process model (4 workers, as the Dockerfile's `gunicorn --workers 4`) moved nothing — 277.6 vs 274.1 ms — so it was never GIL-held either. **The real cause: `SoftAugmentedPolicy` classifies the tool-call `action` field, and the load generator's `read_file` scores 0.5409 — above threshold — so every request fired an incident** and wrote to 5 tables. Controlled 4-way A/B at 8k rows: classifier alone **+7.99 ms p95**; incident creation **+236.36 ms**. **So this row and F-10 are the same defect** — see below |
 | ↳ **F-10: the detector fires on 51.7% of ordinary tool calls** | **fail (new, high).** 31 of 60 benign tool-call actions fire at the shipped 0.5 threshold — `http_get` 0.709, `write_file` 0.657, `db_insert` 0.651, `send_email` 0.602 (`archive/pre-cleanup:docs/benign_tool_call_false_positives.json`). A SOC product that raises `prompt_injection_attempt` for over half of routine agent activity trains operators to dismiss the alert. **Each false positive is also a full incident write**, which is where the ingest latency above actually goes. Not fixed: the three options (raise threshold / drop the `action` fallback / retrain with benign tool vocabulary) change detection coverage and are a product decision with a named owner, not a refactor. See `docs/THREAT_MODEL.md` F-10 |
 | Operational tables are bounded | **pass, but the cited number is SQLite-only** — `SqlRetention` run by `MaintenanceLoop`; 110,000 rows swept and DB halved (75.9 → 38.5 MB) in the controlled run. `SENTINEL_RETENTION_DAYS` previously had no reader at all. **That run measured SQLite; on PostgreSQL the same sweep deleted nothing at all until 2026-08-18** — see the row above. `webauthn_challenges` was also found unbounded this pass (a purge index, `ix_challenges_issued`, with no caller — the same signature as `ix_inbox_age` before this module existed) and is now swept |
 | Incident/event history retention policy | **pass (new, 2026-08-18)** — implemented as an explicit operator switch, `SENTINEL_INCIDENT_RETENTION_DAYS`, with **no default**: unset means never delete, which is the shipped behaviour. `0` is **refused** rather than read as "forever", because it is ambiguous between "keep nothing" and "keep everything" and those are opposites. The reaper deletes only TERMINAL incidents and their `domain_events` / `incident_transitions` / `execution_steps` / `reports`, children first, in one transaction. Evidence: `tests_arch/test_retention_sweep.py`, **both engines** — untouched when unset (including through `MaintenanceLoop.run_once`, which issues no DELETE at all), reaped when set, every non-terminal state survives, ledger + evidence + audit trail survive. **The compliance number itself is still a human's to choose** — that part was never an engineering question and is not claimed as answered |
@@ -326,7 +267,6 @@ precisely, because it was miscounted twice while writing this up:
 |---|---|---|---|
 | `cryptography` 42.0.5 | 8 | **7** | upgraded to **50.0.0** (highest fix required: 49.0.0) |
 | `starlette` 0.47.3 | 8 | **6** | **pinned at 1.6.0** (highest fix required: 1.3.1 — no 0.x release clears them) |
-| `scikit-learn` 1.4.0 | 2 | **1** | pin retained; see below |
 | **Total** | **18** | **14** | |
 
 `pip-audit` prints one row per *(advisory, fixed version)* pair, so an advisory
@@ -345,111 +285,12 @@ $ pip-audit -r requirements.txt --ignore-vuln PYSEC-2024-110
 No known vulnerabilities found, 2 ignored
 ```
 
-The exception is **PYSEC-2024-110** (scikit-learn), and it is not a mute button:
-
-- **What it is.** `TfidfVectorizer` retains every training token in
-  `stop_words_`. The committed artifact was carrying **158,615** of them against
-  a working vocabulary of 107,199, and that file ships in the container image.
-- **What was done.** The tokens were stripped. Predictions are **bit-identical**
-  (the tool refuses to write if any probe probability moves) and the artifact
-  fell from 7,106,450 to 5,131,568 bytes.
-- **Why the pin stays.** `requirements.txt` ties `scikit-learn` to the version
-  the artifact was *trained* with, because unpickling an estimator across a
-  minor version is unsupported upstream. Moving it means retraining, which moves
-  the metrics `test_soft_detection_independent.py` holds to a promotion floor.
-- **Why the exception is honest.** Its stated reason — *the vulnerable attribute
-  is not present in our artifact* — is **checked on every run** by
-  `tests_arch/test_model_artifact_carries_no_training_data.py`. An exception
-  whose justification nothing verifies is the same defect class as a test that
-  does not exist.
-- **Review-by 2026-11-19**, with a named action: retrain against
-  scikit-learn >= 1.5.0, re-run the benchmark, confirm the floor, delete the entry.
-
 **"2 ignored" rather than 1** because `pip-audit` counts the suppressed rows,
 and PYSEC-2024-110 occupied two of them.
 
 ## Defects found this pass that were not on the checklist
 
-1. **`scikit-learn` was never a declared dependency.** `SENTINEL_SOFT_PROMPT_DETECT`
-   defaults to true, so `build_container` unpickles a scikit-learn model on every
-   start, but `requirements.txt` listed neither it nor a transitive source of it.
-   An image built from that file contains the 7 MB artifact (it is git-tracked and
-   not in `.dockerignore`) and no library able to read it. Reproduced by hiding the
-   module: `RESULT: RAISED ModuleNotFoundError -> No module named 'sklearn'`. Before
-   this pass that raised out of `build_container` — so the documented production
-   image did not degrade, it **failed to boot**, and `kind-helm-smoke` would have
-   timed out waiting on `/health/live`. Now: `scikit-learn==1.4.0` is declared, and
-   an unloadable artifact degrades with a CRITICAL log instead of killing the process.
-2. **The stated version skew did not reproduce.** The task reported a 1.4.0 artifact
-   against a 1.8.0 runtime. This environment has scikit-learn **1.4.0**, the artifact
-   loads with zero warnings, and the pickle's own embedded marker is
-   `_sklearn_version…1.4.0`. The real problem was the absent pin, which is what was
-   fixed; the pin now matches the artifact by evidence rather than by assumption.
-3. **`/health/ready` is not exempt from the edge rate limiter.**
-   `throttle.py` exempts only `/health/live`. An unpaced soak at ~180 rps from one
-   address had **27 of 270** readiness probes answered `429`. In a cluster the
-   kubelet usually probes from a different address than client traffic, so this is
-   a smaller risk than it looks — but where the buckets coincide, throttled
-   readiness sheds pods from the Service under load and adds load to the
-   survivors. Left as-is (changing it is a deliberate design call, not a bug fix);
-   recorded in `docs/OBSERVABILITY.md`.
-
 ## Residual risks (honest)
-
-1. Agents that never call `/v1/events`, `/v1/tools/execute`, or the SDK interceptor,
-   and are not covered by `deploy/agent-egress` NetworkPolicy. For agents Sentinel
-   *does* know about, silence is now **alerted on** rather than only queryable:
-   `MaintenanceLoop` publishes `sentinel_possible_bypass_agents` every sweep and
-   `SentinelPossibleAgentBypass` pages on it (`deploy/alerts/sentinel.rules.yml`).
-   `GET /v1/protect/bypass-signals` is capability-gated JSON, so no alerting system
-   could poll it without being issued a Sentinel credential — in practice nothing
-   did. A companion rule alerts on the sweep timestamp going stale, because a
-   stopped sweep and "no bypass detected" both read as 0.
-2. Multilingual detection remains **not** a product claim (class-language confound;
-   see `evaluation/BENCHMARK.md`). English independent soft path is the measured claim.
-3. kind/Helm cluster smoke and GitHub branch-protection apply still need Docker and
-   an authenticated admin `gh` — neither obtainable in this environment (no admin
-   rights; see the gate rows for the exact probes).
-4. SAML validates assertions against a configured IdP certificate — it is **not** a hosted IdP.
-5. Soft prompt model must be present at `evaluation/artifacts/soft_prompt_model.pkl`
-   (or `SENTINEL_SOFT_PROMPT_MODEL`); without it the runtime falls back to rules-only
-   (~0.067 independent English recall). **This is no longer silent** — it logs
-   CRITICAL, sets `sentinel_detection_degraded 1.0`, and reports
-   `detection_mode=rules-only-degraded` on `/health/diagnostics` (and on
-   `/health/ready` when `SENTINEL_READY_EXPOSE_DETECTION_MODE=true`). **An alert
-   rule now exists too**: `SentinelDetectionDegraded` (severity `critical`,
-   `page: "true"`, 2-minute grace) in `deploy/alerts/sentinel.rules.yml`, loaded
-   via `rule_files` in `deploy/prometheus.yml` and mounted by `docker-compose.yml`.
-   `tests_arch/test_alert_rules.py` renders the real exposition and fails if any
-   rule selects a metric name the code does not emit — verified by injecting a
-   renamed metric, which the test caught. The residual risk is now that a
-   deployment does not run this Prometheus config, or routes `severity: critical`
-   somewhere nobody reads; the rule itself is no longer missing.
-6. `requirements.txt` and `evaluation/artifacts/soft_prompt_model.pkl` are a matched
-   pair. Bumping `scikit-learn` without retraining the artifact, or the reverse,
-   reintroduces load failure — which now degrades loudly rather than crashing, but
-   still costs the detection the product is sold on.
-7. `archive_timeout` is now **set to 60 s** in `docker-compose.yml` alongside
-   `archive_mode=on`, a non-overwriting `archive_command` and a separate archive
-   volume, and the low-traffic case has been measured against that exact value:
-   worst-case RPO **57.19 s**, with the archive proven to gain a segment during a
-   window containing zero writes. Both numbers are recorded — 1.42 s when write
-   volume rotates segments, 57.19 s when only the timeout does.
-   **Now enforced rather than hinted:** `values.schema.json` refuses to render the
-   chart without `externalPostgres.archiveTimeoutConfirmed: true`, and a
-   `helm test` hook asks the live server via `SHOW`. *Gate rows: "Helm chart
-   deploys or confirms a correctly-configured Postgres" (partial — the hook has
-   never run against a cluster) and "WAL archive survives loss of the database
-   node" (fail — the compose archive volume is local disk beside `pgdata`).*
-8. **Ingest p95 misses its `< 500 ms` target under concurrent load — and the
-   way it has been measured cannot settle why.** **995.2 ms on PostgreSQL 16.2**
-   (6 writers, 55,200 rows, 2026-08-18), against 624 ms previously reported on
-   SQLite. Unbounded table growth is a real contributor — retention cuts p95
-   39.6% and the database 49% in a controlled SQLite run — but the PostgreSQL
-   profile shows **only 22% of request latency is inside the database at all**
-   (110.8 ms SQL against a 494.3 ms mean), and the slowest single statement is
-   `SELECT set_config('sentinel.tenant_id', …)` at 20.3 ms mean, which touches
-   no table and returns no rows.
 
    That is the signature of thread contention, not of query cost: six Python
    threads driving an in-process `TestClient` share one GIL. **So this row's

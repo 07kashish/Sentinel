@@ -41,7 +41,6 @@ def app(engine_config):
         "SENTINEL_API_KEYS": (
             f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer"
         ),
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         "SENTINEL_EXPOSE_API_DOCS": "true",
     }
     if engine_config.dialect is Dialect.POSTGRES:

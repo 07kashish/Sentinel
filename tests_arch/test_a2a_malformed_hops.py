@@ -25,7 +25,6 @@ def _client(engine_config):
     env = {
         "SENTINEL_ENV": "development",
         "SENTINEL_API_KEYS": f"acme:{ADMIN}:admin",
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
     }
     if engine_config.dialect is Dialect.SQLITE:
         env["SENTINEL_DB_PATH"] = engine_config.dsn

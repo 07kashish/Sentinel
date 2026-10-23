@@ -41,7 +41,6 @@ def client(engine_config):
         "SENTINEL_API_KEYS": (
             f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer"
         ),
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         # Off by default, and correctly so -- a production deployment should
         # not publish its own attack surface. Enabled here because a test that
         # asserts a route is discoverable has to look at the document where

@@ -90,31 +90,6 @@ defusedxml==0.7.1
 # request rather than at build time.
 redis==8.0.1
 
-# Soft prompt-injection classifier. A RUNTIME dependency, not evaluation-only:
-# `SENTINEL_SOFT_PROMPT_DETECT` defaults to true, so the composition root
-# unpickles `evaluation/artifacts/soft_prompt_model.pkl` on every start, and
-# that unpickle reconstructs scikit-learn estimators. Without this line an image
-# built from this file has the artifact but not the code to read it, and
-# detection degrades from ~0.855 to ~0.067 independent English recall.
-#
-# The version is pinned to the one the committed artifact was TRAINED with
-# (see `evaluation/artifacts/soft_prompt_model_card.json`). Unpickling an
-# estimator across a scikit-learn minor version is explicitly unsupported
-# upstream, so this pin and that artifact are a matched pair: retrain the
-# artifact in the same change that moves this pin, never one without the other.
-#
-# MOVED FROM 1.4.0 FOR CVE-2024-5206 / PYSEC-2024-110 (CVSS 4.7).
-# `TfidfVectorizer.stop_words_` retained EVERY token seen during training rather
-# than only the discarded subset, so the fitted estimator carried training data
-# it had no functional use for. Fixed upstream in 1.5.0.
-#
-# THE ARTIFACT WAS RETRAINED IN THIS SAME CHANGE, not merely re-pinned. A .pkl
-# fitted under the vulnerable version can carry the leaked attribute regardless
-# of which version later loads it -- bumping the dependency alone would have
-# left the data sitting in the committed file. That is the matched-pair rule
-# above being honoured rather than quoted.
-scikit-learn==1.9.0
-
 # Operational tracing uses the standard OTLP exporter; no customer payloads.
 opentelemetry-sdk==1.44.0
 opentelemetry-exporter-otlp-proto-http==1.44.0

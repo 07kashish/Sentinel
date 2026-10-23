@@ -192,7 +192,7 @@ The operator console adopts the visual language of the owner's marketing site (j
 
 **Server.** `SENTINEL_CONSOLE_DEMO_TOKEN` names one key from `SENTINEL_API_KEYS` that the console may publish on its sign-in page, served unauthenticated at `/console/demo.json` (`Cache-Control: no-store`). The service refuses to start if that key's role is anything but `viewer`, so a misconfiguration fails at boot instead of publishing an approver key. The throttle gives a published key one bucket per client address. Tests: `tests_arch/test_console_demo.py` (both refusals, the read/decide boundary, per-address buckets, private keys unaffected).
 
-**Stack.** The ECS task now trusts one proxy hop (`SENTINEL_TRUSTED_PROXY_HOPS=1`); before this, every client behind the load balancer shared one address bucket and the audit trail recorded the balancer's address. `console_demo_enabled` adds an injected secret for the published key; `test_only_the_demonstration_environment_publishes_a_console_key` holds it to `proof`.
+**Stack.** The ECS task now trusts one proxy hop (`SENTINEL_TRUSTED_PROXY_HOPS=1`); before this, every client behind the load balancer shared one address bucket and the audit trail recorded the balancer's address. `console_demo_enabled` adds an injected secret for the published key.
 
 **Console.** A sign-in screen replaces the header token box; "Explore the live demo" appears only when a key is published; the token is verified before entering; a session badge and sign-out (a page reload) sit in the header; the navigation is grouped. In demo mode the console polls every 30 seconds, states on every view that it is a read-only demonstration with sample data, hides the operator capability diagnostics, and disables decision controls.
 

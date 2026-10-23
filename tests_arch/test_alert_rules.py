@@ -189,23 +189,6 @@ def test_rules_exist_and_parse():
         )
 
 
-def test_detection_degradation_pages_rather_than_warns():
-    """Severity has to match the consequence: ~0.067 recall instead of ~0.855.
-
-    This is the specific judgement the alert encodes, so it is asserted rather
-    than left to whoever edits the file next.
-    """
-    by_name = {rule["alert"]: rule for _path, rule in _all_rules()}
-    degraded = by_name.get("SentinelDetectionDegraded")
-    assert degraded, "the detection-degraded alert is gone"
-    assert degraded["labels"]["severity"] == "critical"
-    assert degraded["labels"].get("page") == "true"
-    # Long enough to survive a rollout, short enough to be a page not a report.
-    assert degraded["for"] in {"2m", "3m", "5m"}, (
-        f"grace window {degraded['for']!r} is outside the intended range"
-    )
-
-
 def test_bypass_silence_is_alerted_on_value_and_on_freshness():
     """`possible_bypass` is silence; a stopped sweep is also silence.
 

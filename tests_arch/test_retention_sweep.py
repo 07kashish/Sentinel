@@ -123,13 +123,6 @@ def _env(engine: str, tmp_path, dsn, **extra) -> dict:
         "SENTINEL_API_KEYS": f"{TENANT}:{KEY}:admin",
         "SENTINEL_RETENTION_DAYS": "7",
         "SENTINEL_RETENTION_INTERVAL": "1",
-        # Explicit, not incidental: `build_container` unpickles a 7 MB
-        # scikit-learn artifact on every construction, which dominated this
-        # module's runtime at ~15 s per test once it was parametrised over two
-        # engines. Retention deletes rows; it does not classify prompts. Turning
-        # the detector off is stated here rather than left to a default so that
-        # nobody reads a fast retention suite as evidence the detector is cheap.
-        "SENTINEL_SOFT_PROMPT_DETECT": "false",
         **extra,
     }
     if engine == "sqlite":
