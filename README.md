@@ -163,8 +163,8 @@ See `.github/workflows/ci.yml`.
 - `docs/REMEDIATION_MATRIX.md` — Eighth Review F-1..F-12 status
 - `sentinel/ARCHITECTURE.md` — enforced dependency rules
 - `docs/SECURITY.md` — edge findings (**different** F-numbering)
-- `docs/MCP_GATEWAY.md` — MCP server trust, tool pinning, description poisoning
-- `docs/TOOL_GATEWAY.md` — OpenAPI ingestion, tool adapters, SIEM export
+- `docs/INTEGRATIONS.md` — MCP server trust, tool pinning, description poisoning
+- `docs/INTEGRATIONS.md` — OpenAPI ingestion, tool adapters, SIEM export
 
 ## What this README does not claim
 

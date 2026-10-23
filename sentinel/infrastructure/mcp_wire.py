@@ -254,7 +254,7 @@ def _last_json_rpc_from_sse(raw: bytes) -> dict[str, Any]:
     The transport allows a server to stream related messages (progress
     notifications, server-initiated requests) before the actual response on the
     same stream. This v1 gateway does not relay intermediate stream traffic —
-    stated in `docs/MCP_GATEWAY.md`, not hidden — so the LAST well-formed data
+    stated in `docs/INTEGRATIONS.md`, not hidden — so the LAST well-formed data
     event is taken, which per the spec's ordering is the response that closes
     the interaction. The body is already size-bounded by `HardenedHttpClient`,
     so a stream that never ends was refused before this function ran.

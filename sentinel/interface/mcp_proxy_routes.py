@@ -18,7 +18,7 @@ properties a description-based API (`/v1/mcp/evaluate`) cannot provide:
      pin-drift check compares what the operator approved against what the server
      claims NOW — the rug pull is caught even if the client's cached listing is
      stale. The cost is one extra upstream round trip per call, stated in
-     `docs/MCP_GATEWAY.md` rather than hidden.
+     `docs/INTEGRATIONS.md` rather than hidden.
 
   3. `tools/list` IS DRIFT-CHECKED BEFORE THE CLIENT SEES IT. Descriptions in a
      listing are prose the model will read as instructions. A listing that

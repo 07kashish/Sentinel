@@ -61,7 +61,7 @@ one too.
 | Third-party penetration test | `UNVERIFIED` | No external party has examined this system. `SECURITY.md` is the material a tester would need, not a report from one |
 | Production soak / availability | `UNVERIFIED` | A 99.9%/30-day figure requires 30 days. `OPERATIONS.md` describes the procedure that has not been run |
 | Design-partner outcomes | `UNVERIFIED` | There are no design partners. No customer results, no time-to-value, no case studies. Generating any would be fabrication |
-| Bedrock, Foundry, Copilot Studio, Entra, Vertex, OpenAI, Cursor connectors | `NEEDS SDK` | Each needs a vendor SDK, credential chain or inventory API this repository has no access to and no test surface for. Listed in `CONNECTOR_MATRIX.md` because the specification names them, **not** because they are planned |
+| Bedrock, Foundry, Copilot Studio, Entra, Vertex, OpenAI, Cursor connectors | `NEEDS SDK` | Each needs a vendor SDK, credential chain or inventory API this repository has no access to and no test surface for. Listed in `INTEGRATIONS.md` because the specification names them, **not** because they are planned |
 | SOC 2 / ISO 27001 / ISO 42001 certification | `NOT_APPLICABLE` to a codebase | Those certify an organisation. Access reviews, onboarding, vendor management, IR drills and change-management approvals are organisational and none is in this repository. `COMPLIANCE.md` shows the technical subset an audit would sample |
 
 ## The two defects worth knowing about
@@ -103,6 +103,6 @@ fail. A guard that stays green while its property is broken is reported as
 ## Related
 
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — the gate verdict
-- [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) — all connectors, with real status
+- [`INTEGRATIONS.md`](INTEGRATIONS.md#connector_matrix) — all connectors, with real status
 - [`COMPLIANCE.md`](COMPLIANCE.md#compliance_matrix) — mapping, which is not certification
 - [`engineering/CURRENT_STATE_AUDIT.md`](engineering/CURRENT_STATE_AUDIT.md) — generated per capability

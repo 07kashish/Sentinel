@@ -242,12 +242,12 @@ documentation worse, so it has not been done.
 | `SENTINEL_PRODUCT_READINESS.md` | this document |
 | `SECURITY_ARCHITECTURE.md` | [`SECURITY.md`](SECURITY.md), [`SECURITY.md`](SECURITY.md#security_assurance) |
 | `SECURITY.md` | [`SECURITY.md`](SECURITY.md#threat_model) |
-| `MCP_SECURITY.md` | [`MCP_GATEWAY.md`](MCP_GATEWAY.md) |
+| `MCP_SECURITY.md` | [`INTEGRATIONS.md`](INTEGRATIONS.md#mcp_gateway) |
 | `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#execution_trust_architecture) |
 | `EXECUTION_PASSPORT_SPEC.md` | `../standard/execution-passport-v1/SPEC.md` |
 | `AI_BOM_SPEC.md` | `sentinel/domain/ai_bom.py`, `sentinel.cdx.json` |
 | `AGENT_IDENTITY_SPEC.md` | [`ENTERPRISE_CONTROLS.md`](ENTERPRISE_CONTROLS.md) |
-| `ENTERPRISE_DISCOVERY.md` | [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) |
+| `ENTERPRISE_DISCOVERY.md` | [`INTEGRATIONS.md`](INTEGRATIONS.md#connector_matrix) |
 | `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#aws_production_architecture) |
 | `OPERATIONS.md` | [`OPERATIONS.md`](OPERATIONS.md#dr_runbook) |
 | `PENTEST_READINESS.md` | [`SECURITY.md`](SECURITY.md#pentest_package) |

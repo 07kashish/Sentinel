@@ -18,7 +18,7 @@ a connector that returned an empty inventory because nobody could exercise it is
 worse than an absent one: it reports "nothing found" where the honest answer is
 "not implemented".
 
-`docs/CONNECTOR_MATRIX.md` lists all of them by name with their real status, so
+`docs/INTEGRATIONS.md` lists all of them by name with their real status, so
 "which connectors does Sentinel have" is answered by a document that names the
 gaps rather than by a slide that lists logos.
 

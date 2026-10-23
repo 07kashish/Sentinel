@@ -30,7 +30,7 @@ Generated rules are written to a file for review; nothing here installs them.
 A tool that both invents rules and enables them is a tool that changes what a
 deployment blocks without a human deciding -- and the failure mode is silent,
 because a rule that fires on ordinary traffic looks exactly like a rule that
-works until somebody's workflow stops. `docs/TOOL_GATEWAY.md` states the same
+works until somebody's workflow stops. `docs/INTEGRATIONS.md` states the same
 limit for the same reason.
 """
 

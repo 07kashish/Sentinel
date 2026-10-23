@@ -42,7 +42,7 @@ JSON-RPC/Streamable-HTTP client) fronted by `interface/mcp_proxy_routes.py`,
 which routes every proxied `tools/call` through `evaluate_request` below with
 the server's LIVE definition. Scope and limits of that wire support --
 allowlisted methods, one protocol revision, no server discovery -- are stated
-in `docs/MCP_GATEWAY.md` rather than implied here.
+in `docs/INTEGRATIONS.md` rather than implied here.
 """
 
 from __future__ import annotations
