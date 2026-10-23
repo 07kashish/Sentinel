@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS
 ---------------
-`docs/ADVERSARIAL_REVIEW.md` cited three artifacts as evidence. None was in the
+`docs/SECURITY.md` cited three artifacts as evidence. None was in the
 tree:
 
   * `test_tenant_isolation_is_enforced_by_the_real_database`

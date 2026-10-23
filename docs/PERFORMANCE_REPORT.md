@@ -104,7 +104,7 @@ Four runs, 8,000 rows, 6 writers, back-to-back on an otherwise idle machine:
 | **Incident creation** triggered by the false positive | **+236.36 ms** |
 
 **So the detection-quality defect and the latency defect are the same defect.**
-F-10 in `docs/THREAT_MODEL.md` records that the classifier fires on **51.7% of
+F-10 in `docs/SECURITY.md` records that the classifier fires on **51.7% of
 ordinary tool-call actions** (31 of 60). Each false positive is a full incident
 write. Fixing F-10 removes the great majority of this row's cost; tuning the
 classifier's inference speed would recover about 8 ms.

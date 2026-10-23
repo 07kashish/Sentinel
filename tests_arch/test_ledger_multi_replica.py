@@ -2,7 +2,7 @@
 
 WHY THIS FILE EXISTS
 --------------------
-`docs/ADVERSARIAL_REVIEW.md` names this as one of three things a fifth review
+`docs/SECURITY.md` names this as one of three things a fifth review
 would have to find:
 
     **A single-node evidence ledger head** -- the append protocol is not proven

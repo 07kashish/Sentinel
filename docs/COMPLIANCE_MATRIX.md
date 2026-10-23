@@ -146,6 +146,6 @@ predecessor cited a `tests/` directory that does not exist in this repository.
 
 ## Related
 
-- [`SECURITY_ASSURANCE.md`](SECURITY_ASSURANCE.md)
+- [`SECURITY.md`](SECURITY.md#security_assurance)
 - [`COMPLIANCE_MAP.md`](COMPLIANCE_MAP.md) — the OWASP/ASI detail
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md)

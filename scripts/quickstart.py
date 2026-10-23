@@ -393,7 +393,7 @@ def main() -> int:
             _say("  * nothing was blocked. Correlation is self-reported, so")
             _say("    blocking on it would let an attacker halt someone else's")
             _say("    agent by forging a chain. Sentinel detects far more than")
-            _say("    it prevents, on purpose. See docs/SECURITY_ASSURANCE.md.")
+            _say("    it prevents, on purpose. See docs/SECURITY.md.")
             _say("")
             _say("Next:")
             _say(f"  console   {base}/console  (viewer key: {VIEW_KEY})")

@@ -51,7 +51,7 @@ Severity: **critical** = customer data or an unauthorised consequential action i
 - **Owner:** CISO
 - **Description:** Configured CI jobs and local static/dependency/container scans are first-party checks. Current Actions is held; none is an independent security assessment.
 - **Impact:** Customers in fintech infrastructure require a third-party report before enforcement mode.
-- **Mitigation:** Contract a third party against docs/PENTEST_PACKAGE.md scope; track findings as risks here.
+- **Mitigation:** Contract a third party against docs/SECURITY.md scope; track findings as risks here.
 - **Closes when:** docs/current/evidence/external/pentest-<date>.pdf plus a remediation table in this register
 - **Review by:** 2026-12-15
 
@@ -254,4 +254,3 @@ Severity: **critical** = customer data or an unauthorised consequential action i
 - **Mitigation:** Run scripts/smoke_clean_install.py for every delivered wheel; preserve the explicit asset allowlist.
 - **Closes when:** Successful release-hygiene CI plus an exact wheel digest and the clean-install smoke report in the release evidence bundle.
 - **Review by:** 2027-03-15
-

@@ -79,7 +79,7 @@ Every row here is NOT APPLICABLE to a build and UNVERIFIED as assurance. Nothing
 - **As a build gate:** NOT APPLICABLE
 - **As assurance:** UNVERIFIED
 - **What would satisfy it:** A scoped engagement by a firm with no stake in the result, followed by a remediation cycle and a RETEST of the findings. The retest is the part people skip and the part that matters: a report with open criticals is a to-do list, not assurance.
-- **Already prepared:** docs/PENTEST_PACKAGE.md, docs/attack_surface.json (47 routes with the capability each declares), docs/THREAT_MODEL.md, and a reproducible test deployment
+- **Already prepared:** docs/SECURITY.md, docs/attack_surface.json (47 routes with the capability each declares), docs/SECURITY.md, and a reproducible test deployment
 - **Owner:** security leadership + external firm
 - **Elapsed time:** 4-8 weeks including remediation and retest
 - **Cost shape:** fixed-fee engagement

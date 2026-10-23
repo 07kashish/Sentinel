@@ -48,7 +48,7 @@ of the script. It also cross-checks two independent reports of the same fact
 (the submission response and the incident list) and fails if they disagree.
 
 You will notice that **nothing is blocked**. That is deliberate and is
-explained in [docs/SECURITY_ASSURANCE.md](docs/SECURITY_ASSURANCE.md):
+explained in [docs/SECURITY.md](docs/SECURITY.md#security_assurance):
 correlation is self-reported, so blocking on it would let an attacker halt
 someone else's agent by forging a chain. Sentinel detects far more than it
 prevents, on purpose.
@@ -162,7 +162,7 @@ See `.github/workflows/ci.yml`.
 - `docs/ARCHITECTURE.md` — current vs target, API surface, risks
 - `docs/REMEDIATION_MATRIX.md` — Eighth Review F-1..F-12 status
 - `sentinel/ARCHITECTURE.md` — enforced dependency rules
-- `docs/THREAT_MODEL.md` — edge findings (**different** F-numbering)
+- `docs/SECURITY.md` — edge findings (**different** F-numbering)
 - `docs/MCP_GATEWAY.md` — MCP server trust, tool pinning, description poisoning
 - `docs/TOOL_GATEWAY.md` — OpenAPI ingestion, tool adapters, SIEM export
 

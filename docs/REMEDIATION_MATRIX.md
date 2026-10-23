@@ -1,7 +1,7 @@
 # Remediation Matrix — Eighth Review F-1..F-12
 
 CLOSED requires automated tests executed against this tree.
-Do **not** conflate with `docs/THREAT_MODEL.md` F-numbers (different scheme).
+Do **not** conflate with `docs/SECURITY.md` F-numbers (different scheme).
 
 ## Session 2026-08-18/19 — what changed, and what did not
 
@@ -24,7 +24,7 @@ one measured functional defect in a gate row that had been marked `pass`:
 | Finding | Where | Evidence |
 |---|---|---|
 | **The retention sweep deleted nothing on PostgreSQL** and reported zero rather than failing. Unscoped pooled connection under `FORCE ROW LEVEL SECURITY`; `tenant_id = NULL` matched no rows. Same shape as the `delivery_queue` defect the codebase documents. | `sql/retention.py` | Probe: `before: work_queue = 1 → sweep reported 0 → after: work_queue = 1`. Fixed per-tenant; `test_retention_sweep.py` now runs on both engines and asserts `before − after == reported` |
-| **Three artifacts cited as existing evidence did not exist**: `test_tenant_isolation_is_enforced_by_the_real_database`, `test_every_table_is_either_reaped_or_declared_append_only` (and `APPEND_ONLY_TABLES`), and `tests/test_failure_classes_are_structural.py` (no `tests/` directory). | `docs/ADVERSARIAL_REVIEW.md` | Searched for; absent. Retraction recorded at the top of that document. The first two now exist and pass; **the third is still absent and its claim is withdrawn** |
+| **Three artifacts cited as existing evidence did not exist**: `test_tenant_isolation_is_enforced_by_the_real_database`, `test_every_table_is_either_reaped_or_declared_append_only` (and `APPEND_ONLY_TABLES`), and `tests/test_failure_classes_are_structural.py` (no `tests/` directory). | `docs/SECURITY.md` | Searched for; absent. Retraction recorded at the top of that document. The first two now exist and pass; **the third is still absent and its claim is withdrawn** |
 | **`domain_events` had no index on `(tenant_id, incident_id)`** in the live schema, making the per-incident read and the new retention delete sequential scans — i.e. a retention job that degrades quadratically in the history it exists to bound. | `sql/schema.py` | `ix_events_incident` added; migration 12 |
 | **`webauthn_challenges` was unbounded**: ships `ix_challenges_issued(issued_at)`, an index whose only purpose is an age purge, with no caller. Same signature as `ix_inbox_age`/`ix_nonces_expiry`. | `sql/schema.py` | Found by the new declared-or-reaped gate; now swept |
 | **`tests_arch/conftest.py` handed out a PostgreSQL DSN before the server accepted connections**, producing 13 unrelated failures on a loaded machine. | `tests_arch/conftest.py` | `FATAL: the database system is not yet accepting connections`; readiness wait added |

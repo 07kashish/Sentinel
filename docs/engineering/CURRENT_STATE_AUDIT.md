@@ -49,4 +49,4 @@ The AWS identity layer is the honest example of both. The Terraform validates an
 ## Related
 
 - [`../RELEASE_READINESS.md`](../RELEASE_READINESS.md) — the two scoreboards
-- [`../SECURITY_ASSURANCE.md`](../SECURITY_ASSURANCE.md)
+- [`../SECURITY.md`](../SECURITY.md#security_assurance)

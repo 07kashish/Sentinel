@@ -332,7 +332,7 @@ def assess_adoption(*, tenant: str, counts: TenantCounts) -> AdoptionSnapshot:
                 "no action has been refused or contained. Detection without "
                 "enforcement is the deliberate default for correlation-driven "
                 "findings, so this may be correct rather than incomplete -- "
-                "see docs/SECURITY_ASSURANCE.md before treating it as a gap."
+                "see docs/SECURITY.md before treating it as a gap."
             ),
             counts=counts,
         )

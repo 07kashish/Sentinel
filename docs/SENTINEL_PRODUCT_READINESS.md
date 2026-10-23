@@ -240,8 +240,8 @@ documentation worse, so it has not been done.
 | Named in the prompt | Actual file |
 |---|---|
 | `SENTINEL_PRODUCT_READINESS.md` | this document |
-| `SECURITY_ARCHITECTURE.md` | [`SECURITY.md`](SECURITY.md), [`SECURITY_ASSURANCE.md`](SECURITY_ASSURANCE.md) |
-| `THREAT_MODEL.md` | [`THREAT_MODEL.md`](THREAT_MODEL.md) |
+| `SECURITY_ARCHITECTURE.md` | [`SECURITY.md`](SECURITY.md), [`SECURITY.md`](SECURITY.md#security_assurance) |
+| `SECURITY.md` | [`SECURITY.md`](SECURITY.md#threat_model) |
 | `MCP_SECURITY.md` | [`MCP_GATEWAY.md`](MCP_GATEWAY.md) |
 | `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#execution_trust_architecture) |
 | `EXECUTION_PASSPORT_SPEC.md` | `../standard/execution-passport-v1/SPEC.md` |
@@ -250,7 +250,7 @@ documentation worse, so it has not been done.
 | `ENTERPRISE_DISCOVERY.md` | [`CONNECTOR_MATRIX.md`](CONNECTOR_MATRIX.md) |
 | `ARCHITECTURE.md` | [`ARCHITECTURE.md`](ARCHITECTURE.md#aws_production_architecture) |
 | `DR_RUNBOOK.md` | [`DR_RUNBOOK.md`](DR_RUNBOOK.md) |
-| `PENTEST_READINESS.md` | [`PENTEST_PACKAGE.md`](PENTEST_PACKAGE.md) |
+| `PENTEST_READINESS.md` | [`SECURITY.md`](SECURITY.md#pentest_package) |
 | `RELEASE_CHECKLIST.md` | [`RELEASE_GATES.md`](RELEASE_GATES.md) |
 | `DESIGN_PARTNER_RUNBOOK.md` | [`DESIGN_PARTNER_RUNBOOK.md`](DESIGN_PARTNER_RUNBOOK.md) |
 

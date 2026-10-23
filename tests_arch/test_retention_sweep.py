@@ -727,7 +727,7 @@ def test_every_table_is_either_reaped_or_declared_append_only():
     table and CI fails until it is either swept here or written into
     `APPEND_ONLY_TABLES` with a reason.
 
-    NOTE ON PROVENANCE: `docs/ADVERSARIAL_REVIEW.md` cited this test by name as
+    NOTE ON PROVENANCE: `docs/SECURITY.md` cited this test by name as
     already existing. It did not exist in the tree -- there was no
     `APPEND_ONLY_TABLES` either. It exists now.
     """

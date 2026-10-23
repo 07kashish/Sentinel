@@ -58,7 +58,7 @@ one too.
 | Area | Status | Why |
 |---|---|---|
 | AWS deployment (discovery, blast radius, JIT) | `UNVERIFIED` | Terraform written and `terraform validate` passes. **Deliberately not applied**: applying provisions billable resources, and the instruction for this work was setup only with no cost. No `plan` either, since that needs credentials |
-| Third-party penetration test | `UNVERIFIED` | No external party has examined this system. `PENTEST_PACKAGE.md` is the material a tester would need, not a report from one |
+| Third-party penetration test | `UNVERIFIED` | No external party has examined this system. `SECURITY.md` is the material a tester would need, not a report from one |
 | Production soak / availability | `UNVERIFIED` | A 99.9%/30-day figure requires 30 days. `SOAK_RUNBOOK.md` describes the procedure that has not been run |
 | Design-partner outcomes | `UNVERIFIED` | There are no design partners. No customer results, no time-to-value, no case studies. Generating any would be fabrication |
 | Bedrock, Foundry, Copilot Studio, Entra, Vertex, OpenAI, Cursor connectors | `NEEDS SDK` | Each needs a vendor SDK, credential chain or inventory API this repository has no access to and no test surface for. Listed in `CONNECTOR_MATRIX.md` because the specification names them, **not** because they are planned |

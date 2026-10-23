@@ -133,7 +133,7 @@ scope for a code change.
 | A.8.16 Monitoring activities | Detections derived from the hash-chained trail, each citing the audit sequences it was computed from | `test_security_threat_detection.py` |
 | A.8.24 Use of cryptography | AES-256-GCM, envelope, KEK rotation via `rewrap` without touching plaintext | `test_persistence_crypto_audit.py` |
 | A.8.25 Secure development lifecycle | Architecture and security rules as executable fitness functions | `test_architecture_rules.py`, `test_security_rules.py` |
-| A.8.26 Application security requirements | This document plus `THREAT_MODEL.md`, both with test references | — |
+| A.8.26 Application security requirements | This document plus `SECURITY.md`, both with test references | — |
 | A.8.28 Secure coding | Property-based, chaos, concurrency, mutation and model-checking suites | `tests_arch/` |
 
 ---
@@ -149,7 +149,7 @@ scope for a code change.
 | PW.7 Review code | Fitness functions enforce what review would otherwise have to remember | `test_architecture_rules.py` |
 | PW.8 Test executable code | 370+ tests including property, chaos, concurrency, mutation, model checking, and an adversarial security suite | `tests_arch/` |
 | PW.9 Configure securely by default | Docs off by default; `fail_open` has no default; production refuses unsafe configuration | `test_security_edge.py` |
-| RV.1 Identify vulnerabilities | This pass: four proven findings with PoCs, each now a regression test | `THREAT_MODEL.md` |
+| RV.1 Identify vulnerabilities | This pass: four proven findings with PoCs, each now a regression test | `SECURITY.md` |
 
 ### SP 800-53 control families
 
@@ -189,7 +189,7 @@ including prompt injection and memory poisoning.
    presented as one. Evidence: `tests_arch/test_gap_closures.py`
    (`test_saml_validator_rejects_assertion_signed_by_untrusted_idp_cert`). Full SP
    login ceremony still needs a human identity product decision (item 1). Prefer
-   OIDC for new deployments; see `THREAT_MODEL.md` §4 on hand-rolled XML signature risk.
+   OIDC for new deployments; see `SECURITY.md` §4 on hand-rolled XML signature risk.
 4. **SCIM.** Users API is in-tree behind `MANAGE_USERS`; Groups productization and
    IdP-driven lifecycle remain incomplete without a broader human-identity product.
 5. **A real KMS round trip.** Adapter is logic-complete; no request has reached a

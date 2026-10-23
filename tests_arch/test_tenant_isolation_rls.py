@@ -2,7 +2,7 @@
 
 THE RESIDUAL THIS CLOSES
 ------------------------
-`docs/ADVERSARIAL_REVIEW.md`, Enterprise CISO:
+`docs/SECURITY.md`, Enterprise CISO:
 
     **Residual concern, not fixed:** isolation is enforced in application SQL,
     not by PostgreSQL row-level security. A single missing predicate would bleed.
@@ -83,7 +83,7 @@ def both_tenants(migrated_pool):
 def test_tenant_isolation_is_enforced_by_the_real_database(both_tenants, engine_config):
     """The same incident id exists under two tenants and each sees only its own.
 
-    This is the test `docs/ADVERSARIAL_REVIEW.md` claimed as evidence. It is run
+    This is the test `docs/SECURITY.md` claimed as evidence. It is run
     against a real PostgreSQL server, and against SQLite, from the same source.
     """
     for tenant, expected in ((TENANT_A, 1), (TENANT_B, 2)):

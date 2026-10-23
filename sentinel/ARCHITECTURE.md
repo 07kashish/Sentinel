@@ -131,7 +131,7 @@ There is no module-level `app`. Importing any module starts nothing.
 
 ## Phase 0 baseline
 
-See `docs/ARCHITECTURE.md` and `docs/REMEDIATION_MATRIX.md` for the Eighth Review F-1..F-12 status against this tree. Do not conflate with `docs/THREAT_MODEL.md` F-numbers.
+See `docs/ARCHITECTURE.md` and `docs/REMEDIATION_MATRIX.md` for the Eighth Review F-1..F-12 status against this tree. Do not conflate with `docs/SECURITY.md` F-numbers.
 
 ## Protect gate (F-11)
 

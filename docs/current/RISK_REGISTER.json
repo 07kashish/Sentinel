@@ -46,7 +46,7 @@
       "owner": "CISO",
       "description": "Configured CI jobs and local static/dependency/container scans are first-party checks. Current Actions is held; none is an independent security assessment.",
       "impact": "Customers in fintech infrastructure require a third-party report before enforcement mode.",
-      "mitigation": "Contract a third party against docs/PENTEST_PACKAGE.md scope; track findings as risks here.",
+      "mitigation": "Contract a third party against docs/SECURITY.md scope; track findings as risks here.",
       "closing_evidence": "docs/current/evidence/external/pentest-<date>.pdf plus a remediation table in this register",
       "review_by": "2026-12-15",
       "affected_surface": "external-verification",
