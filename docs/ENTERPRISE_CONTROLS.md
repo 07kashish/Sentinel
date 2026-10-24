@@ -251,9 +251,8 @@ and cannot quietly widen what the estate permits.
 
 ## 7. Known limits
 
-- **SSO and SCIM were already present** (`oidc.py`, `saml.py`, the SCIM routes)
-  and were not rebuilt. They are counted as Phase 5 coverage on that basis, not
-  because new work was done.
+- **Existing OIDC and SCIM routes remain.** The unused SAML validator was
+  removed in cleanup Phase 2; SAML support is not counted as a shipped capability.
 - **The enterprise console** is the existing `interface/console`. The Phase 5
   controls above are API-only; no console screens were added for policy
   versioning, key state or retention.

@@ -32,8 +32,8 @@
 
 ## Known limitations
 
-- Full enterprise IdP (hosted SAML IdP, SCIM Groups sync productization): incomplete.
-  **SAML in this tree validates signed assertions; it is not an IdP.**
+- Hosted SAML IdP and SAML assertion validation are not provided; the unused
+  legacy validator was removed in Phase 2. SCIM Groups sync productization is incomplete.
 - Remote GitHub branch protection UNVERIFIED until an operator runs
   `python scripts/apply_branch_protection.py OWNER/REPO --apply`.
 
@@ -398,7 +398,7 @@ Do not spend the engagement here unless you can beat it:
   fails if the response is unchanged.
 - **SAST** (bandit), **secret scanning** (gitleaks over full history),
   **dependency scanning** (pip-audit), **container scanning** (trivy).
-- **Prompt injection, SSRF, bounds, MFA, passkeys, throttling** — dedicated
+- **Prompt injection, SSRF, bounds, audit trail, throttling** — dedicated
   suites. SSRF alone has 44 tests: post-resolution address validation, one
   pinned lookup, redirects refused.
 

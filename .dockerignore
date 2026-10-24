@@ -29,7 +29,6 @@
 !scripts/profile_ingest.py
 !scripts/publish_transparency_root.py
 !scripts/quickstart.py
-!scripts/run_attack_campaign.py
 !scripts/run_authorization_bench.py
 !scripts/run_dast.py
 !scripts/run_deployed_journey.py
@@ -66,7 +65,6 @@
 !sentinel/application/commands/decide_approval.py
 !sentinel/application/commands/dispatch_outbox.py
 !sentinel/application/commands/manage_containment.py
-!sentinel/application/deployment_contract.py
 !sentinel/application/execution/engine.py
 !sentinel/application/execution/handler.py
 !sentinel/application/execution/pipeline.py
@@ -111,7 +109,6 @@
 !sentinel/domain/adoption.py
 !sentinel/domain/ai_bom.py
 !sentinel/domain/assets.py
-!sentinel/domain/attack_campaign.py
 !sentinel/domain/attestation.py
 !sentinel/domain/authorization.py
 !sentinel/domain/baseline.py
@@ -133,13 +130,11 @@
 !sentinel/domain/execution_binding.py
 !sentinel/domain/execution_graph.py
 !sentinel/domain/exposure_graph.py
-!sentinel/domain/identity.py
 !sentinel/domain/incident.py
 !sentinel/domain/inventory.py
 !sentinel/domain/keys.py
 !sentinel/domain/mcp.py
 !sentinel/domain/mcp_estate.py
-!sentinel/domain/mfa.py
 !sentinel/domain/modes.py
 !sentinel/domain/observed_binding.py
 !sentinel/domain/operations.py
@@ -155,7 +150,6 @@
 !sentinel/domain/slo.py
 !sentinel/domain/stream_guard.py
 !sentinel/domain/tenant_integrations.py
-!sentinel/domain/threat_intel.py
 !sentinel/domain/transparency.py
 !sentinel/domain/value_metrics.py
 !sentinel/infrastructure/__init__.py
@@ -166,7 +160,6 @@
 !sentinel/infrastructure/app_call.py
 !sentinel/infrastructure/attestation.py
 !sentinel/infrastructure/aws_container_credentials.py
-!sentinel/infrastructure/cbor.py
 !sentinel/infrastructure/cli_advisor.py
 !sentinel/infrastructure/containment.py
 !sentinel/infrastructure/default_policy.json
@@ -189,7 +182,6 @@
 !sentinel/infrastructure/observability.py
 !sentinel/infrastructure/oidc.py
 !sentinel/infrastructure/openapi.py
-!sentinel/infrastructure/openapi_risk.py
 !sentinel/infrastructure/orgs.py
 !sentinel/infrastructure/outbound.py
 !sentinel/infrastructure/passport_signing.py
@@ -197,11 +189,8 @@
 !sentinel/infrastructure/persistence/backup.py
 !sentinel/infrastructure/persistence/cache.py
 !sentinel/infrastructure/persistence/crypto.py
-!sentinel/infrastructure/persistence/diagnostics.py
 !sentinel/infrastructure/persistence/engine.py
-!sentinel/infrastructure/persistence/migrations.py
 !sentinel/infrastructure/persistence/objectstore.py
-!sentinel/infrastructure/persistence/schema.py
 !sentinel/infrastructure/platforms/__init__.py
 !sentinel/infrastructure/platforms/ai_connectors.py
 !sentinel/infrastructure/platforms/ai_discovery.py
@@ -232,8 +221,6 @@
 !sentinel/infrastructure/root_publication.py
 !sentinel/infrastructure/runtime.py
 !sentinel/infrastructure/s3_root_sink.py
-!sentinel/infrastructure/saml.py
-!sentinel/infrastructure/secrets.py
 !sentinel/infrastructure/security_audit.py
 !sentinel/infrastructure/siem.py
 !sentinel/infrastructure/siem_routing.py
@@ -264,14 +251,11 @@
 !sentinel/infrastructure/sql/work_queue.py
 !sentinel/infrastructure/sql/workflow_metrics.py
 !sentinel/infrastructure/strace_parse.py
-!sentinel/infrastructure/threat_detection.py
 !sentinel/infrastructure/tool_adapters.py
 !sentinel/infrastructure/trace_export.py
-!sentinel/infrastructure/webauthn.py
 !sentinel/interface/__init__.py
 !sentinel/interface/a2a_proxy_routes.py
 !sentinel/interface/a2a_routes.py
-!sentinel/interface/advisor_check.py
 !sentinel/interface/analysis_routes.py
 !sentinel/interface/app_routes.py
 !sentinel/interface/asgi.py

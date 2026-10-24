@@ -6,7 +6,7 @@
 |---|---|---|
 | Architecture fitness | `pytest -q tests_arch/test_architecture_rules.py` | Dependency rule, fences, size, protect allowlist |
 | Domain / execution | `pytest -q tests_arch/test_domain_incident.py tests_arch/test_execution_*.py` | Lifecycle, chaos, concurrency, properties, model, mutation |
-| Security | `pytest -q tests_arch/test_security_*.py` | Edge, outbound, bounds, MFA, passkeys, throttle |
+| Security | `pytest -q tests_arch/test_security_*.py` | Edge, outbound, bounds, audit, prompt injection, throttle |
 | SQL / RLS | `pytest -q tests_arch/test_sql_infrastructure.py` | Both engines via pgserver |
 | Protect / tools | `pytest -q tests_arch/test_protect_gate.py tests_arch/test_tool_runner.py tests_arch/test_gated_remediation.py` | F-11 |
 | VCS integrity | `pytest -q tests_arch/test_vcs_integrity.py` | Empty-module script + pre-commit wiring |

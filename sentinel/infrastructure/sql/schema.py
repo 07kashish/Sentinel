@@ -526,8 +526,8 @@ _CORE_STATEMENTS: Final[tuple[str, ...]] = (
     "CREATE INDEX IF NOT EXISTS ix_nonces_expiry ON replay_nonces(expires_at)",
     # ── Human identity ───────────────────────────────────────────────────────
     #
-    # No password column, deliberately and permanently. Authentication is a passkey;
-    # API-key/OIDC operators do not need a local password store.
+    # Legacy identity tables remain in migration history; no password column.
+    # Current operator authentication uses API-key bindings or OIDC.
     #
     # A suspended user is kept rather than deleted: removing the row destroys the
     # audit trail's ability to name who did something, and "who was this actor"
