@@ -43,7 +43,6 @@ observation window. The contract makes that an explicit operator breach.
 | `deploy/agent-egress/admission/validating-admission-policy.yaml` | Fail/Deny unless enrolled + `sentinel.io/tool-path` ∈ {sdk, execute, egress-proxy} |
 | `deploy/agent-egress/egress-proxy/fail_closed_proxy.py` | Sidecar stub: deny upstream when Sentinel unhealthy; Sentinel host allowlist |
 | `deploy/agent-egress/example-enrolled-agent.yaml` | Reference enrolled agent + proxy sidecar |
-| `sentinel/application/deployment_contract.py` | In-repo admit/reject logic mirrored by tests |
 | `tests_arch/test_security_bypass_detection.py` | Manifests + admission + proxy + silence + SDK refuse |
 
 ### SDK enrollment

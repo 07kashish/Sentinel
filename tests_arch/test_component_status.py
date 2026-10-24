@@ -23,8 +23,7 @@ LIVE = {"slo": "judges the workflow targets in GET /v1/workflow/metrics",
         "stream_guard": "interface/mcp_streaming.py: every MCP notification relayed to a client is offered to RelayGuard first"}
 
 #: Used by operator or assurance scripts, never by the running service.
-TOOLING = {"attack_campaign": "scripts/run_attack_campaign.py: red-team campaign outcomes and regression",
-           "detection_metrics": "scripts/measure_benign_tool_call_false_positives.py: corpus provenance on detection numbers"}
+TOOLING = {"detection_metrics": "scripts/measure_benign_tool_call_false_positives.py: corpus provenance on detection numbers"}
 
 #: Implemented and tested, deliberately NOT part of the product today.
 DORMANT = {}  # The three unused domain primitives were removed in Phase 2.

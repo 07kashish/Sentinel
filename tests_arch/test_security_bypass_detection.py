@@ -169,43 +169,10 @@ def test_admission_policy_manifest_fail_closed():
     assert "sentinel.io/deployment-contract: protect-egress-v1" in text
 
 
-def test_deployment_contract_admission_rejects_unenrolled():
-    from sentinel.application.deployment_contract import admit_agent_workload
-
-    denied = admit_agent_workload(
-        labels={"sentinel.io/role": "agent"},
-        annotations={"sentinel.io/tool-path": "sdk"},
-    )
-    assert denied.allowed is False
-    assert "enrolled" in denied.reason
 
 
-def test_deployment_contract_admission_rejects_missing_tool_path():
-    from sentinel.application.deployment_contract import admit_agent_workload
-
-    denied = admit_agent_workload(
-        labels={
-            "sentinel.io/role": "agent",
-            "sentinel.io/enrolled": "true",
-        },
-    )
-    assert denied.allowed is False
-    assert "tool-path" in denied.reason
 
 
-def test_deployment_contract_admission_allows_sdk_or_sidecar():
-    from sentinel.application.deployment_contract import admit_agent_workload
-
-    labels = {
-        "sentinel.io/role": "agent",
-        "sentinel.io/enrolled": "true",
-    }
-    ok_sdk = admit_agent_workload(
-        labels=labels, annotations={"sentinel.io/tool-path": "sdk"}
-    )
-    assert ok_sdk.allowed is True
-    ok_side = admit_agent_workload(labels=labels, has_egress_sidecar=True)
-    assert ok_side.allowed is True
 
 
 def _load_fail_closed_proxy():

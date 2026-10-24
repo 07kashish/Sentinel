@@ -12,7 +12,6 @@ from sentinel.composition.container import build_container
 from sentinel.composition.settings import ConfigurationError, Settings
 from sentinel.domain.primitives import InvalidValue
 from sentinel.infrastructure.cli_advisor import AntigravityCliAdvisor
-from sentinel.interface.advisor_check import main
 
 KEYS = {"SENTINEL_API_KEYS": "acme:" + "k" * 40 + ":admin"}
 INCIDENT = {"severity": "high", "incident_type": "credential_file_read", "raw_payload": {"secret": "never-forwarded"}}
@@ -91,15 +90,6 @@ def test_cli_and_endpoint_are_mutually_exclusive_and_the_container_wires_the_cli
         container.close()
 
 
-def test_the_check_command_reports_a_cli_answer(monkeypatch, capsys):
-    for name in ("SENTINEL_ADVISOR_ENDPOINT", "SENTINEL_ADVISOR_TOKEN", "SENTINEL_DB_PATH"):
-        monkeypatch.delenv(name, raising=False)
-    for name, value in {**KEYS, "SENTINEL_ADVISOR_CLI_COMMAND": "/opt/agy", "SENTINEL_ADVISOR_MODEL": "gemini-x-pro"}.items():
-        monkeypatch.setenv(name, value)
-    assert main([], cli_run=_Run(_frames("Look at the session that read it."))) == 0
-    text = capsys.readouterr().out
-    assert "provider antigravity cli, model gemini-x-pro: answered" in text and "authority: none" in text
-    assert main(["--list-models"], cli_run=_Run()) == 64
 
 
 def test_pipeline_worker_count_is_explicit_bounded_and_may_be_zero(monkeypatch):

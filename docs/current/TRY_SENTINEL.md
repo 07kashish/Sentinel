@@ -78,7 +78,7 @@ Sentinel's decisions are deterministic. A model can be attached as an **advisor*
 .venv/bin/python scripts/try_sentinel.py --scan --advisor-cli ~/.local/bin/agy --advisor-model gemini-3.1-pro-high
 ```
 
-Model names come from `agy models`. Check it answers with `sentinel-advisor-check` (same environment variables as the service; see `.env.example`). Notes take 10–60 seconds each and appear in the incident's report under *Advisory second opinion*. `tests_arch/test_cli_advisor.py` holds the isolation checks: sandboxed, no auto-approved tools, an empty working directory, none of the service's secrets in its environment.
+Model names come from `agy models`. Configure the advisor through the service environment variables in `.env.example`; the standalone advisor-check CLI was removed in Phase 2. Notes take 10–60 seconds each and appear in the incident's report under *Advisory second opinion*. `tests_arch/test_cli_advisor.py` holds the isolation checks: sandboxed, no auto-approved tools, an empty working directory, none of the service's secrets in its environment.
 
 ---
 
