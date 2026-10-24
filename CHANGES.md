@@ -1,5 +1,39 @@
 # Sentinel change record
 
+## Phase 2 results — 2026-10-24
+
+**Ready for Phase 3: yes; Phase 3 has not started.** Cleanup on
+`cleanup/oversight-core` removed 15 unused modules and 26 files while retaining
+backup/PITR, object-store support and all non-partition core assertions.
+
+| Group | Modules removed | Files removed | Gross LOC removed | Test cases removed / added | Cases after | Commit |
+|---|---:|---:|---:|---:|---:|---|
+| dead-persistence | 3 | 3 | 1,222 | 4 / 2 | 4,404 | `742e86d` |
+| dead-security | 9 | 17 | 5,525 | 209 / 0 | 4,195 | `1414eb3` |
+| dead-tooling | 3 | 6 | 1,739 | 52 / 0 | 4,143 | `df3e863` |
+
+Full Linux verification: **4,101 passed, 42 skipped,
+0 failures/errors/timeouts**. Ruff, 10 graph tests, graph check with documented
+keep/Phase 3 allowances, actionlint, secret scan and 63 relative Markdown links pass.
+Files: 697 → 671; Sentinel modules: 257 → 242; test cases: 4,406 → 4,143.
+Tracked text LOC including the final result record: 256,948 → 248,649.
+Settings (73), environment assignments (66), CI jobs (16) and live migrations are unchanged.
+
+The user explicitly retired legacy partitioning: live tables are not partitioned,
+and retention is a DELETE sweep. Four partition cases were removed, all other
+benchmark/crypto/audit assertions were retargeted, and two real audit interoperability
+cases were added. The original capability proof, exact deleted partition IDs,
+per-file test reductions, all remaining orphan dispositions and the parked
+range-partitioning entry are in [CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-2-results--2026-10-24).
+
+The Helm test reports an explicit skip when initdb cannot run; root failure/skip
+was reproduced, and normal-user server assertions passed. Docker is unavailable,
+so image build/start remains unverified. Other service/artifact skips and the
+previous Passport integer-range discrepancy remain explicit limits.
+Reports stay uncommitted. No Phase 3, PR, main merge or deployment was performed.
+
+<!-- phase2-summary:end -->
+
 ## Phase 1 results — 2026-10-23
 
 **Ready for Phase 2: yes.** This means the authorized Phase 1 cleanup is verified;

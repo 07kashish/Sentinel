@@ -1,6 +1,6 @@
-# Sentinel cleanup plan — Phase 1 results
+# Sentinel cleanup plan — Phase 2 results
 
-Phase 1 was subsequently authorized and is verified in the results section below. Phase 2 and later work has not started. The original Phase 0 inventory and checkpoint records below are historical; current Phase 1 facts are in the results section.
+Phase 2 is complete under the explicit schema decision below. Phase 3 has not started. Earlier inventories and checkpoint conditions are historical; the Phase 2 schema decision and results are current.
 
 **Product constraint:** independent, cross-vendor company oversight through Observe → Decide → Act → Prove. Deterministic rules remain the decision authority. Preserve the semantics and existing assertions for protect_gate, authorizations, tool_runner, execution_binding, operation storage/reconciliation, transparency and Execution Passport. Keep AWS, GitHub and Kubernetes controlled execution.
 
@@ -140,7 +140,7 @@ Never imported by any other sentinel module (including legitimate roots): `senti
 | `sentinel/infrastructure/persistence/objectstore.py` | 470 | **KEEP — prompt exception**. deploy/wal-archive/wal_s3.py imports S3ObjectStore/BlobKey/BlobMissing (lines 85, 133, 141, 201); the WAL/PITR drill and live-MinIO/storage tests use this adapter. It is not dead despite having no sentinel importer. Keep as documented external CLI support; removal would disable off-host WAL recovery. |
 | `sentinel/infrastructure/persistence/backup.py` | 616 | **KEEP — Checkpoint 1**. backup/PITR verify_restore supports Stage 4 ("backup restore tested"). Keep test_persistence_backup_pitr.py; treat it like objectstore.py. |
 | `sentinel/interface/advisor_check.py` | 101 | **Console entrypoint**. If removed in Phase 2, remove sentinel-advisor-check from pyproject.toml and only test_the_check_command_reports_a_cli_answer from mixed test_cli_advisor.py in the same commit. Preserve its other CLI-advisor assertions. |
-| `sentinel/infrastructure/persistence/schema.py`, `migrations.py`, `diagnostics.py` | 1,222 | **Proof required before Phase 2 removal**. Demonstrate live sql migration parity for all PostgreSQL test requirements, including RLS and partitioning, and review skip messages naming schema.py. |
+| `sentinel/infrastructure/persistence/schema.py`, `migrations.py`, `diagnostics.py` | 1,222 | **Removed in Phase 2 under the explicit schema decision below**. Non-partition assertions run on live SQL; partition-only cases were retired by user decision. |
 | `sentinel/infrastructure/secrets.py` | 361 | **DELETE after checks**. No kept consumer found. Connected-app sealing instead uses persistence/crypto.py through sql/connected_apps.py and composition, which remain unchanged. |
 | `sentinel/infrastructure/enterprise.py` | 399 | **KEEP — prompt condition not met**. sql/unit_of_work.py and sql/retention.py use SqlPolicyStore, SqlTenantKeys and SqlTenantSettings. It is not SCIM/multi-org-only infrastructure. |
 | `sentinel/domain/residency.py` | 211 | **KEEP shared types**. composition/settings.py imports Region; enterprise.py imports Region, RetentionPolicy and assert_no_cross_region_read. Retention and tenant isolation are core. Do not erase these to remove an analytics screen. |
@@ -1572,10 +1572,10 @@ internal/dynamic imports for this snapshot. Physical Sentinel LOC is 78,966
 | `sentinel/application/deployment_contract.py` | yes | Phase 2: remove after recursive consumer verification. |
 | `sentinel/interface/advisor_check.py` | yes | Console entrypoint: any Phase 2 removal must remove sentinel-advisor-check from pyproject.toml and only the CLI case from mixed test_cli_advisor.py in the same commit. |
 | `sentinel/infrastructure/persistence/backup.py` | yes | KEEP: Stage 4 backup/PITR verify_restore and its tests; Checkpoint 1 exception. |
-| `sentinel/infrastructure/persistence/schema.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
+| `sentinel/infrastructure/persistence/schema.py` | yes | Removed in Phase 2 under the later explicit schema decision; non-partition coverage retained on live SQL. |
 | `sentinel/infrastructure/persistence/objectstore.py` | yes | Keep: external WAL archive adapter; service-root reachability is not the deletion criterion. |
-| `sentinel/infrastructure/persistence/migrations.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
-| `sentinel/infrastructure/persistence/diagnostics.py` | yes | Phase 2 only after proving live sql migrations preserve the PostgreSQL RLS/partitioning requirements and reviewing schema.py skip references. |
+| `sentinel/infrastructure/persistence/migrations.py` | yes | Removed in Phase 2 under the later explicit schema decision; non-partition coverage retained on live SQL. |
+| `sentinel/infrastructure/persistence/diagnostics.py` | yes | Removed in Phase 2 under the later explicit schema decision; non-partition coverage retained on live SQL. |
 | `sentinel/infrastructure/platforms/discovery_breadth.py` | yes | Phase 3: park vendor discovery. |
 | `sentinel/infrastructure/platforms/copilot_studio.py` | yes | Phase 3: park vendor discovery. |
 | `sentinel/infrastructure/platforms/databricks_agents.py` | yes | Phase 3: park vendor discovery. |
@@ -1900,3 +1900,266 @@ schema.py (recoverable from archive/pre-cleanup), never wired into live migratio
 Revisit when event volume makes DELETE sweeps too slow.
 
 Phase 3 has not started. This item will become part of `docs/PARKED.md` in Phase 3.
+
+<!-- phase2-results:start -->
+## Phase 2 results — 2026-10-24
+
+**Ready for Phase 3: yes.** Phase 2 is complete; Phase 3 has not started.
+This is cleanup readiness, not production readiness. Work is on
+`cleanup/oversight-core`; no merge or PR is part of this task.
+
+### Per-group accounting
+
+| Group | Modules removed | Files removed | Gross LOC removed | Test cases removed / added | Cases after | Commit |
+|---|---:|---:|---:|---:|---:|---|
+| dead-persistence | 3 | 3 | 1,222 | 4 / 2 | 4,404 | `742e86d` |
+| dead-security | 9 | 17 | 5,525 | 209 / 0 | 4,195 | `1414eb3` |
+| dead-tooling | 3 | 6 | 1,739 | 52 / 0 | 4,143 | `df3e863` |
+
+Gross deleted paths contain 8,486 text lines; net repository size below includes
+the retained adaptations and result prose. All 15 deleted Sentinel modules were
+unreachable from service roots immediately before deletion. Per-path import
+graphs and recursive consumer searches across every requested root are saved
+under ignored `baseline/phase2/<group>/`. `reports/` and `baseline/` are uncommitted.
+The recovery tag remains `archive/pre-cleanup` at `d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6`.
+The reviewed documentation and generated container-manifest corrections were
+committed separately as `e895f28` while final verification completed; that commit
+is preserved. The final results commit contains only this plan and CHANGES.
+
+| Metric | Before (`b66a8ca`) | After Phase 2 |
+|---|---:|---:|
+| Tracked files | 697 | 671 |
+| Tracked text physical LOC | 256,948 | 248,649 |
+| Sentinel modules | 257 | 242 |
+| Sentinel Python physical LOC | 78,684 | 73,787 |
+| Test files | 192 | 183 |
+| Settings fields | 73 | 73 |
+| .env.example assignments | 66 | 66 |
+| CI jobs | 16 | 16 |
+| Collected/executed cases | 4,406 | 4,143 |
+| Passed / skipped | 4,362 / 44 | 4,101 / 42 |
+
+Dependency manifests/lock versions, live SQL migrations, route registrations,
+settings and CI jobs are unchanged, except removal of the advisor-check console
+entry from `pyproject.toml`. Backup/PITR, WAL object-store support, public SDK
+adapters, MCP stdio, deterministic metrics and all Phase 3 features remain.
+
+### Test-count reconciliation and retained assertions
+
+The net reduction is 263 cases: persistence −4/+2, security −209, tooling −52.
+The two additions exercise interoperability between the real service audit
+writer and the retained audit helper on SQLite and PostgreSQL.
+
+| Group / test file | Cases removed |
+|---|---:|
+| dead-persistence: `tests_arch/test_persistence_benchmarks.py` | 4 |
+| dead-security: `tests_arch/test_component_status.py` | 4 |
+| dead-security: `tests_arch/test_gap_closures.py` | 2 |
+| dead-security: `tests_arch/test_openapi_risk.py` | 17 |
+| dead-security: `tests_arch/test_saml_xml_hardening.py` | 7 |
+| dead-security: `tests_arch/test_security_mfa.py` | 47 |
+| dead-security: `tests_arch/test_security_passkeys.py` | 49 |
+| dead-security: `tests_arch/test_security_secrets.py` | 26 |
+| dead-security: `tests_arch/test_security_threat_detection.py` | 16 |
+| dead-security: `tests_arch/test_threat_intel.py` | 41 |
+| dead-tooling: `tests_arch/test_advisor_check.py` | 4 |
+| dead-tooling: `tests_arch/test_attack_campaign.py` | 43 |
+| dead-tooling: `tests_arch/test_cli_advisor.py` | 1 |
+| dead-tooling: `tests_arch/test_component_status.py` | 1 |
+| dead-tooling: `tests_arch/test_security_bypass_detection.py` | 3 |
+
+The four exact partition-specific case IDs removed are:
+
+- `tests_arch/test_persistence_benchmarks.py::test_partition_pruning_happens[postgres]`
+- `tests_arch/test_persistence_benchmarks.py::test_partition_pruning_happens[sqlite]`
+- `tests_arch/test_persistence_benchmarks.py::test_partitions_can_be_created_and_dropped_in_constant_time[postgres]`
+- `tests_arch/test_persistence_benchmarks.py::test_partitions_can_be_created_and_dropped_in_constant_time[sqlite]`
+
+Adapted mixed test files (all surviving original assertion ASTs are identical
+where retargeting touches core behavior; fixture/API/query inputs changed):
+
+- dead-persistence: `tests_arch/test_helm_postgres_archive.py`, `tests_arch/test_persistence_benchmarks.py`, `tests_arch/test_persistence_crypto_audit.py`, `tests_arch/test_retention_sweep.py`.
+- dead-security: `tests_arch/test_architecture_rules.py`, `tests_arch/test_component_status.py`, `tests_arch/test_documentation_cites_real_tests.py`, `tests_arch/test_gap_closures.py`, `tests_arch/test_sql_is_never_built_from_data.py`.
+- dead-tooling: `tests_arch/test_cli_advisor.py`, `tests_arch/test_component_status.py`, `tests_arch/test_security_bypass_detection.py`.
+
+The security group removes two SAML cases from the mixed gap-closure file,
+three dormant-module parameter cases and their feature-only documentation case.
+The tooling group removes only the advisor-check case from the mixed CLI file,
+three cases for the unused admission helper, and the attack-campaign tooling
+classification case. All other advisory isolation, credentials, worker,
+authorization and network-admission manifest assertions remain.
+The removed SAML citation anchor is replaced by the retained audit test; the
+citation regex, assertions and zero-backlog requirement are unchanged.
+The stale deleted-module exception was removed from the single-engine ratchet.
+
+### Live-schema capability proof and deliberate differences
+
+The earlier **Phase 2 schema decision** preserves the original fresh-database
+PostgreSQL proof and the user's explicit override of partition parity. Live
+tables are not partitioned; retention is a DELETE sweep. No partition migration
+was introduced. The parked range-partitioning entry remains in this plan for
+Phase 3's `docs/PARKED.md`.
+
+| Retained capability | Executed proof |
+|---|---|
+| RLS without application predicate | `test_tenant_isolation_rls.py::test_rls_alone_blocks_the_leak_with_the_application_predicate_removed`; cross-tenant update/delete cases |
+| Forced RLS / protected catalogue | `test_every_protected_table_actually_carries_a_forced_policy`; `test_no_tenant_owned_table_was_left_out_of_the_protected_set` |
+| WITH CHECK | `test_a_write_cannot_be_attributed_to_another_tenant` |
+| Non-superuser application role | `test_the_application_role_is_not_a_superuser`; original diagnostic also records no BYPASSRLS |
+| Isolation levels / lock timeout | `test_persistence_benchmarks.py::test_isolation_levels_are_actually_applied`; `test_a_blocked_writer_fails_fast_rather_than_queueing` |
+| Index plans / timing / query count | All nine non-partition benchmark functions retained, including the unindexed negative control; 250 ms median ceiling unchanged |
+| Crypto and audit chain | All 26 original functions in `test_persistence_crypto_audit.py`; edits/deletions, per-tenant chains, keyset pagination, rollback and canonicalization |
+| Live audit producer interoperability | `test_audit_log_and_live_service_writer_share_one_verifiable_chain` on both engines; existing live audit trail tests also retained |
+| Real retention | Original count assertions now run the live DELETE sweep; all `test_retention_sweep.py` cases retained |
+
+Implementation decisions: the live schema has no `deleted_at`, so the legacy
+soft-delete-named benchmark retains its ID and both count assertions but ages
+exactly a tenth of its incidents and invokes `SqlRetention.sweep_incident_history`.
+The query set uses live columns and the real shard-scoped lease predicate.
+EXPLAIN analysis, query observation and timing are now test-local helpers;
+observation always calls the original live connection method. AuditLog now uses
+the live `security_audit`/`detail` layout and the same `security_audit` advisory-lock
+purpose as the service writer; it still joins the caller's transaction.
+The two implementations' canonical hash/value objects are unchanged.
+
+### Verification
+
+Full Linux suite: **4,101 passed, 42 skipped,
+0 failed, 0 errors, 0 timeouts**, exit 0; JUnit 2242.210 s,
+approximate wall 2252.789 s. Same Phase 0 command and timeout settings:
+
+```bash
+pytest tests_arch/ -q --timeout=120 --timeout_method=thread --durations=30 -rA --junitxml=baseline/phase2/junit.xml
+```
+
+Before group commits: persistence 149 passed/10 skipped; security 65 passed
+plus 33 architecture cases passed; tooling 123 passed/3 skipped. Ruff passed for
+each group. The final Ruff run, 10 import-graph regression tests, actionlint,
+secret scanner (671 members, zero findings) and 63 relative Markdown
+links pass. This is the repository secret scanner, not an independent gitleaks run.
+After writing the results, all 51 documentation, container-context and architecture
+cases passed; the secret scan, 63-link check and diff whitespace check passed again.
+Docker is absent from WSL PATH; image build/start/healthcheck remain **unverified**.
+Other skipped live services and generated artifacts remain unverified.
+
+Skips change from 44 to 42. Removed skipped IDs:
+
+- `tests_arch/test_persistence_benchmarks.py::test_partition_pruning_happens[sqlite]`
+- `tests_arch/test_persistence_benchmarks.py::test_partitions_can_be_created_and_dropped_in_constant_time[sqlite]`
+
+New skipped IDs:
+
+- None.
+
+The Helm archive test now skips when `initdb` returns failure, matching the PITR
+fixture. A real root invocation failed before the change and reports the explicit
+`initdb: cannot be run as root` skip afterward. The normal-user test executes its
+unchanged running-server assertions. Root-only diagnostic skips are not included
+in the full-suite totals. The resumed runner's shell printed a literal zero;
+the recorded exit is instead the actual pytest status observed from its parent
+shell's wait4 result (`observed-exit.json`). Full per-ID skip reasons/comparison are in ignored
+`baseline/phase2/skip-comparison.json` and JUnit/log files.
+
+### Import graph: zero unexplained orphans
+
+242 modules; 217 reachable;
+25 unreachable, all explicitly classified below. Zero unresolved
+internal/dynamic imports and zero stale allowances. `import_graph.py --check`
+passed with one `--allow-unreachable` per documented module (exact command saved
+as `baseline/phase2/graph-check-command.json`). The bare command intentionally
+refuses documented external entrypoints/Phase 3 modules without those flags.
+
+| Remaining unreachable module | Disposition |
+|---|---|
+| `sentinel.domain.detection_metrics` | Keep: deterministic measurement CLI used outside the service roots. |
+| `sentinel.domain.endpoint_sensor` | Phase 3: endpoint feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.endpoint_scan` | Phase 3: endpoint feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.persistence.backup` | Keep: explicitly retained backup/PITR verify_restore capability and tests. |
+| `sentinel.infrastructure.persistence.engine` | Keep: real PostgreSQL backup/PITR preflight tests use this engine; the user explicitly retained those tests. No service root uses it after audit retargeting. |
+| `sentinel.infrastructure.persistence.objectstore` | Keep: external WAL archive adapter. |
+| `sentinel.infrastructure.platforms.copilot_studio` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.databricks_agents` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.discovery_breadth` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.discovery_support` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.github_discovery` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.gitlab_discovery` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.identity_agents` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.local_mcp_configs` | Phase 3: endpoint feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.salesforce_agentforce` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.servicenow_agents` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.infrastructure.platforms.slack_apps` | Phase 3: vendor discovery feature; deliberately untouched in Phase 2. |
+| `sentinel.sdk.adapters` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.adapters._gate` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.adapters.anthropic` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.adapters.gemini` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.adapters.langchain` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.adapters.openai_agents` | Keep: public SDK adapter/helper imported by external SDK clients. |
+| `sentinel.sdk.discovery_app` | Phase 3: endpoint feature; deliberately untouched in Phase 2. |
+| `sentinel.sdk.mcp_stdio` | Keep: explicit sentinel-mcp-stdio console entrypoint outside graph roots. |
+
+
+### Review, corrections and limits
+
+Review complete: fresh read-only review of `b66a8ca..df3e863` found no
+critical issues or runtime regression. Two important findings concerned current
+SAML claims in SECURITY and ENTERPRISE_CONTROLS. Three related descriptions
+(verification-suite coverage in SECURITY/TESTING and a current-passkey schema
+comment) were initially labelled minor.
+
+Ruling: treat all five stale capability/verification statements as important
+documentation correctness findings: they contradict the authorized cleanup and
+could mislead an operator or security reviewer about shipped authentication or
+test coverage. Corrected in one pass; no executable behavior or live migration
+changed. Documentation-citation and architecture checks were rerun. No review
+minors remain deferred.
+
+The reviewer confirmed deletion scope, unchanged retained assertions, real SQL
+observation, DELETE retention, audit table/detail/shared-lock adaptation and the
+initdb-only skip boundary. The reviewer also caught a JUnit/pytest spelling
+difference for Hypothesis TestLifecycleModel.runTest: normalized accounting
+records four partition cases removed and two audit cases added, rather than a
+false execution-model removal/addition. The model case remains unchanged.
+
+Rulings on matters the reviewer set aside:
+
+- Dated release notes and the dated engineering audit describe their original
+  snapshots; retain their historical meaning rather than claim fresh verification.
+- The added audit interoperability case is sequential. It proves both writers
+  share the table and chain format; it is not new contention proof. Shared locking
+  is aligned by inspection; the existing concurrency tests remain in the full suite.
+- Full-suite completion, Docker, deletion chronology, result commit and push are
+  established by this execution's own evidence, not inferred from the review.
+  Docker remains unavailable; per-path pre-deletion evidence is preserved.
+- Partition parity was deliberately waived by the user. The legacy engine is a
+  documented keep for explicitly retained backup/PITR tests; deleting it would
+  break that coverage. Neither decision authorizes Phase 3 work.
+
+The first full run at `df3e863` exposed a stale generated `.dockerignore`: it
+still listed 16 removed runtime/script paths. Its failure was reproduced, then
+the repository generator refreshed the manifest and all 14 unchanged container-
+context tests passed. That full run was interrupted and preserved separately;
+the final full run completed with the manifest and review corrections applied.
+The review corrections change only prose and a schema comment; their 37
+documentation/architecture cases passed separately. Executable code and
+retained assertions are unchanged by these final corrections.
+
+
+Initial retargeting exposed the expected missing `audit_log` dependency; the
+live-table adaptation made the retained cases pass. A fixture keyword error was
+fixed before the passing run. An initial verification command named a nonexistent
+audit test file and collected nothing; the corrected list ran the real audit trail.
+Security verification caught stale compliance citations and a SAML anchor, which
+were corrected without relaxing the documentation gate. A replacement comment
+temporarily exceeded the existing 800-line module limit by one line; shortening
+that comment restored the unchanged gate. The first full run exposed the stale
+generated container manifest and was interrupted; all 14 container-context cases
+passed after regeneration, and the reported full suite is a fresh complete run.
+None of those failed attempts is represented as a passing run; their evidence
+is retained separately. The established `baseline/phase2` ledger was reused
+instead of creating a second skill workspace.
+
+The previously agreed Passport integer-range discrepancy remains outside Phase 2.
+No deterministic decision authority, approval/execution behavior, live migration,
+Phase 3 feature, external production deployment, PR or main merge changed.
+
+<!-- phase2-results:end -->
