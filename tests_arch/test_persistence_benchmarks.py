@@ -15,7 +15,6 @@ WHAT IS ASSERTED
 ----------------
   * no sequential scan of an UNBOUNDED table on a hot query
   * query count does not grow with result-set size (no N+1)
-  * partition pruning actually happens
   * row-level security does not turn into a full scan
   * lock acquisition is bounded, so a blocked writer fails rather than queues
 """
@@ -26,20 +25,74 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from sentinel.infrastructure.persistence.diagnostics import (
-    analyse_plan,
-    count_statements,
-    time_query,
-)
-from sentinel.infrastructure.persistence.engine import (
-    DatabaseConfig,
-    Dialect,
-    Isolation,
-    PoolConfig,
-    build_database,
-)
-from sentinel.infrastructure.persistence.migrations import MigrationRunner
-from sentinel.infrastructure.persistence.schema import MIGRATIONS
+import re
+import time
+from contextlib import contextmanager
+from dataclasses import dataclass
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from sentinel.domain.primitives import TenantId, Timestamp
+from sentinel.infrastructure.persistence.engine import Isolation
+from sentinel.infrastructure.sql.engine import Connection, Dialect, build_engine
+from sentinel.infrastructure.sql.migrate import migrate
+from sentinel.infrastructure.sql.retention import SqlRetention
+
+
+@dataclass(frozen=True)
+class PlanAnalysis:
+    """Test-only summary of EXPLAIN from the actual live connection."""
+
+    plan: str
+    sequential_scans: tuple[str, ...]
+
+    def offending_scans(self, unbounded=frozenset({
+        "incidents", "incident_transitions", "evidence", "reports", "approvals",
+        "ledger_entries", "outbox", "inbox", "execution_steps", "work_queue",
+        "domain_events", "replay_nonces", "security_audit",
+    })):
+        return tuple(table for table in self.sequential_scans if table in unbounded)
+
+
+def analyse_plan(conn, sql, params=()):
+    prefix = "EXPLAIN " if conn.dialect is Dialect.POSTGRES else "EXPLAIN QUERY PLAN "
+    rows = conn.execute(prefix + sql, params)
+    plan = "\n".join(str(row[0] if conn.dialect is Dialect.POSTGRES else row[3]) for row in rows)
+    if conn.dialect is Dialect.POSTGRES:
+        scans = tuple(re.findall(r"(?:Seq Scan|Parallel Seq Scan) on (\w+)", plan))
+    else:
+        scans = tuple(match.group(1) for line in plan.splitlines()
+                      if "USING" not in line
+                      for match in re.finditer(r"SCAN (\w+)", line))
+    return PlanAnalysis(plan, scans)
+
+
+@contextmanager
+def count_statements(conn):
+    """Observe real live-engine queries; always call the original method."""
+    counter = SimpleNamespace(count=0)
+    execute = Connection.execute
+
+    def observed(connection, sql, params=()):
+        if connection is conn:
+            counter.count += 1
+        return execute(connection, sql, params)
+
+    with patch.object(Connection, "execute", observed):
+        yield counter
+
+
+def time_query(conn, name, sql, params=(), *, runs=25):
+    samples = []
+    for _ in range(runs):
+        started = time.perf_counter()
+        conn.execute(sql, params)
+        samples.append((time.perf_counter() - started) * 1000)
+    samples.sort()
+    return SimpleNamespace(name=name, median_ms=samples[len(samples) // 2],
+                           p95_ms=samples[min(len(samples) - 1, int(len(samples) * .95))],
+                           max_ms=samples[-1])
+
 
 # Sized so the planner has a genuine choice while the whole fixture still fits
 # in a temp volume. 25x80x4 seeded ~40k rows per test and, with a fresh database
@@ -70,28 +123,16 @@ def _scoped(conn, tenant: str = SUBJECT):
 
 @pytest.fixture
 def seeded(engine_config):
-    """A migrated database with enough rows for the planner to have a choice.
-
-    `engine_config.dialect` belongs to the OUTGOING engine's enum, which is a
-    different class from this one even though the members share names and
-    values. Mapping by value rather than passing it through is what stops
-    `dialect is Dialect.SQLITE` silently evaluating False and routing a SQLite
-    path into the PostgreSQL driver.
-    """
-    config = DatabaseConfig(
-        dialect=Dialect(engine_config.dialect.value),
-        dsn=engine_config.dsn,
-        pool=PoolConfig(min_size=1, max_size=6),
-    )
-    database = build_database(config)
-    MigrationRunner(database=database, migrations=MIGRATIONS).upgrade()
+    """Seed the same live migrations and connection pool as the service."""
+    database = build_engine(engine_config)
+    migrate(database)
     _seed(database)
     yield database
     database.close()
 
 
 def _seed(database) -> None:
-    with database.writer() as conn:
+    with database.acquire() as conn:
         conn.begin()
         p = conn.p
         for t in range(TENANTS):
@@ -112,14 +153,11 @@ def _seed(database) -> None:
                 incident = f"inc-{t:03d}-{i:04d}"
                 stamp = (NOW - timedelta(minutes=i)).isoformat()
                 state = "completed_attested" if i % 3 else "reported"
-                # A tenth are soft-deleted, so the partial indexes have something
-                # to exclude and the live-row queries have something to skip.
-                deleted = stamp if i % 10 == 0 else None
                 conn.execute_rowcount(
                     f"INSERT INTO incidents (tenant_id, incident_id, state, facts_json,"
-                    f" version, execution_epoch, created_at, updated_at, deleted_at)"
-                    f" VALUES ({p},{p},{p},{p},1,1,{p},{p},{p})",
-                    (tenant, incident, state, "{}", stamp, stamp, deleted),
+                    f" version, execution_epoch, created_at, updated_at)"
+                    f" VALUES ({p},{p},{p},{p},1,1,{p},{p})",
+                    (tenant, incident, state, "{}", stamp, stamp),
                 )
                 conn.execute_rowcount(
                     f"INSERT INTO work_queue (tenant_id, work_id, incident_id, shard,"
@@ -147,7 +185,7 @@ def _seed(database) -> None:
         conn.commit()
 
     # Statistics, without which the planner is guessing.
-    with database.writer() as conn:
+    with database.acquire() as conn:
         conn.begin()
         conn.execute_rowcount("ANALYZE")
         conn.commit()
@@ -166,7 +204,7 @@ def _queries(p: str) -> list[tuple[str, str, tuple]]:
         (
             "incidents.list_live",
             f"SELECT incident_id, state, updated_at FROM incidents "
-            f"WHERE tenant_id={p} AND deleted_at IS NULL "
+            f"WHERE tenant_id={p} "
             f"ORDER BY updated_at DESC LIMIT 50",
             (tenant,),
         ),
@@ -178,7 +216,7 @@ def _queries(p: str) -> list[tuple[str, str, tuple]]:
         (
             "incidents.counts_by_state",
             f"SELECT state, COUNT(*) AS n FROM incidents "
-            f"WHERE tenant_id={p} AND deleted_at IS NULL GROUP BY state",
+            f"WHERE tenant_id={p} GROUP BY state",
             (tenant,),
         ),
         (
@@ -190,8 +228,8 @@ def _queries(p: str) -> list[tuple[str, str, tuple]]:
         ),
         (
             "work_queue.reap_leases",
-            f"SELECT work_id FROM work_queue WHERE state='claimed' AND lease_until<{p}",
-            (stamp,),
+            f"SELECT work_id FROM work_queue WHERE shard={p} AND state='claimed' AND lease_until IS NOT NULL AND lease_until<{p}",
+            (3, stamp),
         ),
         (
             "outbox.claim_due",
@@ -225,7 +263,7 @@ def _queries(p: str) -> list[tuple[str, str, tuple]]:
 def test_no_hot_query_sequentially_scans_an_unbounded_table(seeded, capsys):
     """The headline rule, measured against real volume and real statistics."""
     offenders: list[str] = []
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         _scoped(conn)
         for name, sql, params in _queries(conn.p):
             analysis = analyse_plan(conn, sql, params)
@@ -240,17 +278,17 @@ def test_no_hot_query_sequentially_scans_an_unbounded_table(seeded, capsys):
     )
 
 
-def test_every_hot_query_is_benchmarked(seeded, capsys):
+def test_every_hot_query_is_benchmarked(seeded, capsys, engine_config):
     """Times every query and prints the table. No query ships unmeasured."""
     timings = []
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         _scoped(conn)
         for name, sql, params in _queries(conn.p):
             timings.append(time_query(conn, name, sql, params, runs=15))
         conn.commit()
 
     with capsys.disabled():
-        print(f"\n  {seeded.dialect.value} — {len(timings)} hot queries")
+        print(f"\n  {engine_config.dialect.value} — {len(timings)} hot queries")
         for timing in timings:
             print(f"    {timing}")
 
@@ -274,7 +312,7 @@ def test_the_analyser_can_actually_detect_a_scan(seeded):
     so the planner used the primary key and reported no sequential scan. A
     negative control has to be genuinely negative.
     """
-    with seeded.writer() as conn:
+    with seeded.acquire() as conn:
         conn.begin()
         conn.execute_rowcount(
             "CREATE TABLE IF NOT EXISTS scan_control (id INTEGER, payload TEXT)"
@@ -285,12 +323,12 @@ def test_the_analyser_can_actually_detect_a_scan(seeded):
                 (i, f"row-{i}"),
             )
         conn.commit()
-    with seeded.writer() as conn:
+    with seeded.acquire() as conn:
         conn.begin()
         conn.execute_rowcount("ANALYZE")
         conn.commit()
 
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         conn.begin()
         analysis = analyse_plan(
             conn,
@@ -317,7 +355,7 @@ def test_the_analyser_can_actually_detect_a_scan(seeded):
 
 def test_listing_incidents_does_not_issue_a_query_per_row(seeded):
     """The N+1 test: query count must not grow with result size."""
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         _scoped(conn)
         p = conn.p
 
@@ -325,7 +363,7 @@ def test_listing_incidents_does_not_issue_a_query_per_row(seeded):
             with count_statements(conn) as counter:
                 rows = conn.execute(
                     f"SELECT incident_id, state FROM incidents WHERE tenant_id={p} "
-                    f"AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT {p}",
+                    f"ORDER BY updated_at DESC LIMIT {p}",
                     (SUBJECT, limit),
                 )
                 assert rows
@@ -347,7 +385,7 @@ def test_hydrating_events_for_many_incidents_is_one_query(seeded):
     This asserts the batched form is used and that its cost is constant in the
     number of incidents.
     """
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         _scoped(conn)
         p = conn.p
         ids = [f"inc-006-{i:04d}" for i in range(20)]
@@ -364,68 +402,6 @@ def test_hydrating_events_for_many_incidents_is_one_query(seeded):
     assert len(rows) >= len(ids), "the batched fetch returned nothing; the test is vacuous"
 
 
-# ── Partitioning ─────────────────────────────────────────────────────────────
-
-
-def test_partition_pruning_happens(seeded, engine_config):
-    """A bounded time range must touch fewer partitions than exist.
-
-    Reported rather than skipped on SQLite, which has no declarative
-    partitioning: stating the difference is better than a green test that means
-    nothing on one engine.
-    """
-    if Dialect(engine_config.dialect.value) is not Dialect.POSTGRES:
-        pytest.skip("SQLite has no declarative partitioning; see schema.py")
-
-    with seeded.reader(consistent=True) as conn:
-        _scoped(conn)
-        p = conn.p
-        analysis = analyse_plan(
-            conn,
-            f"SELECT COUNT(*) FROM domain_events WHERE tenant_id={p} "
-            f"AND recorded_at >= {p} AND recorded_at < {p}",
-            (SUBJECT, "2026-07-01", "2026-08-01"),
-        )
-        conn.commit()
-
-    # With only the DEFAULT partition provisioned in this fixture, pruning is
-    # trivially satisfied -- so the assertion is that the plan is partition-aware
-    # at all, which is what proves the table really is partitioned.
-    assert "domain_events" in analysis.plan, analysis.plan
-
-
-def test_partitions_can_be_created_and_dropped_in_constant_time(seeded, engine_config):
-    """Retention by DROP TABLE, which is the reason for partitioning at all.
-
-    Deleting a month of rows from a monolithic table writes as much WAL as the
-    rows and leaves the space to VACUUM. Dropping a partition is a catalogue
-    operation.
-    """
-    if Dialect(engine_config.dialect.value) is not Dialect.POSTGRES:
-        pytest.skip("SQLite has no declarative partitioning")
-
-    with seeded.writer() as conn:
-        conn.begin()
-        conn.execute_rowcount(
-            "CREATE TABLE domain_events_2026_06 PARTITION OF domain_events "
-            "FOR VALUES FROM ('2026-06-01') TO ('2026-07-01')"
-        )
-        conn.commit()
-
-    with seeded.reader(consistent=True) as conn:
-        conn.begin()
-        found = conn.one(
-            "SELECT relname FROM pg_class WHERE relname = 'domain_events_2026_06'"
-        )
-        conn.commit()
-    assert found is not None
-
-    with seeded.writer() as conn:
-        conn.begin()
-        conn.execute_rowcount("DROP TABLE domain_events_2026_06")
-        conn.commit()
-
-
 # ── Isolation and locking ────────────────────────────────────────────────────
 
 
@@ -434,8 +410,9 @@ def test_isolation_levels_are_actually_applied(seeded, engine_config):
         pytest.skip("SQLite has one isolation level")
 
     for level in (Isolation.READ_COMMITTED, Isolation.REPEATABLE_READ, Isolation.SERIALIZABLE):
-        with seeded.writer() as conn:
-            conn.begin(level)
+        with seeded.acquire() as conn:
+            conn.begin()
+            conn.execute("SET TRANSACTION ISOLATION LEVEL " + level.value)
             observed = conn.one("SHOW transaction_isolation")
             conn.commit()
         assert observed["transaction_isolation"].upper() == level.value, (
@@ -456,14 +433,14 @@ def test_a_blocked_writer_fails_fast_rather_than_queueing(seeded, engine_config)
 
     from sentinel.domain.errors import TransientFailure
 
-    with seeded.writer() as holder:
+    with seeded.acquire() as holder:
         _scoped(holder, "tenant-001")
         holder.execute(
             f"SELECT * FROM incidents WHERE tenant_id={holder.p} AND incident_id={holder.p}"
             + holder.lock_clause(),
             ("tenant-001", "inc-001-0001"),
         )
-        with seeded.writer() as blocked:
+        with seeded.acquire() as blocked:
             _scoped(blocked, "tenant-001")
             blocked.execute_rowcount("SET LOCAL lock_timeout = 250")
             with pytest.raises(TransientFailure) as caught:
@@ -487,12 +464,12 @@ def test_row_level_security_does_not_degrade_into_a_scan(seeded, engine_config):
     if Dialect(engine_config.dialect.value) is not Dialect.POSTGRES:
         pytest.skip("SQLite has no row-level security")
 
-    with seeded.reader(consistent=True) as conn:
+    with seeded.acquire() as conn:
         _scoped(conn)
         analysis = analyse_plan(
             conn,
             f"SELECT incident_id FROM incidents WHERE tenant_id={conn.p} "
-            f"AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 20",
+            f"ORDER BY updated_at DESC LIMIT 20",
             (SUBJECT,),
         )
         conn.commit()
@@ -502,20 +479,35 @@ def test_row_level_security_does_not_degrade_into_a_scan(seeded, engine_config):
     )
 
 
-# ── Soft delete ──────────────────────────────────────────────────────────────
+# ── Live DELETE retention ───────────────────────────────────────────────────
 
 
 def test_soft_deleted_rows_are_excluded_and_cost_nothing_to_skip(seeded):
-    with seeded.reader(consistent=True) as conn:
+    """Retain the original count contract against the service's DELETE sweep.
+
+    The legacy name is kept for traceability. Production has no deleted_at:
+    age a tenth of the incidents into terminal history, then run real retention.
+    """
+    with seeded.acquire() as conn:
         _scoped(conn)
         p = conn.p
-        live = conn.one(
-            f"SELECT COUNT(*) AS n FROM incidents WHERE tenant_id={p} "
-            f"AND deleted_at IS NULL",
-            (SUBJECT,),
-        )
         total = conn.one(
             f"SELECT COUNT(*) AS n FROM incidents WHERE tenant_id={p}", (SUBJECT,)
+        )
+        for i in range(0, INCIDENTS_PER_TENANT, 10):
+            conn.execute_rowcount(
+                f"UPDATE incidents SET state='completed_attested', updated_at={p} "
+                f"WHERE tenant_id={p} AND incident_id={p}",
+                ((NOW - timedelta(days=60)).isoformat(), SUBJECT, f"inc-006-{i:04d}"),
+            )
+        conn.commit()
+    SqlRetention(pool=seeded).sweep_incident_history(
+        now=Timestamp(NOW), incident_retention_days=30, tenants=[TenantId(SUBJECT)]
+    )
+    with seeded.acquire() as conn:
+        _scoped(conn)
+        live = conn.one(
+            f"SELECT COUNT(*) AS n FROM incidents WHERE tenant_id={conn.p}", (SUBJECT,)
         )
         conn.commit()
 

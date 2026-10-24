@@ -27,14 +27,8 @@ from sentinel.infrastructure.persistence.crypto import (
     EnvironmentKeyProvider,
     StaticKeyProvider,
 )
-from sentinel.infrastructure.persistence.engine import (
-    DatabaseConfig,
-    Dialect,
-    PoolConfig,
-    build_database,
-)
-from sentinel.infrastructure.persistence.migrations import MigrationRunner
-from sentinel.infrastructure.persistence.schema import MIGRATIONS
+from sentinel.infrastructure.sql.engine import build_engine
+from sentinel.infrastructure.sql.migrate import migrate
 
 TENANT = TenantId("acme")
 OTHER = TenantId("globex")
@@ -260,14 +254,9 @@ def test_the_environment_provider_refuses_an_incomplete_configuration():
 
 @pytest.fixture
 def audited(engine_config):
-    config = DatabaseConfig(
-        dialect=Dialect(engine_config.dialect.value),
-        dsn=engine_config.dsn,
-        pool=PoolConfig(min_size=1, max_size=4),
-    )
-    database = build_database(config)
-    MigrationRunner(database=database, migrations=MIGRATIONS).upgrade()
-    with database.writer() as conn:
+    database = build_engine(engine_config)
+    migrate(database)
+    with database.acquire() as conn:
         conn.begin()
         for tenant in (TENANT, OTHER):
             conn.execute_rowcount(
@@ -282,7 +271,7 @@ def audited(engine_config):
 
 def _write(database, tenant: TenantId, count: int, *, action: str = "incident.admit"):
     written = []
-    with database.writer() as conn:
+    with database.acquire() as conn:
         conn.begin()
         conn.set_tenant(tenant.value)
         log = AuditLog(conn, tenant)
@@ -312,7 +301,7 @@ def test_entries_chain_to_their_predecessor(audited):
 
 def test_a_freshly_written_chain_verifies(audited):
     _write(audited, TENANT, 12)
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         result = AuditLog(conn, TENANT).verify()
@@ -328,16 +317,16 @@ def test_editing_an_entry_breaks_the_chain(audited):
     change it without the chain noticing.
     """
     _write(audited, TENANT, 6)
-    with audited.writer() as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         conn.execute_rowcount(
-            f"UPDATE audit_log SET outcome='denied' WHERE tenant_id={conn.p} AND seq=3",
+            f"UPDATE security_audit SET outcome='denied' WHERE tenant_id={conn.p} AND seq=3",
             (TENANT.value,),
         )
         conn.commit()
 
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         result = AuditLog(conn, TENANT).verify()
@@ -350,16 +339,16 @@ def test_editing_an_entry_breaks_the_chain(audited):
 
 def test_deleting_an_entry_breaks_the_chain(audited):
     _write(audited, TENANT, 6)
-    with audited.writer() as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         conn.execute_rowcount(
-            f"DELETE FROM audit_log WHERE tenant_id={conn.p} AND seq=4",
+            f"DELETE FROM security_audit WHERE tenant_id={conn.p} AND seq=4",
             (TENANT.value,),
         )
         conn.commit()
 
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         result = AuditLog(conn, TENANT).verify()
@@ -377,15 +366,15 @@ def test_the_verifier_names_where_the_chain_broke(audited):
     on. "The log is broken" is not.
     """
     _write(audited, TENANT, 20)
-    with audited.writer() as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         conn.execute_rowcount(
-            f"UPDATE audit_log SET actor='forged' WHERE tenant_id={conn.p} AND seq=18",
+            f"UPDATE security_audit SET actor='forged' WHERE tenant_id={conn.p} AND seq=18",
             (TENANT.value,),
         )
         conn.commit()
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         result = AuditLog(conn, TENANT).verify()
@@ -398,7 +387,7 @@ def test_each_tenant_has_an_independent_chain(audited):
     _write(audited, TENANT, 4)
     _write(audited, OTHER, 7)
     for tenant, expected in ((TENANT, 4), (OTHER, 7)):
-        with audited.reader(consistent=True) as conn:
+        with audited.acquire() as conn:
             conn.begin()
             conn.set_tenant(tenant.value)
             result = AuditLog(conn, tenant).verify()
@@ -408,7 +397,7 @@ def test_each_tenant_has_an_independent_chain(audited):
 
 def test_a_denied_action_is_recorded_as_carefully_as_a_success(audited):
     """"We were asked and said no" is what gets disputed later."""
-    with audited.writer() as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         entry = AuditLog(conn, TENANT).record(
@@ -427,7 +416,7 @@ def test_a_denied_action_is_recorded_as_carefully_as_a_success(audited):
 
 def test_entries_are_queryable_by_resource_and_by_actor(audited):
     _write(audited, TENANT, 9)
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         log = AuditLog(conn, TENANT)
@@ -443,7 +432,7 @@ def test_pagination_is_keyset_not_offset(audited):
     _write(audited, TENANT, 25)
     seen: list[int] = []
     after = 0
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         log = AuditLog(conn, TENANT)
@@ -465,7 +454,7 @@ def test_the_head_is_publishable_and_changes_with_every_entry(audited):
     externally is what makes that detectable, so the head must be stable to read
     and must move on every append.
     """
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         assert AuditLog(conn, TENANT).head() == GENESIS
@@ -474,7 +463,7 @@ def test_the_head_is_publishable_and_changes_with_every_entry(audited):
     heads = []
     for _ in range(3):
         _write(audited, TENANT, 1)
-        with audited.reader(consistent=True) as conn:
+        with audited.acquire() as conn:
             conn.begin()
             conn.set_tenant(TENANT.value)
             heads.append(AuditLog(conn, TENANT).head())
@@ -509,7 +498,7 @@ def test_the_audit_write_shares_the_transaction_it_describes(audited):
     that never happened and misses ones that did.
     """
     with pytest.raises(RuntimeError):
-        with audited.writer() as conn:
+        with audited.acquire() as conn:
             conn.begin()
             conn.set_tenant(TENANT.value)
             AuditLog(conn, TENANT).record(
@@ -518,9 +507,39 @@ def test_the_audit_write_shares_the_transaction_it_describes(audited):
             )
             raise RuntimeError("the surrounding action failed")
 
-    with audited.reader(consistent=True) as conn:
+    with audited.acquire() as conn:
         conn.begin()
         conn.set_tenant(TENANT.value)
         result = AuditLog(conn, TENANT).verify()
         conn.commit()
     assert result.entries == 0, "an audit entry survived a rolled-back transaction"
+
+
+def test_audit_log_and_live_service_writer_share_one_verifiable_chain(audited):
+    """Both writers use the live table, canonicalization and advisory-lock key."""
+    from types import SimpleNamespace
+
+    from sentinel.infrastructure.security_audit import SqlSecurityAudit
+
+    failures = []
+    service = SqlSecurityAudit(
+        pool=audited, clock=SimpleNamespace(now=lambda: NOW),
+        logger=SimpleNamespace(error=lambda *args, **kwargs: failures.append(kwargs)),
+    )
+    for action in ("before", "after"):
+        service.record(tenant=TENANT, actor="service", action=action,
+                       resource_type="incident", resource_id="shared",
+                       outcome=Outcome.SUCCESS, detail={"source": "live"})
+        if action == "before":
+            _write(audited, TENANT, 1)
+    assert not failures
+    with audited.acquire() as conn:
+        conn.begin()
+        conn.set_tenant(TENANT.value)
+        log = AuditLog(conn, TENANT)
+        entries = log.entries()
+        result = log.verify()
+        conn.commit()
+    assert [entry.action for entry in entries] == ["before", "incident.admit", "after"]
+    assert result.intact and result.entries == 3
+    assert entries[0].detail == {"source": "live"}

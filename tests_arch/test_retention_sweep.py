@@ -4,8 +4,8 @@ THE DEFECT
 ----------
 The setting was parsed into `Settings.retention_days` and read by no code at all.
 The Helm chart set it, and set `SENTINEL_RETENTION_INTERVAL` besides, which
-`Settings` did not even parse. `schema.py` opens by explaining that two tables
-are partitioned "for retention". `MaintenanceLoop`'s docstring refers to "its
+`Settings` did not even parse. Live tables are not partitioned; retention is
+a DELETE sweep. `MaintenanceLoop`'s docstring refers to "its
 retention job". `inbox` and `replay_nonces` each shipped a purge primitive with a
 dedicated index -- `ix_inbox_age`, `ix_nonces_expiry` -- and neither primitive
 had a single production caller. `work_queue.complete()` sets `state='done'` and

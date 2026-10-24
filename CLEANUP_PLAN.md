@@ -101,10 +101,10 @@ Regression command: `python -m unittest discover -s scripts/dev -p test_import_g
 | `sentinel.infrastructure.endpoint_scan` | 434 | Phase 3: park (endpoint) |
 | `sentinel.infrastructure.openapi_risk` | 291 | Phase 2: delete (dead-security) |
 | `sentinel.infrastructure.persistence.backup` | 616 | Keep: backup/PITR verify_restore supports Stage 4; external-support exception like objectstore. |
-| `sentinel.infrastructure.persistence.diagnostics` | 248 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
-| `sentinel.infrastructure.persistence.migrations` | 417 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
+| `sentinel.infrastructure.persistence.diagnostics` | 248 | Phase 2: remove under the explicit Phase 2 schema decision below. |
+| `sentinel.infrastructure.persistence.migrations` | 417 | Phase 2: remove under the explicit Phase 2 schema decision below. |
 | `sentinel.infrastructure.persistence.objectstore` | 470 | Keep: external WAL archive command imports it; see exceptions. |
-| `sentinel.infrastructure.persistence.schema` | 557 | Phase 2: conditional on live sql RLS/partitioning parity proof; see Checkpoint 1. |
+| `sentinel.infrastructure.persistence.schema` | 557 | Phase 2: remove under the explicit Phase 2 schema decision below. |
 | `sentinel.infrastructure.platforms.copilot_studio` | 330 | Phase 3: park (discovery) |
 | `sentinel.infrastructure.platforms.databricks_agents` | 195 | Phase 3: park (discovery) |
 | `sentinel.infrastructure.platforms.discovery_breadth` | 244 | Phase 3: park (discovery) |
@@ -984,7 +984,7 @@ Unused campaign/admission helper and advisor-only CLI; remove the advisor consol
 
 ### Phase 2: dead-persistence
 
-Retain backup.py and test_persistence_backup_pitr.py. Before removing the duplicate schema/migration/diagnostic implementation, prove the live sql migrations provide every capability its PostgreSQL tests rely on, including RLS and partitioning; review the schema.py skip messages. Retarget shared crypto/audit tests only after that proof.
+Retain backup.py and test_persistence_backup_pitr.py. Remove the duplicate schema/migration/diagnostic implementation under the later Phase 2 schema decision. Preserve non-partition assertions on live SQL; delete only the two partition-specific cases and correct partitioning claims.
 
 | Proposed path | LOC / binary size | Action |
 |---|---:|---|
@@ -1828,3 +1828,75 @@ Rulings and limits:
 - Phase 2/3 implementation, a main merge and a PR remain outside this phase.
 
 <!-- phase1-results:end -->
+
+## Phase 2 schema decision
+
+On 2026-10-24 the user explicitly overrode the earlier schema-parity stop
+condition and authorized removal of `persistence/schema.py`, `migrations.py`
+and `diagnostics.py`. Partitioning was designed only in the legacy schema and
+was never wired into the live SQL migrations used by production. Live tables
+are not partitioned; retention is a DELETE sweep in
+`sentinel/infrastructure/sql/retention.py`. Preserve `backup.py`, `objectstore.py`
+and all non-partition assertions, retargeted to the live SQL layer. The original
+code remains recoverable from `archive/pre-cleanup`.
+
+The pre-deletion capability proof below is preserved from
+`reports/PHASE2_CAPABILITY_BLOCKER.md`. Reports and raw evidence stay uncommitted.
+
+A temporary diagnostic under ignored `baseline/phase2/test_schema_probe.py`
+created separate fresh PostgreSQL databases using the existing test fixtures.
+It migrated one through `sql.migrate.migrate` and the other through the legacy
+`MigrationRunner` with `persistence.schema.MIGRATIONS`. Both used the configured
+application role, neither superuser nor BYPASSRLS. Both diagnostic cases passed;
+that establishes successful measurement, not schema parity.
+
+| Capability | Live SQL observation / existing coverage | Legacy observation | Result |
+|---|---|---|---|
+| RLS and forced RLS | Both catalogue flags present on probed tables; `test_every_protected_table_actually_carries_a_forced_policy` covers the protected set | Both flags present | Present in both |
+| USING and WITH CHECK | Both policy expressions present; `test_rls_alone_blocks_the_leak_with_the_application_predicate_removed` and `test_a_write_cannot_be_attributed_to_another_tenant` cover enforcement | Both expressions present | Present in both |
+| Application role | Diagnostic confirms `rolsuper=false`, `rolbypassrls=false`; `test_the_application_role_is_not_a_superuser` guards against vacuous RLS coverage | Same application role | Roles come from fixtures/deployment, not either migration system |
+| Range-partitioned events and transitions | `domain_events` and `incident_transitions`: `pg_class.relkind='r'`, no partition catalogue entry | Both have `relkind='p'`, range strategy `r` | **Parity missing** |
+| Create monthly partition | `CREATE TABLE ... PARTITION OF domain_events` fails with SQLSTATE `42P17`: `"domain_events" is not partitioned` | Same operation succeeds; probe rolled back | **Parity missing** |
+| Audit storage | Ordinary `security_audit`; no legacy `audit_log` table | Range-partitioned `audit_log` | Direct fixture replacement is insufficient; core audit cases still need deliberate retargeting |
+
+The existing test references above are mapped from unchanged source and Phase 1
+coverage. This preflight did not rerun the full RLS suite or the final Phase 2
+suite. The fresh diagnostic checked actual catalogue state, role properties and
+partition creation against both migration systems.
+
+`test_persistence_benchmarks.py::test_partition_pruning_happens` and
+`test_partitions_can_be_created_and_dropped_in_constant_time` depend on the
+legacy partitioned schema. The latter actually creates and drops a partition.
+They cannot simply be retargeted to live SQL while preserving their assertions.
+Legacy `persistence/schema.py` declares range partitioning for `domain_events`,
+`incident_transitions` and `audit_log`; the recursive search found no equivalent
+in the live SQL migration path.
+
+Evidence is retained under ignored `baseline/phase2/`: `schema-probe.xml`,
+`schema-probe.log`, `live-schema-capabilities.json`,
+`legacy-schema-capabilities.json`, `schema-capability-references.txt` and
+`import-graph-before.json`. The search covered all requested roots.
+
+### Authorized test and schema changes
+
+Only these partition-specific test IDs are deleted (each previously collected
+on SQLite and PostgreSQL; four parametrized cases in total):
+
+- `tests_arch/test_persistence_benchmarks.py::test_partition_pruning_happens`
+- `tests_arch/test_persistence_benchmarks.py::test_partitions_can_be_created_and_dropped_in_constant_time`
+
+All non-partition benchmark and crypto/audit cases are retained. Their assertion
+expressions and thresholds stay unchanged while fixtures, SQL and connection
+APIs are retargeted to live SQL. RLS, forced RLS and WITH CHECK continue to be
+covered by the unchanged `test_tenant_isolation_rls.py` cases named above.
+Isolation and lock-timeout checks run on the live engine; crypto still uses
+the retained encryption implementation. Audit chaining, tamper detection,
+tenant separation, pagination and rollback use the live `security_audit` table.
+
+### Parked list for Phase 3
+
+Range partitioning of domain_events/incident_transitions — designed in legacy
+schema.py (recoverable from archive/pre-cleanup), never wired into live migrations.
+Revisit when event volume makes DELETE sweeps too slow.
+
+Phase 3 has not started. This item will become part of `docs/PARKED.md` in Phase 3.

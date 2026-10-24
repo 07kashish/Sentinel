@@ -4,10 +4,9 @@ WHAT WAS WRONG
 --------------
 `SENTINEL_RETENTION_DAYS` has been a documented setting, parsed into
 `Settings.retention_days`, and read by **nothing**. The Helm chart sets it, and
-sets `SENTINEL_RETENTION_INTERVAL` too, which `Settings` did not even parse. The
-schema module opens by explaining that `incident_transitions` and `audit_log` are
-partitioned "for retention", and `MaintenanceLoop`'s own docstring refers to "its
-retention job". There was no retention job.
+sets `SENTINEL_RETENTION_INTERVAL` too, which `Settings` did not even parse. Live tables are not partitioned; retention is a DELETE sweep. The legacy
+partitioned schema was never wired into live migrations. Before this module,
+there was no retention job.
 
 The consequences are not hypothetical. `complete()` sets a work item's state to
 `done` and leaves the row; `mark_delivered` does the same for the outbox. There
@@ -25,7 +24,7 @@ message-dedup journal past its redelivery window, and expired replay nonces.
 Every one of those is derived state whose purpose has already been served.
 
 It does NOT touch `incidents`, `domain_events`, `incident_transitions`,
-`ledger_entries` or `audit_log`. Those are the security record. How long a SOC
+`ledger_entries` or `security_audit`. Those are the security record. How long a SOC
 keeps incident history is a compliance decision with legal weight, it is not
 interchangeable with "when can we reclaim disk", and an agent should not pick a
 number for it. If those tables need trimming, that is a separate policy with a

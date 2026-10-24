@@ -31,10 +31,9 @@ overclaim this codebase has been burned by before.
 
 SOFT DELETE DOES NOT APPLY HERE
 --------------------------------
-`audit_log` has no `deleted_at`. An audit entry is never deleted individually --
-not softly, not at all. Retention is by dropping a whole partition once it is
-past the compliance window, which is visible, atomic and leaves the remaining
-chain verifiable from the new starting point.
+Live tables are not partitioned; retention uses DELETE sweeps for explicitly
+eligible operational and incident history rows. `security_audit` is append-only
+and is never swept. Removing entries would break its chain.
 """
 
 from __future__ import annotations
@@ -47,7 +46,7 @@ from typing import Any, Mapping, Sequence
 
 from sentinel.domain.errors import SentinelError
 from sentinel.domain.primitives import TenantId, Timestamp
-from sentinel.infrastructure.persistence.engine import Connection
+from sentinel.infrastructure.sql.engine import Connection
 
 __all__ = [
     "AuditEntry",
@@ -145,8 +144,8 @@ class ChainVerification:
 class AuditLog:
     """Append-only audit writer and verifier, scoped to one tenant.
 
-    Constructed by the unit of work, so an audit entry commits in the SAME
-    transaction as the action it describes. That coupling is the point: an audit
+    Uses the caller's live SQL connection, so an entry commits in the SAME
+    transaction as the caller's action. That coupling is the point: an audit
     log written in a separate transaction records actions that were rolled back
     and misses actions that were not.
     """
@@ -178,10 +177,10 @@ class AuditLog:
         chain has exactly the same shape.
         """
         p = self._conn.p
-        self._conn.serialise_tenant(self._tenant.value, purpose="audit-append")
+        self._conn.serialise_tenant(self._tenant.value, purpose="security_audit")
 
         head = self._conn.one(
-            f"SELECT seq, chain_hash FROM audit_log WHERE tenant_id={p} "
+            f"SELECT seq, chain_hash FROM security_audit WHERE tenant_id={p} "
             f"ORDER BY seq DESC LIMIT 1" + self._conn.lock_clause(),
             (self._tenant.value,),
         )
@@ -208,8 +207,8 @@ class AuditLog:
         )
 
         self._conn.execute_rowcount(
-            f"INSERT INTO audit_log (tenant_id, seq, actor, action, resource_type, "
-            f"resource_id, outcome, detail_json, prev_chain_hash, chain_hash, "
+            f"INSERT INTO security_audit (tenant_id, seq, actor, action, resource_type, "
+            f"resource_id, outcome, detail, prev_chain_hash, chain_hash, "
             f"occurred_at) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})",
             (
                 self._tenant.value,
@@ -234,7 +233,7 @@ class AuditLog:
         a self-consistent chain leaves open."""
         p = self._conn.p
         row = self._conn.one(
-            f"SELECT chain_hash FROM audit_log WHERE tenant_id={p} "
+            f"SELECT chain_hash FROM security_audit WHERE tenant_id={p} "
             f"ORDER BY seq DESC LIMIT 1",
             (self._tenant.value,),
         )
@@ -249,7 +248,7 @@ class AuditLog:
         """
         p = self._conn.p
         rows = self._conn.execute(
-            f"SELECT * FROM audit_log WHERE tenant_id={p} AND seq>{p} "
+            f"SELECT * FROM security_audit WHERE tenant_id={p} AND seq>{p} "
             f"ORDER BY seq ASC LIMIT {p}",
             (self._tenant.value, after_seq, limit),
         )
@@ -260,7 +259,7 @@ class AuditLog:
     ) -> Sequence[AuditEntry]:
         p = self._conn.p
         rows = self._conn.execute(
-            f"SELECT * FROM audit_log WHERE tenant_id={p} AND resource_type={p} "
+            f"SELECT * FROM security_audit WHERE tenant_id={p} AND resource_type={p} "
             f"AND resource_id={p} ORDER BY occurred_at DESC LIMIT {p}",
             (self._tenant.value, resource_type, resource_id, limit),
         )
@@ -269,7 +268,7 @@ class AuditLog:
     def by_actor(self, *, actor: str, limit: int = 100) -> Sequence[AuditEntry]:
         p = self._conn.p
         rows = self._conn.execute(
-            f"SELECT * FROM audit_log WHERE tenant_id={p} AND actor={p} "
+            f"SELECT * FROM security_audit WHERE tenant_id={p} AND actor={p} "
             f"ORDER BY occurred_at DESC LIMIT {p}",
             (self._tenant.value, actor, limit),
         )
@@ -292,7 +291,7 @@ class AuditLog:
 
         while True:
             rows = self._conn.execute(
-                f"SELECT * FROM audit_log WHERE tenant_id={p} AND seq>{p} "
+                f"SELECT * FROM security_audit WHERE tenant_id={p} AND seq>{p} "
                 f"ORDER BY seq ASC LIMIT {p}",
                 (self._tenant.value, after, batch),
             )
@@ -360,7 +359,7 @@ class AuditLog:
             resource_id=row["resource_id"],
             outcome=Outcome(row["outcome"]),
             occurred_at=Timestamp.parse(row["occurred_at"]),
-            detail=json.loads(row["detail_json"]) if row["detail_json"] else {},
+            detail=json.loads(row["detail"]) if row["detail"] else {},
             prev_chain_hash=row["prev_chain_hash"],
             chain_hash=row["chain_hash"],
         )

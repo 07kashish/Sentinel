@@ -483,7 +483,7 @@ _CORE_STATEMENTS: Final[tuple[str, ...]] = (
     )
     """,
     # The dispatch index. Shard leads so a worker's claim is a single ranged
-    # scan over its own partition, rather than the predecessor's fan-out that
+    # scan over its shard key range (the table is not partitioned), rather than the fan-out that
     # opened one connection PER TENANT on every poll.
     """
     CREATE INDEX IF NOT EXISTS ix_work_dispatch

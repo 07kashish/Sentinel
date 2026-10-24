@@ -36,9 +36,10 @@
    `APPEND_ONLY_TABLES` with those reasons; neither is an oversight, and neither
    is bounded. *Gate row: "Incident/event history retention policy" (pass).*
 
-10. Reclaiming freed space is a second step the sweep does not take. On SQLite
-    only `VACUUM` returns pages to the filesystem; on PostgreSQL the cheap path is
-    dropping a partition, as `schema.py` describes. Neither runs automatically.
+10. Reclaiming freed space is a second step the sweep does not take. Live tables are not
+    partitioned; retention is a DELETE sweep. SQLite may need `VACUUM` to shrink
+    its file; PostgreSQL vacuum makes deleted space reusable and deployment
+    settings govern autovacuum. The sweep does not drop partitions.
 
 
 <a id="release_gates"></a>
