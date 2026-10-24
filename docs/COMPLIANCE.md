@@ -35,9 +35,9 @@ exists to avoid.
 | A04 | Insecure Design | **Covered** | Client cannot assert severity — the field does not exist. Advisory model has no path to a decision. Saga pivot validated at construction | `test_security_prompt_injection.py::test_model_output_carries_no_authority_over_triage`, `test_execution_properties.py` |
 | A05 | Security Misconfiguration | **Covered** | Fail-closed configuration; production refuses to boot on wildcard CORS, exposed docs, missing keys, or SQLite. Full security header set. Strict boolean parsing | `test_security_edge.py::test_production_refuses_to_start_with_docs_enabled`, `test_every_security_header_is_present_on_a_data_response` |
 | A06 | Vulnerable Components | **Partial** | Runtime dependencies each justified in `requirements.txt`. `pip-audit` in CI | CI job; `scripts/build_sbom_and_licenses.py`; signed provenance requires CI evidence |
-| A07 | Identification & Authentication Failures | **Mostly covered** | Fail-closed auth, constant-time comparison with no early exit, duplicate key material refused, ≥32-char keys in production, durable single-use nonce replay guard | `test_end_to_end.py`, `test_security_edge.py::test_malformed_or_absent_credentials_are_refused`. TOTP MFA (RFC vectors), overlapping secret rotation, and three-bucket edge rate limiting are now implemented |
-| A08 | Software & Data Integrity Failures | **Covered** | Hash-chained audit entries; identity-bound Merkle leaves; migration checksums refuse a modified applied migration; no `pickle`/`yaml.load` | `test_persistence_crypto_audit.py`, `test_persistence_benchmarks.py`, `test_security_rules.py::test_no_module_deserialises_with_pickle_or_unsafe_yaml` |
-| A09 | Logging & Monitoring Failures | **Partial** | Hash-chained `security_audit` wired to authentication failures, authorization denials and approval decisions; tamper detection verified. Detections derived from the chain, each citing the audit sequences it used | `test_security_audit_trail.py` (19), `test_security_threat_detection.py` (16) |
+| A07 | Identification & Authentication Failures | **Mostly covered** | Fail-closed auth, constant-time comparison with no early exit, duplicate key material refused, ≥32-char keys in production, durable single-use nonce replay guard | `test_end_to_end.py`, `test_security_edge.py::test_malformed_or_absent_credentials_are_refused`. Three-bucket edge rate limiting remains; unused TOTP and overlapping-secret helpers were removed in Phase 2 |
+| A08 | Software & Data Integrity Failures | **Covered** | Hash-chained audit entries; identity-bound Merkle leaves; no `pickle`/`yaml.load` | `test_persistence_crypto_audit.py`, `test_persistence_benchmarks.py`, `test_security_rules.py::test_no_module_deserialises_with_pickle_or_unsafe_yaml` |
+| A09 | Logging & Monitoring Failures | **Partial** | Hash-chained `security_audit` wired to authentication failures, authorization denials and approval decisions; tamper detection verified. The unused audit-derived detector was removed in Phase 2 | `test_security_audit_trail.py` |
 | A10 | SSRF | **Covered** | Post-resolution address validation, one pinned lookup, redirects refused, every resolved address checked, bounded response | `test_security_outbound.py` (44 tests) |
 
 ---
@@ -51,13 +51,13 @@ exists to avoid.
 | A.5.17 Authentication information | Keys held only as SHA-256 digests; raw material never stored on the binding object | `settings.py::ApiKey` |
 | A.8.2 Privileged access | `admin` explicitly excludes `INGEST_EVENT`; `read_diagnostics` is admin-only | `test_security_edge.py::test_admin_cannot_forge_telemetry` |
 | A.8.3 Information access restriction | Forced RLS, tenant from credential | `test_sql_infrastructure.py` |
-| A.8.5 Secure authentication | Fail-closed, constant-time, durable replay guard, TOTP second factor with per-step replay defence | `test_end_to_end.py`, `test_security_mfa.py` |
+| A.8.5 Secure authentication | Fail-closed API-key/OIDC authentication, constant-time key comparison and durable replay guard; no built-in TOTP login flow | `test_end_to_end.py`, `test_security_edge.py` |
 | A.8.7 Protection against malware | No code-execution or unsafe-deserialisation primitives | `test_security_rules.py` |
 | A.8.9 Configuration management | Immutable validated settings; production refuses unsafe configuration | `test_security_edge.py` |
 | A.8.12 Data leakage prevention | No credential or settings object may reach a logger; readiness carries no internal detail | `test_security_rules.py::test_no_logger_call_passes_a_credential_or_a_whole_settings_object` |
 | A.8.13 Information backup | Base backups with manifests, compression, verified restore | `test_persistence_backup_pitr.py` |
 | A.8.15 Logging | Structured logging plus a tamper-evident audit trail with dense per-tenant sequencing, so deletion is detectable as a gap | `test_security_audit_trail.py` |
-| A.8.16 Monitoring activities | Detections derived from the hash-chained trail, each citing the audit sequences it was computed from | `test_security_threat_detection.py` |
+| A.8.16 Monitoring activities | Hash-chained audit events remain; automatic audit-derived threat detection is not shipped | `test_security_audit_trail.py` |
 | A.8.24 Use of cryptography | AES-256-GCM, envelope, KEK rotation via `rewrap` without touching plaintext | `test_persistence_crypto_audit.py` |
 | A.8.25 Secure development lifecycle | Architecture and security rules as executable fitness functions | `test_architecture_rules.py`, `test_security_rules.py` |
 | A.8.26 Application security requirements | This document plus `SECURITY.md`, both with test references | — |
@@ -89,9 +89,9 @@ exists to avoid.
 | AU — Audit and Accountability | **Partial.** AU-2/AU-3/AU-9 covered (events selected, content recorded, protected against tampering). AU-6 review absent |
 | CM — Configuration Management | **Covered** (CM-2, CM-6, CM-7 least functionality) |
 | CP — Contingency Planning | **Covered technically** (CP-9, CP-10 — restore verified) |
-| IA — Identification and Authentication | **Partial.** IA-2 has TOTP MFA but no human login flow to attach it to; IA-5 rotation implemented |
+| IA — Identification and Authentication | **Partial.** API-key/OIDC authentication is supported; unused TOTP and overlapping-secret helpers were removed in Phase 2 |
 | SC — System and Communications Protection | **Covered** (SC-8 transit, SC-13 cryptography, SC-28 at rest) |
-| SI — System and Information Integrity | **Covered.** SI-10 input validation bounded and refusing; SI-4 monitoring derived from the audit chain |
+| SI — System and Information Integrity | **Partial.** SI-10 input validation is bounded and refusing; audit events are recorded, but the unused audit-derived monitoring helper was removed |
 
 ---
 

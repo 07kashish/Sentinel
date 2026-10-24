@@ -5,7 +5,7 @@
 ## Authentication and authorisation
 
 - Bearer API keys; optional OIDC JWT (RS256/ES256, tenant claim required).
-- SAML assertion validator (`sentinel/infrastructure/saml.py`) with signature verify.
+- API-key and OIDC authentication; the unused SAML validator was removed in Phase 2.
 - SCIM 2.0 Users (`/scim/v2/Users`) and org APIs (`/v1/orgs*`) behind `MANAGE_USERS`.
 - Capability grants; ingest cannot read incidents.
 
@@ -634,45 +634,10 @@ wiring.
 <a id="threat_model--f-8--pre-authentication-xml-denial-of-service-in-the-saml-path--high"></a>
 #### F-8 — Pre-authentication XML denial of service in the SAML path · **high**
 
-*Found 2026-08-19, by a static analyser whose output nobody had been reading.*
-
-`SamlValidator.validate` parsed the assertion with
-`xml.etree.ElementTree.fromstring`. It has no choice about parsing before
-verifying — **the signature it needs to check is inside the document** — so this
-parse is reachable by anyone who can reach the SSO endpoint, with no credential
-of any kind.
-
-`xml.etree.ElementTree` expands internal entities. Measured against the stdlib
-parser while writing the fix:
-
-```
-3 nested entities, ~30 bytes of input  ->  1000 characters expanded
-```
-
-Each additional level multiplies by ten. Nine levels is the classic *billion
-laughs*: a few hundred bytes of request body become gigabytes of memory, and the
-process dies well before reaching the signature check that would have rejected
-the document. No authentication, no rate-limit interaction, one request.
-
-**Fixed** — `defusedxml`, with `forbid_dtd=True` set explicitly, plus a 512 KB
-size cap checked *before* the parser is reached and a uniform refusal message so
-an attacker cannot tell which guard fired.
-
-**Writing the test found a second gap.** `defusedxml` forbids entities and
-external references by default but **permits a bare DTD**, so
-`<!DOCTYPE r SYSTEM "http://evil.example/x.dtd"><r/>` parsed cleanly and was only
-refused later, by the signature check. No legitimate SAML assertion carries a
-doctype, so the whole category is now refused.
-
-`tests_arch/test_saml_xml_hardening.py` — 8 tests, including an AST check that
-the stdlib parser is never called from that module again (the `ET` import stays,
-for the exception and element types, so an import-level check would not catch a
-regression).
-
-**How it stayed hidden.** `bandit` had flagged it as B314 and the `security` job
-had been failing for long enough that its output went unread — 99 B608 false
-positives on one side, one real finding on the other. That is the argument for
-keeping a scan *runnable* rather than merely *configured*.
+Historical finding in an unused SAML validator, removed in Phase 2. Its parser
+hardening and regression evidence remain recoverable from `archive/pre-cleanup`.
+It was not on the service authentication path. Current authentication uses
+API keys or OIDC; this section does not claim a shipped SAML capability.
 
 <a id="threat_model--structural-controls"></a>
 ### Structural controls
@@ -713,10 +678,6 @@ assertion vacuous).
 | Control | Boundary |
 |---|---|
 | Audit Trails | `security_audit` added to the live schema (migrations v5/v6, forced RLS), `SecurityAudit` port, `SqlSecurityAudit` adapter reusing the existing hash-chain value objects. Wired to authentication failures, authorization denials and approval decisions. Tamper detection verified through the live engine | `test_security_audit_trail.py` (19) |
-| Threat Detection | `threat_detection.py` derives credential stuffing, privilege probing (one credential denied across distinct capabilities) and horizontal enumeration from the audit chain, with the audit sequences cited as evidence. Blocks nothing by design | `test_security_threat_detection.py` (16) |
-| Secret Rotation | `RotatingSecret` gives overlapping versions: the newest is issued, any non-retired version is accepted, and retiring is a separate decision — so a rotation never breaks in-flight clients. Constant-time over every version with no early exit | `test_security_secrets.py` (26) |
-| KMS | `KmsKeyProvider` satisfies the same `KeyProvider` port, fetches KEKs over the hardened HTTP client (so the SSRF and redirect defences cover the key-fetch path), caches with a bounded TTL so a revoked key stops working. **No request has reached a real KMS** |
-| MFA | RFC 6238 TOTP verified against all 14 of the RFC's published vectors across SHA-1/256/512. Replay-defended (returns the matched step; reuse raises a distinct `ReplayedCode`), constant-time with no early exit, skew window capped at 3 steps | `test_security_mfa.py` (47) |
 
 <a id="threat_model--residual-advisory-risk"></a>
 ### Residual advisory risk

@@ -852,7 +852,6 @@ SINGLE_ENGINE_BASELINE = frozenset(
         "test_security_bounds",
         "test_security_bypass_detection",
         "test_security_edge",
-        "test_security_threat_detection",
         "test_security_throttle",
     }
 )

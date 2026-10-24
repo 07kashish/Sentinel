@@ -6,7 +6,7 @@ WHY THIS REPLACES A BANDIT RULE
 `hardcoded_sql_expressions` -- the rule that fires on an f-string containing SQL.
 The job could therefore never pass, and a gate that cannot pass gets switched
 off, which is how a real finding eventually gets missed. The other finding in
-that run, B314, was real and is fixed (see `test_saml_xml_hardening.py`).
+that run, B314, was real in the historical SAML validator, removed in Phase 2.
 
 B608 fires on this codebase by construction. Every statement is built with an
 f-string because the PLACEHOLDER TOKEN differs per dialect -- `?` on SQLite,

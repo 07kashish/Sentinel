@@ -1,17 +1,10 @@
-"""F-11 tool proxy, SCIM/org, console XSS sinks, SAML fixtures."""
+"""F-11 tool proxy, SCIM/org and console XSS sinks."""
 
 from __future__ import annotations
 
-import base64
-import re
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.x509.oid import NameOID
 from fastapi.testclient import TestClient
 
 from sentinel.application.protect_controls import ProtectControls
@@ -22,7 +15,6 @@ from sentinel.composition.container import build_container
 from sentinel.composition.settings import Settings
 from sentinel.domain.primitives import TrustLevel
 from sentinel.infrastructure.detection import DeterministicPolicy
-from sentinel.infrastructure.saml import SamlError, SamlValidator
 from sentinel.infrastructure.sql.engine import build_engine
 from sentinel.infrastructure.sql.migrate import migrate
 from sentinel.interface.http import create_app
@@ -286,71 +278,10 @@ def test_org_create_and_members(tmp_path):
         container.close()
 
 
-def _saml_fixture():
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "idp.test")])
-    cert = (
-        x509.CertificateBuilder()
-        .subject_name(subject)
-        .issuer_name(issuer)
-        .public_key(key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.now(timezone.utc) - timedelta(days=1))
-        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=30))
-        .sign(key, hashes.SHA256())
-    )
-    pem = cert.public_bytes(serialization.Encoding.PEM).decode()
-    not_after = (datetime.now(timezone.utc) + timedelta(hours=1)).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-    body = f"""<Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion">
-  <Issuer>https://idp.test</Issuer>
-  <Subject><NameID>user@acme.test</NameID></Subject>
-  <Conditions NotOnOrAfter="{not_after}">
-    <AudienceRestriction><Audience>sentinel</Audience></AudienceRestriction>
-  </Conditions>
-  <AttributeStatement>
-    <Attribute Name="tenant_id"><AttributeValue>acme</AttributeValue></Attribute>
-    <Attribute Name="role"><AttributeValue>viewer</AttributeValue></Attribute>
-  </AttributeStatement>
-</Assertion>"""
-    unsigned = re.sub(
-        r"<([a-zA-Z0-9_]+:)?Signature\b[^>]*>.*?</([a-zA-Z0-9_]+:)?Signature>",
-        "",
-        body,
-        flags=re.DOTALL,
-    )
-    sig = base64.b64encode(
-        key.sign(unsigned.encode(), padding.PKCS1v15(), hashes.SHA256())
-    ).decode()
-    signed = body.replace(
-        "</Assertion>",
-        f'<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">'
-        f"<SignatureValue>{sig}</SignatureValue></Signature></Assertion>",
-    )
-    return pem, signed
 
 
-def test_saml_validator_accepts_signed_and_rejects_unsigned():
-    pem, signed = _saml_fixture()
-    validator = SamlValidator(
-        audience="sentinel", issuer="https://idp.test", idp_cert_pem=pem
-    )
-    claims = validator.validate(signed)
-    assert claims.tenant_id == "acme"
-    with pytest.raises(SamlError):
-        validator.validate(signed.replace("SignatureValue", "X"))
 
 
-def test_saml_validator_rejects_assertion_signed_by_untrusted_idp_cert():
-    trusted_pem, signed = _saml_fixture()
-    other_pem, _ = _saml_fixture()
-    assert trusted_pem != other_pem
-    validator = SamlValidator(
-        audience="sentinel", issuer="https://idp.test", idp_cert_pem=other_pem
-    )
-    with pytest.raises(SamlError, match="signature is invalid"):
-        validator.validate(signed)
 
 
 def test_console_has_no_innerhtml_sink():

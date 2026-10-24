@@ -27,11 +27,7 @@ TOOLING = {"attack_campaign": "scripts/run_attack_campaign.py: red-team campaign
            "detection_metrics": "scripts/measure_benign_tool_call_false_positives.py: corpus provenance on detection numbers"}
 
 #: Implemented and tested, deliberately NOT part of the product today.
-DORMANT = {
-    "threat_intel": "needs a pooled indicator service across deployments; none exists, so nothing may claim threat-intelligence enrichment",
-    "mfa": "operator TOTP is not part of the supported workflow; operators authenticate through the customer's identity provider",
-    "identity": "superseded as the workload trust root by infrastructure/agent_identity_providers.py",
-}
+DORMANT = {}  # The three unused domain primitives were removed in Phase 2.
 
 
 def _importers(module: str, *folders: str) -> list[str]:
@@ -57,26 +53,7 @@ def test_a_tooling_module_is_used_by_a_script_and_not_by_the_service(module):
     assert not _importers(module, "sentinel"), f"{module} is now on the service path; move it to LIVE"
 
 
-@pytest.mark.parametrize("module", sorted(DORMANT))
-def test_a_dormant_module_is_imported_by_nothing_that_ships(module):
-    assert (ROOT / "sentinel" / "domain" / f"{module}.py").exists(), f"{module} is gone; remove it from DORMANT"
-    users = _importers(module, "sentinel", "scripts")
-    assert not users, f"{module} is listed as dormant and is imported by {users}; reclassify it"
 
 
 def test_no_module_is_classified_twice():
     assert not (set(LIVE) & set(TOOLING)) and not (set(LIVE) & set(DORMANT)) and not (set(TOOLING) & set(DORMANT))
-
-
-def test_current_documents_do_not_sell_a_dormant_module():
-    """docs/current may mention a dormant module only to say it is not in use."""
-    offenders = []
-    for path in (ROOT / "docs" / "current").glob("*.md"):
-        text = path.read_text(encoding="utf-8").lower()
-        for module in DORMANT:
-            # By file name: `identity` and `mfa` are also ordinary words.
-            for match in re.finditer(rf"\b{module}\.py\b|domain/{module}\b", text):
-                window = text[max(0, match.start() - 160): match.end() + 160]
-                if not any(word in window for word in ("dormant", "not wired", "not part", "not in use", "not used", "superseded")):
-                    offenders.append(f"{path.name}: {module}")
-    assert not offenders, offenders

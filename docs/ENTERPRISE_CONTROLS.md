@@ -141,7 +141,8 @@ it was harmless.
 ## 3. Customer-managed keys (§55)
 
 **What already existed:** `persistence/crypto.py` implements envelope encryption
-with a `KeyProvider` port, and `secrets.py` has a `KmsKeyProvider`. That layer
+with a `KeyProvider` port. The unused standalone KMS wrapper was removed in
+Phase 2. The retained encryption layer
 does the cryptography and is **not duplicated** — a second `KeyProvider` would be
 a second answer to "which key wraps this".
 

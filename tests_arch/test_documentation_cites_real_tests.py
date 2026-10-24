@@ -179,7 +179,7 @@ def test_the_scanner_actually_finds_citations():
     # caught by something other than the count.
     for anchor in (
         "test_retention_sweep",
-        "test_saml_xml_hardening",
+        "test_security_audit_trail",
     ):
         assert any(anchor in name for name in citations), (
             f"expected a citation containing {anchor!r}; the scanner found "

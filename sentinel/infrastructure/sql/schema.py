@@ -527,7 +527,7 @@ _CORE_STATEMENTS: Final[tuple[str, ...]] = (
     # ── Human identity ───────────────────────────────────────────────────────
     #
     # No password column, deliberately and permanently. Authentication is a passkey;
-    # see sentinel/domain/identity.py for why a password store is not being added.
+    # API-key/OIDC operators do not need a local password store.
     #
     # A suspended user is kept rather than deleted: removing the row destroys the
     # audit trail's ability to name who did something, and "who was this actor"
