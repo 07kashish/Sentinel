@@ -91,7 +91,7 @@ from sentinel.interface.mcp_proxy_checks import (
     rpc_error,
     tools_from_listing,
 )
-from sentinel.interface.a2a_proxy_routes import _inspect_reply
+from sentinel.interface.reply_inspection import inspect_reply
 from sentinel.interface.mcp_streaming import RelayPolicy, stream_through
 
 __all__ = ["register_mcp_proxy_routes"]
@@ -315,9 +315,9 @@ def register_mcp_proxy_routes(
         relay = (
             RelayPolicy(
                 sink=sink,
-                inspect=lambda text: str(_inspect_reply(
-                    container.a2a_gateway, {"result": {"parts": [{"kind": "text", "text": text}]}},
-                    agent_id=agent, tenant=tenant_id) or ""),
+                inspect=lambda text: str(inspect_reply(
+                    container.protect_gate, {"result": {"parts": [{"kind": "text", "text": text}]}},
+                    agent_id=agent) or ""),
             )
             if sink is not None else None
         )
@@ -581,11 +581,10 @@ def register_mcp_proxy_routes(
                     approved_parameter_digest=authorization.approved_parameter_digest,
                     authorization_id=authorization.authorization_id,
                 )
-                verdict = _inspect_reply(
-                    container.a2a_gateway,
+                verdict = inspect_reply(
+                    container.protect_gate,
                     _mcp_reply_for_detector(reply.message),
                     agent_id=agent,
-                    tenant=tenant_id,
                 )
                 if verdict is not None:
                     _audit(

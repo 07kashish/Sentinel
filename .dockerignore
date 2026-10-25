@@ -143,6 +143,7 @@
 !sentinel/domain/primitives.py
 !sentinel/domain/protect.py
 !sentinel/domain/remediation.py
+!sentinel/domain/reply_text.py
 !sentinel/domain/residency.py
 !sentinel/domain/root_sink.py
 !sentinel/domain/sequences.py
@@ -282,6 +283,7 @@
 !sentinel/interface/pilot_routes.py
 !sentinel/interface/policy_routes.py
 !sentinel/interface/principals.py
+!sentinel/interface/reply_inspection.py
 !sentinel/interface/throttle.py
 !sentinel/interface/transparency_routes.py
 !sentinel/interface/worker.py

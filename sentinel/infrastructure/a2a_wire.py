@@ -55,6 +55,11 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
 from sentinel.domain.errors import SentinelError
+from sentinel.domain.reply_text import (
+    MAX_PART_DEPTH as MAX_PART_DEPTH,
+    MAX_TEXT_BYTES as MAX_TEXT_BYTES,
+    text_parts as text_parts,
+)
 from sentinel.infrastructure.outbound import HardenedHttpClient
 
 __all__ = [
@@ -84,12 +89,12 @@ AGENT_CARD_PATHS: tuple[str, ...] = (
 #: Response bodies larger than the hardened client's cap are already refused
 #: there. This is the JSON-nesting bound, which that cap does not cover: a deeply
 #: nested document is a parser-exhaustion primitive that fits in a small body.
-MAX_PART_DEPTH = 12
+
 
 #: Text extracted from one message, in total. The extracted text goes to the
 #: injection detector and into evidence; unbounded input to either is a cost an
 #: attacker chooses.
-MAX_TEXT_BYTES = 65_536
+
 
 
 class A2AWireError(SentinelError):
@@ -119,42 +124,6 @@ class A2AUpstreamReply:
         return bool(self.message and "error" in self.message)
 
 
-def text_parts(message: Mapping[str, Any]) -> tuple[str, ...]:
-    """Every text part in an A2A message, in order, bounded.
-
-    THIS IS THE INJECTION SURFACE. An A2A message carries `parts`, and a text
-    part is prose the receiving agent's model reads and acts on. Inspecting the
-    delegated SCOPES will never find a cross-agent injection; the prose is where
-    it lives, and this is the function that hands it to the detector.
-
-    Non-text parts (`file`, `data`) are deliberately NOT stringified into the
-    detector's input. A base64 blob scored as prose produces noise, and noise is
-    how a detector comes to be ignored -- their presence is reported separately
-    so a reader knows the message carried more than what was scanned.
-    """
-    collected: list[str] = []
-    budget = MAX_TEXT_BYTES
-
-    def _walk(node: Any, depth: int) -> None:
-        nonlocal budget
-        if depth > MAX_PART_DEPTH or budget <= 0:
-            return
-        if isinstance(node, Mapping):
-            if str(node.get("kind") or node.get("type") or "") == "text":
-                text = node.get("text")
-                if isinstance(text, str) and text:
-                    clipped = text[:budget]
-                    budget -= len(clipped)
-                    collected.append(clipped)
-                return
-            for value in node.values():
-                _walk(value, depth + 1)
-        elif isinstance(node, (list, tuple)):
-            for item in node:
-                _walk(item, depth + 1)
-
-    _walk(message.get("parts", ()), 0)
-    return tuple(collected)
 
 
 def card_from_document(document: Mapping[str, Any]) -> dict[str, Any]:

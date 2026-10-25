@@ -2163,3 +2163,198 @@ No deterministic decision authority, approval/execution behavior, live migration
 Phase 3 feature, external production deployment, PR or main merge changed.
 
 <!-- phase2-results:end -->
+
+
+## Phase 3 execution decisions
+
+The user's Phase 3 authorization supersedes the historical not-started notices.
+The binding instructions received before work are recorded below.
+
+# Phase 3 authorized execution brief
+
+Start from ff627fa0617751cdd174d556041ffabb8390367a on cleanup/oversight-core,
+WSL /home/lenovo2/sentinel. Phase 2: 4101 passed, 42 skipped, no failures.
+Use CLEANUP_PLAN.md Phase 3 groups and Corrections and explicit dependency
+decisions. Park means remove now, document in docs/PARKED.md, recoverable from
+archive/pre-cleanup. Never commit main; no Phase 4, merge or PR. Write every
+received or made decision into CLEANUP_PLAN.md before acting.
+
+Order and commits:
+1. MCP reply inspection/text extraction from A2A, its own commit:
+   refactor(phase3): extract MCP reply inspection from A2A
+2. detonation; 3. endpoint; 4. discovery; 5. analysis; 6. soar; 7. orgs; 8. a2a;
+9. one appended drop migration. Each parking group: chore(phase3): park <group>.
+
+MCP detection policy, refusal, receipts and streaming stay the same; MCP tests
+stay unchanged and green before any A2A removal. Keep native AWS/Kubernetes
+kill switch: platforms/remediation.py, remediation_wiring.py, guarded executor
+subsets of infrastructure/remediation.py and domain/remediation.py. Keep
+test_native_remediation.py unchanged and green. Park only webhook/playbook SOAR.
+
+Keep domain/inventory.py, infrastructure/inventory.py, domain/residency.py,
+infrastructure/enterprise.py, attestation, agent identity providers/wiring,
+workload identity, tenant provisioning, operation/receipt stores, evidence,
+execution graph and controlled-execution adapters. Park SqlDeviceDiscovery and
+its routes; retain DEVICE_STATEMENTS required by historical migration 38.
+Endpoint includes local_mcp_configs, sdk/discovery_app and sentinel-discover
+if its only purpose is parked discovery. Park directory.py after SCIM/orgs.
+
+Never edit existing migrations. Append exactly one new migration dropping
+parked-feature tables; list every dropped table before editing. Test fresh
+install and previous-head upgrade on SQLite/PostgreSQL, and prove kept tables,
+indexes, RLS policies and roles are untouched.
+
+For each group immediately before removal: rerun import graph and recursive
+consumer search. Cut routes, settings including all listed env names and _FILE
+variants, parsers, validation, wiring, console screens, Helm/.env/compose, CI
+steps and docs together. Never replace a core collaborator with a no-op. If a
+cut is not obvious, stop and ask. Delete feature-only tests; retain assertions
+in adapted mixed tests. Ruff and touched tests must pass before each commit.
+
+docs/PARKED.md: one entry per feature, purpose, removed LOC, archive paths,
+removed settings/routes/tables and concrete customer signal to restore it.
+Include the plan's range-partitioning entry. Add Reuse candidates for Phase 5:
+github_discovery.py (AI agents in GitHub Actions; 5.1/5.2 GitHub), slack_apps.py
+(Slack apps/bot users and HTTP-200 ok:false; 5.1/5.2 Slack), identity_agents.py
+and discovery_support.py (shared paging/credential helpers). Phase 5 uses
+audit-log connectors; these modules are reference material only.
+
+Final Linux verification: Phase 0 pytest command with timeout=120 and
+timeout_method=thread, durations=30, -rA, JUnit and logs baseline/phase3/;
+zero failures/errors/timeouts. Reconcile per-group test and skip changes.
+Run Ruff, 10 import-graph regressions, graph --check with zero unexplained
+orphans, actionlint, secret scan and relative Markdown links. Record route
+counts via AST and constructed app, settings count before/after. No removed
+SENTINEL_* name remains anywhere, including Helm/docs. If Docker is available,
+build and run healthcheck; otherwise explicitly unverified.
+
+Final Phase 3 results in CLEANUP_PLAN.md and CHANGES.md: group files/LOC/routes/
+settings/tables/tests removed/adapted/commit; deviations; Ready for Phase 4 yes/no.
+Commit chore(phase3): record results, push -u origin cleanup/oversight-core,
+verify remote SHA and clean tree, STOP.
+
+
+### Execution rulings recorded before implementation
+
+- Ruling P3-001: use the explicitly selected WSL clone and named branch, without
+  creating another worktree or changing the Windows product checkout — this is
+  the authorized source of truth; the cost of choosing another clone is divergent
+  commits and misleading verification.
+- Ruling P3-002: execute the ordered groups inline because they share settings,
+  container wiring, routes and migrations; use one fresh whole-branch reviewer
+  at the end — concurrent mutations would conflict with the required order.
+- Ruling P3-003: keep decisions in this plan before each change and raw commands,
+  graphs, test IDs/counts and logs in ignored baseline/phase3, reusing the established
+  audit layout instead of a second skill workspace — evidence must survive
+  compaction and remain uncommitted as in earlier phases.
+- Ruling P3-004: keep the user's existing MCP/native-remediation tests byte-for-byte;
+  any additional regression coverage goes in separate tests. Use the requested
+  touched-test/Ruff gate per commit and one full-suite gate at completion; do not
+  substitute a no-op, change a kept assertion or edit an existing migration.
+- Pre-flight interfaces: MCP consumes A2A inspection today; extract before A2A.
+  Endpoint/discovery share discovery helpers and CLI entrypoints; handle endpoint
+  entrypoints first, then discovery. SOAR shares native execution/evidence types;
+  retain that subset. Orgs consumes directory; remove directory only after orgs.
+  Every group contributes candidate tables to the one final migration; historical
+  DDL, including device migration 38, must remain replayable until that migration.
+
+### Progress
+
+Phase 3 baseline and MCP extraction pending. No feature has been parked yet.
+
+### MCP preflight finding — compatibility decision required before extraction
+
+The existing MCP route calls a2a_proxy_routes._inspect_reply, which extracts
+bounded text and asks A2AGateway.evaluate to inspect a synthetic self-hop.
+Besides metadata.prompt, agentId, resource, eventType=agent_delegation and
+action=delegate, that sends metadata.a2a to ProtectGate. Its findings/severity
+depend on the tenant's A2A card registry and pins: an unenrolled caller yields
+unenrolled_agent/self_delegation, and drift anywhere in the registry can appear.
+Those artifacts are not directly enforced by the reply helper, but custom
+detection rules can read them. The default prompt detector reads the text.
+
+Decision pending: ask the user whether MCP may retire only the synthetic
+metadata.a2a inputs when A2A is parked while retaining the same ProtectGate,
+trust, event/action/agent/resource/text inputs, stop/refusal rule, receipts and
+streaming behavior. Do not make this core cut before the answer; the user
+explicitly requires stopping and asking when a cut is not obvious. Preserving
+registry-dependent inputs after dropping the A2A registry would require a
+different compatibility design, not an invented no-op or fabricated registry.
+Baseline measurement and read-only inspection may continue independently.
+
+Another pending clarification concerns historical removed-setting inventories:
+exact environment names conflict with the requirement for no full-name matches
+anywhere. Suffix-only inventories with the prefix convention documented were
+proposed; ignored historical logs and the archive remain intact. No settings
+removal or inventory rewrite has been performed while the answer is pending.
+
+### Phase 3 preflight results — awaiting MCP compatibility decision
+
+- Starting commit remains ff627fa; no Phase 3 product commit or feature removal.
+- Baseline: 4,143 collected cases; 73 settings; 78 AST routes; 76 constructed
+  routes by default and 78 with both proxies enabled; migration head 39.
+- All 285 unchanged MCP and native-remediation baseline cases passed on Linux:
+  zero failures, errors or skips. Evidence: baseline/phase3/mcp-native-before.xml
+  and .log. The first helper invocation used system Python and lacked defusedxml;
+  rerunning with the repository virtual environment produced these results.
+- A real in-memory diagnostic using ProtectGate, DeterministicPolicy and the
+  existing reply helper proved the compatibility issue. An operator rule on
+  metadata.a2a.findings matching unenrolled_agent refuses a benign reply before
+  enrollment and permits the identical reply afterward. The ruleset loader
+  supports operator-edited nested-field rules; this is an observable policy
+  behavior, not an assumed future extension. Evidence is saved in
+  baseline/phase3/reply-compatibility-probe.json; no product/config/database or
+  network mutation was used for the diagnostic.
+- Status: stop before MCP extraction until the user resolves the synthetic A2A
+  metadata boundary. The removed-setting inventory clarification is also pending.
+  Only this plan has changed in the tracked WSL tree. No Phase 4 work has started.
+
+## Phase 3 decisions
+
+The user approved the following decisions on 2026-10-25, before implementation.
+
+1. Retire the A2A-specific policy inputs. The extracted MCP reply inspector must
+   build the same policy payload as today EXCEPT the metadata.a2a block: keep
+   eventType, action, resource, agentId and metadata.prompt byte-for-byte identical,
+   and run the same deterministic detector/ruleset. All existing MCP proxy tests
+   (refusal, receipt, streaming and non-streaming reply inspection) must pass
+   unchanged. Add one regression test proving an injection in an MCP reply is
+   still refused after A2A is parked. Record in docs/PARKED.md and CHANGES.md:
+   "Custom policy rules matching metadata.a2a.* (or eventType agent_delegation
+   from A2A) no longer match anything; no shipped rule used them."
+   The eventType of retained MCP reply events remains agent_delegation; the
+   quoted retirement of eventType inputs refers to events originating from A2A.
+2. Keep full SENTINEL_* names wherever a removal is recorded. The removed-name
+   scan exempts exactly CHANGES.md, CLEANUP_PLAN.md and docs/PARKED.md. All other
+   tracked files, including code, tests, .env.example, Helm, compose, CI, README
+   and other documentation, must contain zero removed names. The exemption list
+   must be executable scan data, not a comment. Ignored diagnostic logs and the
+   immutable recovery archive remain evidence, not current product surfaces.
+
+Continue Phase 3 in the authorized WSL checkout and the order in
+reports/PHASE3_TASK.md. These decisions resolve the two preflight questions.
+
+### Ruling P3-005: independent MCP reply inspection
+
+Keep bounded text extraction in a pure domain helper, re-exported by the A2A
+wire module until that feature is parked. Add an interface reply inspector
+calling the existing container.protect_gate with TrustLevel.UNSIGNED and the
+same five payload values; do not introduce tenant-policy evaluation, change
+normalization, or alter the A2A route while extracting MCP. The legacy helper
+did not pass tenant_id to ProtectGate.evaluate, so the extracted call must not
+silently add it. Preserve depth and length limits and refusal wording.
+Test the real MCP route with its A2A collaborator absent, and independently
+check the detector payload and trust. All pre-existing MCP/native tests remain
+unmodified in this extraction commit. If this ruling is wrong, policy
+compatibility or reply enforcement could change, so both are explicit gates.
+
+### Phase 3 step 1 complete: MCP reply extraction
+
+The real proxy regression failed on SQLite/PostgreSQL with HTTP 500 when its
+A2A collaborator was absent, then passed after extraction. A separate policy
+contract test proves the exact remaining payload, Unicode prompt normalization,
+unsigned trust and deterministic refusal. Existing MCP/native tests are unchanged
+by SHA-256 comparison. Targeted MCP proxy/streaming/attacks, native remediation
+and A2A helper tests: 174 passed. Container-context checks: 14 passed. The final
+new-regression rerun: 3 passed. Ruff and the repository secret scan passed.
+The final full Phase 3 suite remains pending. No feature has been parked yet.

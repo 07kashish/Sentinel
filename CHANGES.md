@@ -298,3 +298,15 @@ WAL archive or measurement entrypoints.
 
 Requested commit: `chore(phase0): establish Linux test baseline`.
 Stop here after Phase 0. Phase 1 has not begun.
+
+## Phase 3 MCP compatibility decision — 2026-10-25
+
+MCP reply inspection is being extracted from A2A while preserving the existing
+policy payload except for metadata.a2a, and using the same ProtectGate and ruleset.
+
+Custom policy rules matching metadata.a2a.* (or eventType agent_delegation from A2A) no longer match anything; no shipped rule used them.
+
+A2A-originated events cease when A2A is parked. MCP reply events retain the existing
+agent_delegation eventType. All pre-existing MCP proxy tests remain unchanged.
+The removed-setting scan exempts exactly CHANGES.md, CLEANUP_PLAN.md and
+docs/PARKED.md; full environment-variable names remain in removal records.
