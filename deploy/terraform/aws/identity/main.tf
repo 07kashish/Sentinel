@@ -275,21 +275,6 @@ resource "aws_iam_role_policy_attachment" "discovery" {
 }
 
 #############################################################################
-# Detonation sandbox — NO role, on purpose
-#
-# There is deliberately no `aws_iam_role` for the skill sandbox. It executes
-# untrusted code, so it gets no AWS identity at all.
-#
-# The subtler half is the instance metadata endpoint. On EC2 and ECS, an
-# untrusted process that can reach 169.254.169.254 can request the workload's
-# credentials — so a sandbox with a blocked egress allowlist but reachable
-# metadata still has a credential exfiltration path. Blocking it is a network
-# and task-configuration concern (`enableMetadataEndpoint = false`), which is
-# why it lives in the compute module rather than here, and why it is named
-# here so nobody assumes the absence of a role is sufficient.
-#############################################################################
-
-#############################################################################
 # Audit role — for a human, read-only, and it can read evidence
 #
 # Distinct from Discovery: an auditor legitimately needs evidence CONTENT,

@@ -379,10 +379,9 @@ class ProtectedToolRunner:
         what parameter substitution, tool substitution and resource
         substitution actually look like in practice.
 
-        Closing the residual needs enforcement outside the process -- the MCP
-        proxy, which sees the wire request, and the detonation tracer, which
-        sees the syscalls. Both exist; binding them to this authorization is
-        follow-on work and is recorded as such rather than implied here.
+        Closing the residual needs enforcement outside the calling process.
+        The MCP proxy binds the wire request; this method does not claim
+        syscall-level observation of arbitrary user-supplied effects.
         """
         if not tool or not str(tool).strip():
             raise ToolExecutionRefused("tool name is required")

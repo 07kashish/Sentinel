@@ -698,14 +698,6 @@ def test_operator_console_live_routes_and_actions(engine_config, tmp_path: Path)
         )
         assert active["active_version"] == v2
 
-        skill = _json(
-            base,
-            "POST",
-            "/v1/skills/assess",
-            ADMIN_KEY,
-            {"name": "console-check", "permissions": ["read_filesystem"]},
-        )
-        assert "score" in skill
 
         refused, _payload, _headers = _request(
             base,

@@ -27,6 +27,31 @@ the scan checks every other tracked or unignored product file.
 
 <!-- removed-settings:start -->
 ```json
-[]
+[
+  "SENTINEL_DETONATION_IMAGE",
+  "SENTINEL_DETONATION_TRACING"
+]
 ```
 <!-- removed-settings:end -->
+
+## Detonation and skill assessment
+
+Purpose: isolated skill execution, syscall tracing and skill manifest/source assessment.
+Removed 19 whole files (6,205 physical lines); shared-file cuts are reported in CLEANUP_PLAN.md.
+Removed route: `POST /v1/skills/assess`. Removed settings: `SENTINEL_DETONATION_IMAGE`, `SENTINEL_DETONATION_TRACING` (including `_FILE` variants). No dedicated tables.
+Restore signal: a contracted customer requires running untrusted third-party skills in an isolated sandbox with independently verified syscall evidence.
+
+Recovery paths at `archive/pre-cleanup`:
+
+- `deploy/detonation/Dockerfile`
+- `sentinel/application/skill_detonation.py`
+- `sentinel/composition/detonation_wiring.py`
+- `sentinel/domain/detonation.py`
+- `sentinel/domain/observed_binding.py`
+- `sentinel/domain/skills.py`
+- `sentinel/infrastructure/detonation_container.py`
+- `sentinel/infrastructure/detonation_tracing.py`
+- `sentinel/infrastructure/skill_scanner.py`
+- `sentinel/infrastructure/strace_parse.py`
+
+Test recovery directory: `tests_arch/` at the same archive tag. Exact retired test paths are listed in [the cleanup inventory](../CLEANUP_PLAN.md).

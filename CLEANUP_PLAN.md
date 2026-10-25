@@ -2358,3 +2358,47 @@ by SHA-256 comparison. Targeted MCP proxy/streaming/attacks, native remediation
 and A2A helper tests: 174 passed. Container-context checks: 14 passed. The final
 new-regression rerun: 3 passed. Ruff and the repository secret scan passed.
 The final full Phase 3 suite remains pending. No feature has been parked yet.
+
+### Ruling P3-006: detonation parking boundary
+
+The fresh graph and recursive consumer search are recorded under
+baseline/phase3/detonation. Remove the 19 planned detonation/skill sandbox
+files and their one skills assessment route. Cut only the skill section from
+a2a_routes.py; leave the A2A routes intact until the final feature group.
+Remove detonation settings/constructors, console assessment form/handler,
+container allowlist entries and the three sandbox-only mutation checks.
+Remove the captured-strace packaging case because its only fixtures and
+consumer are being parked; keep the packaging refusal tests and Terraform
+lockfile coverage. In the mixed live-console test, remove only the skill
+request and score assertion; preserve all core route assertions.
+No live detonation CI job or Helm/compose values remain at this head; the
+consumer search verifies that rather than inventing deployment changes.
+Remove stale sandbox claims and its obsolete canary exception. Retain native
+containment, remediation and controlled execution. There are no detonation
+tables to drop. Record full removed names, original paths and LOC in PARKED.md.
+If this boundary is wrong, a shared helper could be lost; imports, touched
+tests, route checks and the unchanged native-remediation suite gate the cut.
+
+### Ruling P3-007: archived test recovery paths are not coverage claims
+
+The documentation-citation guard correctly rejects deleted test module names
+in docs/PARKED.md as if they were current coverage claims. Keep its assertions,
+zero-debt threshold and scan scope unchanged. PARKED.md records exact source
+recovery paths and the tests_arch/ recovery directory, linking this plan's exact
+retired test-path inventory. This plan and ignored per-group collection records
+retain the individual removed test identities. No file is exempted from the
+coverage-citation guard and no archived test is presented as current coverage.
+The removed-environment-name exemption list remains exactly the user's three
+files; it is a separate scanner with separate semantics.
+
+Repository commits continue to use the same per-command Codex identity as the
+prior cleanup commits; no user or global Git configuration is changed.
+
+### Phase 3 group complete: detonation
+
+- Removed 19 whole files (6,205 lines); changed-path and numstat records: baseline/phase3/detonation/result.json.
+- Collection: 3963 cases; 183 removed IDs and 3 added IDs since the preceding collection (baseline/phase3/detonation/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 169 passed, 4 skipped, zero remaining failures/errors. Reports: targeted.xml, citations-fixed.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 71. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.
+- The three added cases belong to the preceding MCP extraction; detonation adds no architectural cases. The documentation citation failure is corrected without changing the guard.

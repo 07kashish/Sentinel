@@ -213,26 +213,12 @@ class Settings:
     #: supported state: incidents still land in the console and the API.
     soar_endpoints: Mapping[str, str]
     #: PagerDuty's Events API takes the routing key in the body, not the URL.
-    #: OCI image the skill detonation sandbox runs. Empty means no isolation
-    #: boundary is configured, which yields `RefusingDetonator` -- never a
-    #: subprocess on this host, because the "degraded" mode would be the exact
-    #: attack the sandbox exists to prevent.
     #: Every `SENTINEL_DISCOVERY_*` variable, passed to
     #: `build_discovery_connectors`. ONE field rather than ten, because which
     #: combination of variables makes a usable credential is each connector's
     #: own rule and duplicating it here would be two places to disagree.
     #: Absent variables mean an absent connector, never an empty one.
     discovery_credentials: Mapping[str, str]
-    #: OCI image the skill detonation sandbox runs. Empty means no isolation
-    #: boundary is configured, which yields `RefusingDetonator` -- never a
-    #: subprocess on this host, because the "degraded" mode would be the exact
-    #: attack the sandbox exists to prevent.
-    detonation_image: str
-    #: Whether to trace syscalls in the sandbox. Default FALSE because it costs
-    #: `CAP_SYS_PTRACE` on an otherwise `--cap-drop=ALL` container, and that
-    #: widening should be chosen rather than inherited. Without it the scope
-    #: verdict is UNOBSERVED rather than clean.
-    detonation_tracing: bool
     soar_pagerduty_routing_key: str
     #: Only incidents at or above this priority are dispatched. HIGH by default:
     #: this codebase measured a detector firing on 51.7% of ordinary tool calls,
@@ -529,12 +515,6 @@ class Settings:
             remediation_endpoints=_parsers.remediation_endpoints(source),
             remediation_dry_run=_parsers.flag(source, "SENTINEL_REMEDIATION_DRY_RUN", default=False),
             discovery_credentials=_parsers.discovery_credentials(source),
-            detonation_image=(
-                source.get("SENTINEL_DETONATION_IMAGE") or ""
-            ).strip(),
-            detonation_tracing=_parsers.flag(
-                source, "SENTINEL_DETONATION_TRACING", default=False
-            ),
             soar_endpoints=_parsers.soar_endpoints(source),
             soar_pagerduty_routing_key=(
                 source.get("SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY") or ""

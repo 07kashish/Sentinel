@@ -76,7 +76,6 @@ from sentinel.interface.authorizations import (
 from sentinel.interface.health_routes import register_health_routes
 from sentinel.interface.a2a_routes import (
     register_a2a_routes,
-    register_skill_routes,
 )
 from sentinel.interface.policy_routes import register_policy_routes
 from sentinel.interface.app_routes import register_app_routes
@@ -738,7 +737,6 @@ def create_app(container: Container) -> FastAPI:
 
     register_policy_routes(app, container, require=require)
     register_a2a_routes(app, container, require=require)
-    register_skill_routes(app, container, require=require)
     # A no-op unless the container carries a wire client, which only happens
     # when SENTINEL_MCP_PROXY_ENABLED is set (or a test injects one). A
     # deployment without the proxy does not even advertise the route.

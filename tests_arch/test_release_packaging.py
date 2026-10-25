@@ -12,11 +12,8 @@ TWO DEFECTS THIS FILE ENCODES
 Both were made while writing the packager, and both are the kind that passes
 review:
 
-1. The first denylist refused `tests_arch/fixtures/strace_*.log` and
-   `.terraform.lock.hcl`. The strace logs are real captured output and the only
-   evidence the tracer works against reality; the lock file is a version pin
-   that should ship. A crude suffix rule produces refusals an operator cannot
-   act on, and those get switched off wholesale.
+1. The first denylist refused `.terraform.lock.hcl`, a provider version
+   pin that should ship. Suffix-based refusals must remain actionable.
 
 2. The first verification searched the zip's RAW BYTES for `AKIA`. The zip is
    DEFLATE-compressed, so the search could never match anything and reported a
@@ -116,17 +113,6 @@ def test_every_refusal_explains_itself(tmp_path):
 # ── the two false positives, as regressions ────────────────────────────────
 
 
-def test_captured_strace_fixtures_still_ship():
-    """`.log` was refused by the first version of the denylist. These files are
-    real captured strace output, and the tests that parse them are the only
-    evidence the tracer works against reality -- so refusing them would have
-    shipped an artifact whose suite could not run.
-    """
-    fixtures = sorted((ROOT / "tests_arch" / "fixtures").glob("strace*.log"))
-
-    assert fixtures, "control: the fixtures this test is about have moved"
-    for fixture in fixtures:
-        assert _is_refused(fixture) == "", fixture.name
 
 
 def test_a_terraform_lock_file_still_ships():

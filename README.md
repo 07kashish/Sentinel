@@ -88,7 +88,6 @@ The legacy `api/`, `app/`, `agents/`, and `dashboard/` trees are **gone**.
 | POST | `/v1/a2a/evaluate` | Delegation chain: privilege amplification, loops, agent-card drift, cross-agent injection, then the same policy. Capability `evaluate_protect`. |
 | POST | `/v1/a2a/proxy/{agent_id}` | A2A wire proxy (JSON-RPC). Forwards to ENROLLED agents only; the delegation is refused BEFORE the message moves, the agent card is drift-checked against what the peer serves now, and the REPLY is inspected too. `message/stream` is NOT_SUPPORTED. Registered only when `SENTINEL_A2A_PROXY_ENABLED` is set. Capability `execute_tool`. |
 | POST | `/v1/a2a/cards` | Enrol an agent card and pin its fingerprint. Capability `manage_policy` (admin). **In-process store**. |
-| POST | `/v1/skills/assess` | Explainable skill risk + static source scan that never executes what it inspects. Capability `evaluate_protect`. |
 | GET | `/v1/incidents`, `/v1/incidents/{id}`, history, report | Read capabilities |
 | GET | `/v1/dashboard` | Tenant summary JSON (not an HTML UI) |
 | POST | `/v1/approvals/{id}` | Approve/reject remediation |

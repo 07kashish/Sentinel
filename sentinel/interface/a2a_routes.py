@@ -46,20 +46,14 @@ from sentinel.domain.a2a import (
     DelegationHop,
 )
 from sentinel.domain.authorization import Capability
-from sentinel.domain.skills import SkillDefinition, SkillRuleViolated, assess
 from sentinel.infrastructure.persistence.audit import Outcome
 from sentinel.interface.delegation_verification import (
     passport_from_documents,
     verify_presented_chain,
 )
 from sentinel.interface.http_models import refuse_trust_level
-from sentinel.infrastructure.skill_scanner import (
-    ScanResult,
-    findings_for_assessment,
-    scan_source,
-)
 
-__all__ = ["register_a2a_routes", "register_skill_routes"]
+__all__ = ["register_a2a_routes"]
 
 #: Bounds on the request body. A chain arrives from a caller and every field in
 #: it is interpolated into findings an analyst reads, so each is capped rather
@@ -338,91 +332,3 @@ def register_a2a_routes(app: FastAPI, container: Any, *, require: Any) -> None:
             detail={"fingerprint": card.fingerprint, "version": card.version},
         )
         return card.as_dict()
-
-
-# ── Skills ───────────────────────────────────────────────────────────────────
-#
-# Registered here rather than in a module of their own because a skill and an
-# agent card are the same kind of object: an installable capability whose
-# identity is a fingerprint and whose danger is what it can reach. They share
-# the enrolment capability for the same reason -- re-pinning either one silences
-# its drift detection permanently.
-
-
-class SkillPayload(BaseModel):
-    """A skill to assess, described entirely by an untrusted caller."""
-
-    name: str = Field(min_length=1, max_length=128)
-    version: str = Field(default="", max_length=64)
-    publisher: str = Field(default="", max_length=128)
-    permissions: Sequence[str] = Field(default_factory=tuple, max_length=32)
-    destinations: Sequence[str] = Field(default_factory=tuple, max_length=64)
-    artifactSha256: str = Field(default="", max_length=64)
-    description: str = Field(default="", max_length=8192)
-    #: Source to inspect statically. Bounded hard: it is parsed, and `ast.parse`
-    #: on adversarial input costs CPU before any check runs. NOTHING here is
-    #: executed -- see `infrastructure/skill_scanner.py`.
-    source: str = Field(default="", max_length=262_144)
-
-
-def register_skill_routes(app: FastAPI, container: Any, *, require: Any) -> None:
-    """Attach the skill assessment route."""
-
-    audit = container.security_audit
-
-    @app.post("/v1/skills/assess")
-    def skills_assess(
-        payload: SkillPayload,
-        principal=Depends(require(Capability.EVALUATE_PROTECT)),
-    ):
-        """Score one skill from facts about the artefact.
-
-        Returns explainable FACTORS, never a bare number. Nothing here claims a
-        skill is malicious: static inspection cannot say that, and a control
-        that overclaims is disbelieved on its first false positive. Each factor
-        names a construct that is present, which is a fact, and leaves the
-        judgement to a human.
-
-        The response carries the scanner's own limits alongside its findings, so
-        a caller pasting this into an approval sees "nothing was executed;
-        name-based matching is defeated by runtime construction" next to the
-        score rather than only in a document nobody opened.
-        """
-        try:
-            skill = SkillDefinition(
-                name=payload.name,
-                version=payload.version,
-                publisher=payload.publisher,
-                permissions=frozenset(payload.permissions),
-                destinations=frozenset(payload.destinations),
-                artifact_sha256=payload.artifactSha256,
-                description=payload.description,
-            )
-        except (SkillRuleViolated, ValueError) as exc:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail=str(exc)
-            ) from exc
-
-        scan = ScanResult(
-            findings=scan_source(payload.source, path=payload.name)
-            if payload.source
-            else (),
-            files_scanned=1 if payload.source else 0,
-        )
-        assessment = assess(skill, scan_findings=findings_for_assessment(scan))
-
-        audit.record(
-            tenant=principal.tenant,
-            actor=f"key:{principal.key_hash[:12]}",
-            action="skill.assess",
-            resource_type="skill",
-            resource_id=f"{skill.name}@{skill.version or 'unversioned'}",
-            outcome=Outcome.SUCCESS,
-            detail={
-                "score": assessment.score,
-                "severity": assessment.severity,
-                "fingerprint": skill.fingerprint,
-                "scanned": scan.files_scanned,
-            },
-        )
-        return {**assessment.as_dict(), "scan": scan.as_dict()}

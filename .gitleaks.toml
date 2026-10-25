@@ -89,16 +89,6 @@ regexes = [
   # exists for exactly this.
   '''^\s*private_key:\s*Ed25519PrivateKey\s*$''',
 
-  # A CANARY, which is a fake credential ON PURPOSE. `test_detonation.py`
-  # exercises the one thing the detonation harness treats as PROOF of a
-  # malicious skill: exfiltration of a planted token. The value has to look
-  # like a credential and must never be one. It authenticates nothing and
-  # matches no account. Reviewed 2026-09-01.
-  # The whole literal, not just the prefix. A prefix pattern would excuse any
-  # line that happened to mention the canary, including one that also carried a
-  # real credential.
-  '''CANARIES = \{"aws_secret_key": "AKIA-CANARY-9f3c1d2e4b5a6789"\}''',
-
   # A HASH, not a key. `key_hash = "abcdef0123456789"` is a placeholder in an
   # A2A proxy test double, standing in for `principal.key_hash`, which is a
   # digest prefix the code stores precisely so key material is not. Reviewed

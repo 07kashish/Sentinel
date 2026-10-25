@@ -75,17 +75,6 @@ MUST_BE_REACHABLE = {
     "TenantKey": "sentinel/domain/keys.py",
     "RetentionPolicy": "sentinel/domain/residency.py",
     "assert_no_cross_region_read": "sentinel/domain/residency.py",
-    # Detonation. The WHOLE subsystem was unreachable: `Detonator`, `assess`
-    # and both container implementations had passing tests and no production
-    # caller, and it was never in this registry -- which is why nothing
-    # noticed. Wiring it exposed a live defect: `assess` searched for canary
-    # VALUES in a field both detonators fill with canary NAMES, so
-    # CANARY_EXFILTRATION could not fire from either sandbox.
-    "assess": "sentinel/domain/detonation.py",
-    "SkillDetonationService": "sentinel/application/skill_detonation.py",
-    "compare_trace_to_scope": "sentinel/domain/observed_binding.py",
-    "AuthorizedScope": "sentinel/domain/observed_binding.py",
-    "ScopedDetonation": "sentinel/domain/detonation.py",
     # Discovery. Same finding as detonation: `build_connectors` had tests, was
     # cited in the gap ledger, was audited by the archived state audit -- and
     # had no caller. Being AUDITED is not being wired, and the audit was what

@@ -144,7 +144,7 @@ What follows is the **technical control coverage an audit would sample.**
 | LLM01 | Prompt injection | Structural, not filtered: `ModelAdvice` **has no field for a decision**, so injected text cannot authorize | `IMPLEMENTED` `TESTED` `MAPPED` | `test_security_prompt_injection` (16), `security_tests` gate |
 | LLM02 | Sensitive information disclosure | Bounded metadata; readiness returns booleans only; exception text never returned | `IMPLEMENTED` `TESTED` `MAPPED` | `test_security_bounds` (15), `test_readiness_probe_cache` |
 | LLM03 | Supply chain | SBOM, pip-audit, gitleaks over full history, trivy on the image | `IMPLEMENTED` `TESTED` `MAPPED` | `sbom`, `dependency_scanning`, `secret_scanning`, `container_scanning` gates |
-| LLM04 | Data and model poisoning | MCP definition pinning + drift; skill contract analysis | `IMPLEMENTED` `TESTED` `MAPPED` | `test_mcp_estate`, `test_detonation` |
+| LLM04 | Data and model poisoning | MCP definition pinning and drift checks | `IMPLEMENTED` `TESTED` `MAPPED` | `test_mcp_registry` |
 | LLM05 | Improper output handling | Control characters stripped; `[unverified-model-output]` prefix survives copying; console has **no HTML sink** | `IMPLEMENTED` `TESTED` `MAPPED` | `test_console_bundle` (27) |
 | LLM06 | Excessive agency | Deterministic authorization; approval is a separate capability *and* a separate state transition | `IMPLEMENTED` `TESTED` `MAPPED` | `test_security_edge`, `test_red_team_suite` |
 | LLM07 | System prompt leakage | Prompts are commitments in passports, not stored content | `IMPLEMENTED` `TESTED` `MAPPED` | `test_passport_standard` |

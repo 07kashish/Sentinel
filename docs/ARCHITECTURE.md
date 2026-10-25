@@ -399,13 +399,12 @@ like when an agent is manipulated rather than when the platform itself is
 malicious.
 
 Closing the residual needs an instrument that observes the execution rather
-than accepting a description of it. Three exist; one is now bound.
+than accepting a description of it. The retained instruments are listed below.
 
 | Instrument | Sees | Bound? |
 |---|---|---|
 | `InlineToolProxy` | the tool's real `arguments` | **yes** — passes the verified mapping to the effect |
 | `mcp_wire` / `mcp_proxy_routes` | the real JSON-RPC request on the wire | no |
-| detonation tracer | real syscalls | no |
 
 The wire-level MCP path is a **separate forwarding route** that does not go
 through `ProtectedToolRunner` at all, so binding it is not a matter of passing
@@ -413,8 +412,7 @@ one more argument — it needs an authorization to travel with the request. That
 is the next piece of work, and it is the one that would catch a caller which
 both lies about the tool *and* executes something else.
 
-The tracer is the only instrument that could catch that at the syscall level,
-and it currently runs in detonation rather than in the live path.
+Syscall-level observation is outside the current runtime.
 
 <a id="execution_trust_architecture--the-legacy-path-is-still-open-but-it-can-now-be-closed"></a>
 #### The legacy path is still open, but it can now be closed

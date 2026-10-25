@@ -39,7 +39,6 @@ from sentinel.infrastructure.a2a_registry import (
 from sentinel.application.mcp_gateway import McpGateway
 from sentinel.application.reconciliation import OperationReconciler
 from sentinel.application.protect_gate import ProtectGate
-from sentinel.application.skill_detonation import SkillDetonationService
 from sentinel.application.tool_runner import ProtectedToolRunner
 from sentinel.application.tool_proxy import InlineToolProxy, RegisteredSideEffect
 from sentinel.application.commands.admit_event import AdmitEvent, AdmitEventHandler
@@ -135,7 +134,6 @@ from sentinel.infrastructure.inventory import SqlAgentInventory
 from sentinel.infrastructure.tool_adapters import build_tool_adapters
 from sentinel.composition.platform_wiring import build_platform_effects
 from sentinel.composition.proxy_wiring import build_a2a_upstream, build_mcp_upstream
-from sentinel.composition.detonation_wiring import build_detonation_service
 from sentinel.composition.discovery_wiring import build_discovery_connectors
 from sentinel.composition.remediation_wiring import build_executor
 from sentinel.infrastructure.containment import ContainmentGuard
@@ -262,12 +260,6 @@ class Container:
     #: The delegation key ring. Verifies signed hops on `/v1/a2a/evaluate` and
     #: the A2A proxy; empty refuses every signed chain as UNKNOWN_KEY.
     delegation_verifier: KeyRingVerifier
-    #: Skill detonation, with the scope comparison attached. Not optional and
-    #: never None: an absent service reads as "nothing to check", so a
-    #: deployment with no sandbox gets one that REFUSES rather than one that
-    #: is missing. Whether it can observe scope depends on tracing being on --
-    #: and when it cannot, it says UNOBSERVED rather than clean.
-    detonation: SkillDetonationService
     #: Discovery connectors, keyed by name. EMPTY when nothing is configured,
     #: and that emptiness is load-bearing: an absent connector means no
     #: credential was supplied, not that the platform is clean. Five of these
@@ -755,7 +747,6 @@ def build_container(
             authorizations=authorizations,
             capability_gate=capability_gate,
             delegation_verifier=build_delegation_verifier(settings),
-            detonation=build_detonation_service(settings),
             discovery=build_discovery_connectors(settings.discovery_credentials),
             execution_graph=execution_graph,
             mcp_gateway=mcp_gateway,

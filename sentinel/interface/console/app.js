@@ -46,7 +46,6 @@
     "/v1/containments/",
     "/v1/orgs/current",
     "/v1/orgs/current/members",
-    "/v1/skills/assess",
     "/health/diagnostics",
   ];
 
@@ -2406,46 +2405,6 @@
     return Promise.all([bom, exposure, adoption]);
   }
 
-  function commaList(value) {
-    return String(value || "").split(",").map(function (part) { return part.trim(); }).filter(Boolean);
-  }
-
-  function loadAssessment(event) {
-    event.preventDefault();
-    var name = el("skill-name").value.trim();
-    if (!name) return Promise.resolve();
-    return post("/v1/skills/assess", {
-      name: name,
-      publisher: el("skill-publisher").value.trim(),
-      permissions: commaList(el("skill-permissions").value),
-      destinations: commaList(el("skill-destinations").value),
-    }).then(
-      function (data) {
-        var scan = data.scan || {};
-        var summary = el("assess-summary");
-        clear(summary);
-        summary.appendChild(box("div", "pills", [pill(show(data.severity), show(data.score), wordKind(data.severity)), pill("risk factors", (data.factors || []).length, "muted"), pill("files scanned", scan.files_scanned == null ? 0 : scan.files_scanned, "muted")]));
-        var list = el("assess-findings");
-        clear(list);
-        (data.factors || []).forEach(function (factor) {
-          list.appendChild(box("li", wordKind(data.severity) || "warn", [text("span", "+" + show(factor.points), "num"), text("span", show(factor.factor), "tag"), text("span", show(factor.reason), "hint")]));
-        });
-        (scan.findings || []).forEach(function (f) {
-          list.appendChild(box("li", "warn", [text("span", "scan", "tag"), text("span", show(f.kind || f.rule || f.code)), text("span", show(f.detail || f.message), "hint")]));
-        });
-        if (!list.firstChild) list.appendChild(text("li", "nothing raised by the declaration; this read the manifest and ran nothing", "empty"));
-        toast("ok", "assessed " + name + ": " + show(data.severity) + " " + show(data.score));
-      },
-      function (err) {
-        failed(el("assess-summary"), reasonFor(err), err.status);
-        clear(el("assess-findings"));
-        toast("bad", "assess: " + reasonFor(err));
-      }
-    );
-  }
-
-
-
   function loadGovernance() {
     renderLimits();
 
@@ -2608,7 +2567,6 @@
   el("inclusion-form").addEventListener("submit", loadInclusion);
   el("consistency-form").addEventListener("submit", loadConsistency);
   el("reach-form").addEventListener("submit", loadReach);
-  el("assess-form").addEventListener("submit", loadAssessment);
 
 
   function tick() {

@@ -80,7 +80,6 @@
 !sentinel/application/reconciliation.py
 !sentinel/application/records.py
 !sentinel/application/repository_ports.py
-!sentinel/application/skill_detonation.py
 !sentinel/application/tool_proxy.py
 !sentinel/application/tool_runner.py
 !sentinel/composition/__init__.py
@@ -89,7 +88,6 @@
 !sentinel/composition/app_wiring.py
 !sentinel/composition/container.py
 !sentinel/composition/delegation_wiring.py
-!sentinel/composition/detonation_wiring.py
 !sentinel/composition/discovery_wiring.py
 !sentinel/composition/evidence_wiring.py
 !sentinel/composition/notifications.py
@@ -119,7 +117,6 @@
 !sentinel/domain/delegation_constraints.py
 !sentinel/domain/delegation_passport.py
 !sentinel/domain/detection_metrics.py
-!sentinel/domain/detonation.py
 !sentinel/domain/effective_permissions.py
 !sentinel/domain/endpoint_sensor.py
 !sentinel/domain/errors.py
@@ -136,7 +133,6 @@
 !sentinel/domain/mcp.py
 !sentinel/domain/mcp_estate.py
 !sentinel/domain/modes.py
-!sentinel/domain/observed_binding.py
 !sentinel/domain/operations.py
 !sentinel/domain/passport.py
 !sentinel/domain/policy_as_code.py
@@ -147,7 +143,6 @@
 !sentinel/domain/residency.py
 !sentinel/domain/root_sink.py
 !sentinel/domain/sequences.py
-!sentinel/domain/skills.py
 !sentinel/domain/slo.py
 !sentinel/domain/stream_guard.py
 !sentinel/domain/tenant_integrations.py
@@ -166,8 +161,6 @@
 !sentinel/infrastructure/default_policy.json
 !sentinel/infrastructure/delegation_signing.py
 !sentinel/infrastructure/detection.py
-!sentinel/infrastructure/detonation_container.py
-!sentinel/infrastructure/detonation_tracing.py
 !sentinel/infrastructure/directory.py
 !sentinel/infrastructure/endpoint_scan.py
 !sentinel/infrastructure/enterprise.py
@@ -226,7 +219,6 @@
 !sentinel/infrastructure/siem.py
 !sentinel/infrastructure/siem_routing.py
 !sentinel/infrastructure/siem_transports.py
-!sentinel/infrastructure/skill_scanner.py
 !sentinel/infrastructure/soar.py
 !sentinel/infrastructure/sql/__init__.py
 !sentinel/infrastructure/sql/authorization_store.py
@@ -251,7 +243,6 @@
 !sentinel/infrastructure/sql/unit_of_work.py
 !sentinel/infrastructure/sql/work_queue.py
 !sentinel/infrastructure/sql/workflow_metrics.py
-!sentinel/infrastructure/strace_parse.py
 !sentinel/infrastructure/tool_adapters.py
 !sentinel/infrastructure/trace_export.py
 !sentinel/interface/__init__.py

@@ -402,55 +402,6 @@ MUTATIONS: tuple[Mutation, ...] = (
         ),
     ),
     Mutation(
-        name="detonation_loses_network_isolation",
-        path="sentinel/infrastructure/detonation_container.py",
-        before='        "--network=none",',
-        after='        "--network=host",',
-        guard=(
-            "tests_arch/test_container_detonation.py::"
-            "test_the_network_is_severed"
-        ),
-        consequence=(
-            "An untrusted skill detonates with the HOST's network namespace: "
-            "it reaches the control plane's localhost services, the cloud "
-            "metadata endpoint, and the internet. Exfiltration stops being an "
-            "attempt and becomes a success, and the recording still comes back "
-            "looking like an ordinary run."
-        ),
-    ),
-    Mutation(
-        name="detonation_runs_as_root_inside_the_container",
-        path="sentinel/infrastructure/detonation_container.py",
-        before='        "--user=65534:65534",',
-        after='        "--user=0:0",',
-        guard=(
-            "tests_arch/test_container_detonation.py::"
-            "test_the_skill_does_not_run_as_root"
-        ),
-        consequence=(
-            "A container-runtime escape lands as ROOT on the host rather than "
-            "as an unprivileged user. This is the difference between a "
-            "contained incident and a compromised control plane."
-        ),
-    ),
-    Mutation(
-        name="an_uninstrumented_detonation_reports_a_complete_observation",
-        path="sentinel/infrastructure/detonation_container.py",
-        before="                observation_incomplete=True,\n                incomplete_reason=_incomplete_reason(\n                    f\"Process exited with code {completed.returncode}.\"\n                ),",
-        after="                observation_incomplete=False,\n                incomplete_reason=\"\",",
-        guard=(
-            "tests_arch/test_container_detonation.py::"
-            "test_every_recording_admits_the_observation_was_incomplete"
-        ),
-        consequence=(
-            "A container run watches no syscalls, so its empty "
-            "network_destinations tuple reads identically to 'this skill made "
-            "no network calls'. Marking the observation complete turns every "
-            "unwatched detonation into a clean bill of health -- the product "
-            "would certify skills nobody observed."
-        ),
-    ),
-    Mutation(
         name="sdk_defaults_to_allowing_when_the_gate_is_unreachable",
         path="sentinel/sdk/remote.py",
         before="    on_unreachable: FailureMode = FailureMode.REFUSE",

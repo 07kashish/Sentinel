@@ -54,7 +54,6 @@ or reliability guarantee.** Never by weakening one that does.
 
 | Workload | Spot? | Why |
 |---|---|---|
-| Skill detonation sandbox | **Yes** | Ephemeral and idempotent by construction. An interruption loses an analysis that is simply re-run |
 | Batch discovery scans | **Yes** | Resumable; partial coverage is already reported honestly |
 | Async detection workers | **Careful** | Only with idempotent consumers, visibility timeouts and a DLQ — all of which exist |
 | API / authorization path | **No** | An interruption mid-decision is a fail-closed event. Saving 60% on the component whose availability is the product is a bad trade |

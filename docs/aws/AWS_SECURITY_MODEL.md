@@ -90,16 +90,6 @@ read on Secrets Manager and S3 object contents, which means data, not
 inventory. Discovery needs `List*` and `Describe*` and `Get*Policy`, not
 `GetSecretValue` or `GetObject`.
 
-## Detonation is the exception that proves the rule
-
-The skill sandbox executes untrusted code. It therefore gets **no AWS identity
-at all** — no task role, no instance profile, no metadata access.
-
-That last one matters and is easy to miss: on EC2 and ECS, an untrusted process
-that can reach `169.254.169.254` can request the workload's credentials. A
-sandbox with a blocked egress allowlist but reachable metadata is a sandbox with
-a credential exfiltration path.
-
 ## Encryption
 
 Envelope encryption, so that per-event volume does not become per-event KMS
