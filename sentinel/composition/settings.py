@@ -212,13 +212,6 @@ class Settings:
     #: connector name -> endpoint URL. Empty means no SOAR fan-out, which is a
     #: supported state: incidents still land in the console and the API.
     soar_endpoints: Mapping[str, str]
-    #: PagerDuty's Events API takes the routing key in the body, not the URL.
-    #: Every `SENTINEL_DISCOVERY_*` variable, passed to
-    #: `build_discovery_connectors`. ONE field rather than ten, because which
-    #: combination of variables makes a usable credential is each connector's
-    #: own rule and duplicating it here would be two places to disagree.
-    #: Absent variables mean an absent connector, never an empty one.
-    discovery_credentials: Mapping[str, str]
     soar_pagerduty_routing_key: str
     #: Only incidents at or above this priority are dispatched. HIGH by default:
     #: this codebase measured a detector firing on 51.7% of ordinary tool calls,
@@ -514,7 +507,6 @@ class Settings:
             protect_kill_switch=_parsers.flag(source, "SENTINEL_PROTECT_KILL_SWITCH", default=False),
             remediation_endpoints=_parsers.remediation_endpoints(source),
             remediation_dry_run=_parsers.flag(source, "SENTINEL_REMEDIATION_DRY_RUN", default=False),
-            discovery_credentials=_parsers.discovery_credentials(source),
             soar_endpoints=_parsers.soar_endpoints(source),
             soar_pagerduty_routing_key=(
                 source.get("SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY") or ""

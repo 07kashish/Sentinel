@@ -30,13 +30,7 @@ from typing import Any, Sequence, TextIO
 from sentinel.composition.preflight import validate_production_configuration
 from sentinel.composition.settings import ConfigurationError, Settings
 from sentinel.infrastructure.identity import SqlAgentRegistry
-from sentinel.infrastructure.outbound import HardenedHttpClient, OutboundPolicy
 from sentinel.domain.effective_permissions import compute_effective_reach
-from sentinel.infrastructure.platforms.discovery import (
-    discover_kubernetes_workloads,
-    reconcile,
-)
-from sentinel.infrastructure.platforms.kubernetes import KubernetesCredentials
 from sentinel.domain.inventory import (
     DECLARABLE_FIELDS,
     AgentClassification,
@@ -89,10 +83,6 @@ USAGE = """sentinel — operator commands
   agent-undeclare <tenant> <agent> <field>
   agent-fields                     list what may be declared
   agent-entities <tenant>          count every inventoried entity type
-  agent-discover <tenant> <namespace>...
-                                   list agent workloads the CLUSTER reports,
-                                   not the ones that sent telemetry, and
-                                   reconcile them against enrolment
   passport-inspect <passport.json> what it says + every keyless check
   passport-verify <passport.json> <key.pem>
                                    signature, key window, structure. Offline.
@@ -199,8 +189,6 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
         if command == "agent-effective-reach":
             return _effective_reach_command(rest, pool=pool, stream=stream)
 
-        if command == "agent-discover":
-            return _discover_command(rest, pool=pool, stream=stream, settings=settings)
 
         if command in {"agent-grant", "agent-revoke", "agent-grants"}:
             return _capability_command(command, rest, pool=pool, stream=stream)
@@ -652,89 +640,6 @@ def _siem_export(
     return 0
 
 
-def _discover_command(
-    rest: Sequence[str], *, pool: Any, stream: TextIO, settings: Settings
-) -> int:
-    """Ask the cluster what is running, rather than asking the telemetry.
-
-    WHY THIS IS A CLI COMMAND AND NOT A ROUTE
-    -------------------------------------------
-    It reads with the deployment's Kubernetes credential across whole
-    namespaces. That is a broader read than anything the HTTP surface does, and
-    the codebase already puts operations of that weight behind shell access to
-    the host rather than behind a bearer token -- MCP enrolment is CLI-only for
-    the same reason. An analyst who can call `/v1/incidents` should not thereby
-    be able to enumerate every workload in production.
-
-    The report is printed with its SCOPE and its HOLES, never as a bare list.
-    "We found two agents" and "we found two agents in the one namespace we could
-    read, out of forty" are different statements, and only the second is true.
-    """
-    if len(rest) < 2:
-        stream.write("usage: agent-discover <tenant> <namespace>...\n")
-        return 64  # EX_USAGE
-
-    tenant, namespaces = rest[0], list(rest[1:])
-    configured = settings.platform_adapters.get("kubernetes")
-    if configured is None:
-        # NOT_SUPPORTED, said plainly. A deployment with no cluster credential
-        # cannot do this, and printing an empty result would read as "nothing is
-        # running" -- the single most dangerous wrong answer this command has.
-        stream.write(
-            "agent-discover needs a Kubernetes credential "
-            "(SENTINEL_KUBERNETES_API_SERVER and SENTINEL_KUBERNETES_TOKEN). "
-            "None is configured, so nothing was examined. This is NOT_SUPPORTED "
-            "for this deployment, not an empty cluster.\n"
-        )
-        return 78  # EX_CONFIG
-
-    report = discover_kubernetes_workloads(
-        client=HardenedHttpClient(
-            policy=OutboundPolicy(
-                allow_private_destinations=True,
-                allowed_hosts=settings.tool_http_allowed_hosts,
-            )
-        ),
-        credentials=KubernetesCredentials(
-            api_server=configured["api_server"], token=configured["token"]
-        ),
-        namespaces=namespaces,
-    )
-
-    inventory = SqlAgentInventory(pool=pool)
-    try:
-        enrolled = tuple(
-            str(getattr(profile, "agent_id", "") or "")
-            # Was `inventory.agents(tenant)`, which never existed; the broad
-            # except below made it report zero enrolled agents in silence.
-            for profile in inventory.list_profiles(tenant)
-        )
-    except Exception as exc:  # noqa: BLE001 - reconciliation is best-effort
-        enrolled = ()
-        stream.write(f"note: enrolment could not be read ({type(exc).__name__}); "
-                     "every workload below is reported as unreconciled\n")
-
-    classified = reconcile(report, enrolled=enrolled)
-
-    stream.write(f"examined {report.examined} workloads in {len(report.scope)} namespace(s)\n")
-    for workload in report.workloads:
-        kind = classified.get(workload.agent_id)
-        confidence = "declared" if workload.identity_is_declared else "inferred from name"
-        stream.write(
-            f"  {workload.location:44s} {getattr(kind, 'value', 'unknown'):20s} "
-            f"({confidence}; {', '.join(workload.markers)})\n"
-        )
-    if not report.workloads:
-        stream.write("  no workload carried an agent marker\n")
-
-    for target, reason in report.unreachable:
-        stream.write(f"  UNREACHABLE {target}: {reason}\n")
-
-    stream.write("\n" + report.limits + "\n")
-    # A run that could not read part of its scope is not a clean run, and the
-    # exit code says so -- a script that greps the output would otherwise treat
-    # a half-read cluster as a pass.
-    return 0 if not report.unreachable else 1
 
 
 def _effective_reach_command(rest: Sequence[str], *, pool: Any, stream: TextIO) -> int:

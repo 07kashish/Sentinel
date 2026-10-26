@@ -134,7 +134,6 @@ from sentinel.infrastructure.inventory import SqlAgentInventory
 from sentinel.infrastructure.tool_adapters import build_tool_adapters
 from sentinel.composition.platform_wiring import build_platform_effects
 from sentinel.composition.proxy_wiring import build_a2a_upstream, build_mcp_upstream
-from sentinel.composition.discovery_wiring import build_discovery_connectors
 from sentinel.composition.remediation_wiring import build_executor
 from sentinel.infrastructure.containment import ContainmentGuard
 from sentinel.infrastructure.a2a_wire import A2AUpstreamClient
@@ -260,12 +259,6 @@ class Container:
     #: The delegation key ring. Verifies signed hops on `/v1/a2a/evaluate` and
     #: the A2A proxy; empty refuses every signed chain as UNKNOWN_KEY.
     delegation_verifier: KeyRingVerifier
-    #: Discovery connectors, keyed by name. EMPTY when nothing is configured,
-    #: and that emptiness is load-bearing: an absent connector means no
-    #: credential was supplied, not that the platform is clean. Five of these
-    #: have never authenticated against a real tenant, which
-    #: `describe_discovery` reports alongside the names.
-    discovery: Mapping[str, Any]
     #: Causal traces: what followed what, per session. Evidence for an
     #: investigation, never consulted by the enforcement path.
     execution_graph: SqlExecutionGraph
@@ -747,7 +740,6 @@ def build_container(
             authorizations=authorizations,
             capability_gate=capability_gate,
             delegation_verifier=build_delegation_verifier(settings),
-            discovery=build_discovery_connectors(settings.discovery_credentials),
             execution_graph=execution_graph,
             mcp_gateway=mcp_gateway,
             a2a_gateway=a2a_gateway,

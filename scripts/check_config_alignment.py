@@ -56,7 +56,7 @@ SURFACES: dict[str, tuple[str, ...]] = {
 #: Prefixes that are documented as families (`SENTINEL_SIEM_KAFKA_*`), read
 #: by prefix in code, and therefore legitimately appear with a trailing
 #: underscore in templates.
-FAMILY_PREFIXES = ("SENTINEL_DATA_KEY_", "SENTINEL_DISCOVERY_", "SENTINEL_SIEM_KAFKA_", "SENTINEL_WAL_S3_", "SENTINEL_TENANT_SIEM_")
+FAMILY_PREFIXES = ("SENTINEL_DATA_KEY_", "SENTINEL_SIEM_KAFKA_", "SENTINEL_WAL_S3_", "SENTINEL_TENANT_SIEM_")
 
 #: Variables production requires an explicit value for, per
 #: `sentinel/composition/preflight.py`. Every deployment surface (helm, k8s)

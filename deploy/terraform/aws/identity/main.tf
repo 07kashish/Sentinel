@@ -135,93 +135,6 @@ resource "aws_iam_role" "release" {
 }
 
 #############################################################################
-# Discovery role — read-only, and describable in one sentence
-#
-# This is the role a CUSTOMER grants into their own account, so it is the role
-# a customer's security team will actually read. It has to be defensible in a
-# sentence: "it can list and describe, and it can change nothing."
-#
-# AWS-managed `ReadOnlyAccess` is deliberately NOT used. That policy grants
-# `secretsmanager:GetSecretValue` and `s3:GetObject` — which is DATA, not
-# inventory. Discovery needs to know that a secret exists and which roles can
-# read it. It never needs the secret's value, and a discovery role that could
-# read one is a role no security team should approve.
-#############################################################################
-
-data "aws_iam_policy_document" "discovery" {
-  statement {
-    sid    = "InventoryOnly"
-    effect = "Allow"
-    actions = [
-      # Identity and permission surface
-      "iam:List*",
-      "iam:Get*",
-      "iam:GenerateCredentialReport",
-      "iam:GenerateServiceLastAccessedDetails",
-      # Where agents run
-      "lambda:List*",
-      "lambda:GetFunctionConfiguration",
-      "ecs:List*",
-      "ecs:Describe*",
-      "eks:List*",
-      "eks:Describe*",
-      # Agent platforms
-      "bedrock:List*",
-      "bedrock:Get*",
-      # What agents reach
-      "s3:ListAllMyBuckets",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketPolicyStatus",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:GetBucketLocation",
-      "rds:Describe*",
-      "dynamodb:ListTables",
-      "dynamodb:DescribeTable",
-      "apigateway:GET",
-      "states:List*",
-      "states:Describe*",
-      "events:List*",
-      "sqs:ListQueues",
-      "sqs:GetQueueAttributes",
-      # Existence and reachability of secrets, never their contents
-      "secretsmanager:ListSecrets",
-      "secretsmanager:DescribeSecret",
-      "secretsmanager:GetResourcePolicy",
-      "kms:ListKeys",
-      "kms:DescribeKey",
-      "kms:GetKeyPolicy",
-    ]
-    resources = ["*"]
-  }
-
-  # Belt and braces. The action list above already excludes these, and an
-  # explicit Deny cannot be widened by a future careless addition to the Allow.
-  statement {
-    sid    = "NeverReadSecretMaterial"
-    effect = "Deny"
-    actions = [
-      "secretsmanager:GetSecretValue",
-      "kms:Decrypt",
-      "kms:GenerateDataKey",
-      "ssm:GetParameter",
-      "ssm:GetParameters",
-      "ssm:GetParametersByPath",
-      "s3:GetObject",
-      "dynamodb:GetItem",
-      "dynamodb:Query",
-      "dynamodb:Scan",
-    ]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_policy" "discovery" {
-  name        = "SentinelDiscoveryReadOnly"
-  description = "Lists and describes. Changes nothing. Cannot read secret material."
-  policy      = data.aws_iam_policy_document.discovery.json
-}
-
-#############################################################################
 # Runtime roles — assumed by the workload, never by a person
 #
 # `sts:AssumeRole` is NOT granted to any of these. An agent that can assume
@@ -262,25 +175,13 @@ resource "aws_iam_role" "worker" {
   max_session_duration = 3600
 }
 
-resource "aws_iam_role" "discovery" {
-  name                 = "SentinelDiscovery"
-  description          = "Read-only inventory. Cannot read secret material."
-  assume_role_policy   = data.aws_iam_policy_document.ecs_task_trust.json
-  max_session_duration = 3600
-}
 
-resource "aws_iam_role_policy_attachment" "discovery" {
-  role       = aws_iam_role.discovery.name
-  policy_arn = aws_iam_policy.discovery.arn
-}
 
 #############################################################################
 # Audit role — for a human, read-only, and it can read evidence
 #
-# Distinct from Discovery: an auditor legitimately needs evidence CONTENT,
-# whereas discovery needs only inventory. Two different jobs, two different
-# roles, rather than one role that does both and is therefore over-granted for
-# whichever job it is doing at the time.
+# An auditor reads evidence content under a dedicated read-only identity.
+# Runtime and release identities remain separate from this human access path.
 #############################################################################
 
 variable "audit_principal_arns" {
@@ -329,10 +230,6 @@ output "github_release_role_arn" {
   description = "Set as the `role-to-assume` in the GitHub Actions workflow."
 }
 
-output "discovery_role_arn" {
-  value       = aws_iam_role.discovery.arn
-  description = "The read-only role Sentinel uses to enumerate an estate."
-}
 
 output "api_role_arn" {
   value = aws_iam_role.api.arn

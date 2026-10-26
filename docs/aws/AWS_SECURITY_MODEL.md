@@ -74,21 +74,9 @@ the standard way this configuration is got wrong.
 |---|---|---|
 | `SentinelAPI` | Read config, decrypt with its KMS key, write evidence to its S3 prefix, read/write its database | Assume other roles; touch IAM; read other tenants' prefixes |
 | `SentinelWorker` | Consume SQS, write evidence, call integrations | Modify policy; delete evidence |
-| `SentinelDiscovery` | **Read-only** across the estate | Write anything, anywhere |
 | `SentinelDetonator` | Nothing outside its sandbox | Reach the control plane, the database, or the network beyond its allowlist |
 | `SentinelRelease` | Push images, sign artifacts | Touch runtime data |
 | `SentinelReadOnlyAudit` | Read evidence and audit logs | Write |
-
-`SentinelDiscovery` is the interesting one. It is the role a customer grants
-into *their* account, so it is the role a customer's security team will actually
-read. It must be describable in one sentence — *"it can list and describe, and
-it can change nothing"* — because a discovery role that also writes is a role
-no security team should approve.
-
-The AWS-managed `ReadOnlyAccess` policy is **not** what to attach: it grants
-read on Secrets Manager and S3 object contents, which means data, not
-inventory. Discovery needs `List*` and `Describe*` and `Get*Policy`, not
-`GetSecretValue` or `GetObject`.
 
 ## Encryption
 

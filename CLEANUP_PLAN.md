@@ -2451,3 +2451,36 @@ observations can enter through the removed routes.
 - Verified touched cases, with corrected reruns superseding earlier failures: 193 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 71. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### Ruling P3-010: vendor discovery parking boundary
+
+Park the 21 discovery files in the fresh graph/consumer inventory, the
+container discovery field/builder, the Settings credential collector and
+its dynamic environment prefix, and the agent-discover CLI command. Keep
+agent-inventory/reach/declarations and telemetry observation, all MCP
+enrollment/proxy commands, domain/inventory.py, infrastructure/inventory.py,
+and AWS/GitHub/Kubernetes controlled-execution adapters and their credentials.
+The similarly named test_agent_discovery.py covers retained observation and
+must remain unchanged. The five connector-specific test files are removed.
+
+Remove the dedicated Terraform discovery policy/role/attachment/output and
+its documentation; preserve runtime, audit and release identities. This is
+source cleanup only: no Terraform apply or external infrastructure mutation.
+Replace the discovery section in INTEGRATIONS.md with its parked status while
+retaining old anchors for inbound links; keep the MCP sections intact. Remove
+all retired environment names outside the three allowed removal records.
+There are no discovery-specific SQL tables or new migration changes.
+
+Record GitHub, Slack and identity/paging helpers as Phase 5 reference candidates
+in PARKED.md; those future integrations are audit-log connectors, not restoration
+of the old discovery contract. If this boundary is wrong, an inventory or effect
+adapter might be lost; retained inventory, platform, CLI and architecture tests
+are the group gate, with original MCP/native assertions left unchanged.
+
+### Phase 3 group complete: discovery
+
+- Removed 21 whole files (7,260 lines); changed-path and numstat records: baseline/phase3/discovery/result.json.
+- Collection: 3789 cases; 112 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/discovery/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 322 passed, 1 skipped, zero remaining failures/errors. Reports: targeted.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 70. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

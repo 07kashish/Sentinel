@@ -75,13 +75,7 @@ MUST_BE_REACHABLE = {
     "TenantKey": "sentinel/domain/keys.py",
     "RetentionPolicy": "sentinel/domain/residency.py",
     "assert_no_cross_region_read": "sentinel/domain/residency.py",
-    # Discovery. Same finding as detonation: `build_connectors` had tests, was
-    # cited in the gap ledger, was audited by the archived state audit -- and
-    # had no caller. Being AUDITED is not being wired, and the audit was what
-    # made it look otherwise.
-    "build_connectors": "sentinel/infrastructure/platforms/connectors.py",
-    "build_ai_connectors": "sentinel/infrastructure/platforms/ai_connectors.py",
-    "build_discovery_connectors": "sentinel/composition/discovery_wiring.py",
+
 }
 
 

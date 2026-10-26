@@ -30,7 +30,54 @@ the scan checks every other tracked or unignored product file.
 [
   "SENTINEL_DETONATION_IMAGE",
   "SENTINEL_DETONATION_TRACING",
-  "SENTINEL_DISCOVERY_MCP_CONFIG_PATHS"
+  "SENTINEL_DISCOVERY_",
+  "SENTINEL_DISCOVERY_AWS",
+  "SENTINEL_DISCOVERY_AWS_ACCESS_KEY_ID",
+  "SENTINEL_DISCOVERY_AWS_PATH_PREFIX",
+  "SENTINEL_DISCOVERY_AWS_REGION",
+  "SENTINEL_DISCOVERY_AWS_SECRET_ACCESS_KEY",
+  "SENTINEL_DISCOVERY_BEDROCK",
+  "SENTINEL_DISCOVERY_BEDROCK_ACCESS_KEY_ID",
+  "SENTINEL_DISCOVERY_BEDROCK_REGION",
+  "SENTINEL_DISCOVERY_BEDROCK_SECRET_ACCESS_KEY",
+  "SENTINEL_DISCOVERY_COPILOT_ENVIRONMENTS",
+  "SENTINEL_DISCOVERY_COPILOT_TOKEN",
+  "SENTINEL_DISCOVERY_DATABRICKS",
+  "SENTINEL_DISCOVERY_DATABRICKS_HOST",
+  "SENTINEL_DISCOVERY_DATABRICKS_WORKSPACE",
+  "SENTINEL_DISCOVERY_ENTRA_AGENT_ID_TENANT",
+  "SENTINEL_DISCOVERY_ENTRA_AGENT_ID_TOKEN",
+  "SENTINEL_DISCOVERY_ENTRA_TENANT",
+  "SENTINEL_DISCOVERY_ENTRA_TOKEN",
+  "SENTINEL_DISCOVERY_GITLAB",
+  "SENTINEL_DISCOVERY_GITLAB_GROUP",
+  "SENTINEL_DISCOVERY_GITLAB_HOST",
+  "SENTINEL_DISCOVERY_GITLAB_PROJECTS",
+  "SENTINEL_DISCOVERY_K8S_NAMESPACES",
+  "SENTINEL_DISCOVERY_K8S_SERVER",
+  "SENTINEL_DISCOVERY_K8S_TOKEN",
+  "SENTINEL_DISCOVERY_MCP_CONFIG_PATHS",
+  "SENTINEL_DISCOVERY_MCP_ENDPOINTS",
+  "SENTINEL_DISCOVERY_MCP_TOKEN_",
+  "SENTINEL_DISCOVERY_OKTA",
+  "SENTINEL_DISCOVERY_OKTA_HOST",
+  "SENTINEL_DISCOVERY_OKTA_ORG",
+  "SENTINEL_DISCOVERY_OPENAI_ORG",
+  "SENTINEL_DISCOVERY_OPENAI_TOKEN",
+  "SENTINEL_DISCOVERY_SALESFORCE",
+  "SENTINEL_DISCOVERY_SALESFORCE_HOST",
+  "SENTINEL_DISCOVERY_SALESFORCE_ORG",
+  "SENTINEL_DISCOVERY_SERVICENOW",
+  "SENTINEL_DISCOVERY_SERVICENOW_HOST",
+  "SENTINEL_DISCOVERY_SERVICENOW_INSTANCE",
+  "SENTINEL_DISCOVERY_SLACK_BOT_IDS",
+  "SENTINEL_DISCOVERY_SLACK_ENTERPRISE_ID",
+  "SENTINEL_DISCOVERY_SLACK_TEAM_ID",
+  "SENTINEL_DISCOVERY_SLACK_TOKEN",
+  "SENTINEL_DISCOVERY_SLACK_WORKSPACE",
+  "SENTINEL_DISCOVERY_VERTEX_LOCATION",
+  "SENTINEL_DISCOVERY_VERTEX_PROJECT",
+  "SENTINEL_DISCOVERY_VERTEX_TOKEN"
 ]
 ```
 <!-- removed-settings:end -->
@@ -78,3 +125,39 @@ Recovery paths at `archive/pre-cleanup`:
 - `sentinel/interface/pilot_routes.py`
 
 Runtime store recovery: `sentinel/infrastructure/sql/device_discovery.py`. Tests recover from `tests_arch/`; exact retired paths are in [the cleanup inventory](../CLEANUP_PLAN.md).
+
+## Vendor inventory discovery
+
+Purpose: vendor asset enumeration and reconciliation, distinct from the retained event-observation inventory.
+Removed 21 whole files (7,261 physical lines), container discovery wiring, the agent-discover CLI, and the dedicated Terraform discovery identity. No HTTP routes or dedicated tables.
+Removed settings: all names in the retired `SENTINEL_DISCOVERY_` family, including dynamic credentials and `_FILE` forms; exact observed names are in the catalog above.
+Restore signal: a contracted customer needs continuous asset enumeration for a named platform and can validate coverage, permissions and pagination against a real tenant.
+
+Recovery paths at `archive/pre-cleanup`:
+
+- `scripts/run_discovery.py`
+- `sentinel/composition/discovery_wiring.py`
+- `sentinel/infrastructure/platforms/ai_connectors.py`
+- `sentinel/infrastructure/platforms/ai_discovery.py`
+- `sentinel/infrastructure/platforms/connectors.py`
+- `sentinel/infrastructure/platforms/copilot_studio.py`
+- `sentinel/infrastructure/platforms/databricks_agents.py`
+- `sentinel/infrastructure/platforms/discovery.py`
+- `sentinel/infrastructure/platforms/discovery_breadth.py`
+- `sentinel/infrastructure/platforms/discovery_support.py`
+- `sentinel/infrastructure/platforms/github_discovery.py`
+- `sentinel/infrastructure/platforms/gitlab_discovery.py`
+- `sentinel/infrastructure/platforms/identity_agents.py`
+- `sentinel/infrastructure/platforms/salesforce_agentforce.py`
+- `sentinel/infrastructure/platforms/servicenow_agents.py`
+- `sentinel/infrastructure/platforms/slack_apps.py`
+
+Tests recover from `tests_arch/`; exact retired paths and case deltas are in the cleanup inventory and group evidence.
+
+### Reuse candidates for Phase 5
+
+- `sentinel/infrastructure/platforms/github_discovery.py`: AI-agent markers in GitHub Actions; reference for GitHub 5.1/5.2.
+- `sentinel/infrastructure/platforms/slack_apps.py`: Slack apps/bot users and HTTP-200 `ok:false` handling; reference for Slack 5.1/5.2.
+- `sentinel/infrastructure/platforms/identity_agents.py` and `sentinel/infrastructure/platforms/discovery_support.py`: shared paging and credential-handling patterns.
+
+These archived modules are reference material. Phase 5 implements cursor-based audit-log connectors; it does not reinstate the old discovery contract.

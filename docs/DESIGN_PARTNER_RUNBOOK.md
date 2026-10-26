@@ -81,7 +81,7 @@ A report containing only what was measured:
 ### Two rules for the report
 
 **Every figure carries its denominator.** "14 agents discovered" is not a
-finding; "14 of an estate we could enumerate to 80% via these three connectors"
+finding; "14 of an estate we could enumerate to 80% through an explicitly scoped telemetry source"
 is.
 
 **Coverage holes are a required section, not an appendix.** A pilot report

@@ -23,7 +23,6 @@ from types import MappingProxyType
 from typing import Mapping
 
 __all__ = [
-    "discovery_credentials",
     "metrics_token_from",
     "platform_adapters",
     "siem_transports",
@@ -31,41 +30,8 @@ __all__ = [
     "soar_endpoints",
 ]
 
-#: Prefix for every discovery-connector credential. One prefix rather than an
-#: enumerated list because the connectors each own their own variable names,
-#: and a list here would be a second place to update when one is added -- which
-#: is how a connector comes to be silently unconfigurable.
-DISCOVERY_PREFIX = "SENTINEL_DISCOVERY_"
 
 
-def discovery_credentials(source: Mapping[str, str]) -> Mapping[str, str]:
-    """Every `SENTINEL_DISCOVERY_*` variable, as an immutable mapping.
-
-    WHY THIS LIVES HERE AND NOT IN THE WIRING
-    ------------------------------------------
-    `discovery_wiring.py` read `os.environ` directly, and
-    `test_only_the_settings_module_reads_the_environment` was right to refuse
-    it. One module reads the environment; everything else receives values. That
-    rule is the reason `Settings` exists, and the argument I had made for
-    breaking it -- ten optional integration fields would bloat a frozen
-    dataclass at its size limit -- is answered by carrying ONE field instead.
-
-    The precedent is `tenant_siem_credentials`, which already resolves and
-    holds secrets on `Settings` for the same reason.
-
-    Values are NOT validated or coerced here. Which combination of variables
-    constitutes a usable credential is the connector's own rule -- AWS needs a
-    triple, a bearer needs one token -- and duplicating that judgement here
-    would create two places to disagree about whether a connector is
-    configured.
-    """
-    return MappingProxyType(
-        {
-            name: value
-            for name, value in source.items()
-            if name.startswith(DISCOVERY_PREFIX) and str(value).strip()
-        }
-    )
 
 #: Which settings each Tier-1 platform adapter needs, and which of them are
 #: REQUIRED for that adapter to be built at all. A platform with none of its
