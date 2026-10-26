@@ -254,71 +254,6 @@ MUTATIONS: tuple[Mutation, ...] = (
         ),
     ),
     Mutation(
-        name="empty_discovery_reports_a_complete_estate",
-        path="sentinel/domain/ai_bom.py",
-        before="    if not sources:\n        return Completeness.UNUSABLE",
-        after="    if not sources:\n        return Completeness.COMPLETE",
-        guard=(
-            "tests_arch/test_ai_bom.py::"
-            "test_a_bom_from_no_inventories_is_unusable_not_complete"
-        ),
-        consequence=(
-            "A discovery run whose connectors all errored reports a CLEAN AI "
-            "estate. Every dashboard shows zero unpinned models and zero "
-            "unattested skills at the exact moment visibility was lost. This is "
-            "the most damaging output an inventory can produce, because it is "
-            "indistinguishable from good news."
-        ),
-    ),
-    Mutation(
-        name="a_scan_that_examined_nothing_counts_as_a_scan",
-        path="sentinel/domain/ai_bom.py",
-        before="    if all(source.coverage.examined == 0 for source in sources):",
-        after="    if False:",
-        guard=(
-            "tests_arch/test_ai_bom.py::"
-            "test_a_bom_whose_sources_examined_nothing_is_unusable"
-        ),
-        consequence=(
-            "A connector that returns successfully having inspected zero "
-            "objects -- wrong credential, wrong scope, empty namespace filter "
-            "-- yields a COMPLETE document. The call did not fail, so nothing "
-            "else in the pipeline would notice; only the denominator does."
-        ),
-    ),
-    Mutation(
-        name="a_partially_blind_scan_reports_complete",
-        path="sentinel/domain/ai_bom.py",
-        before="    if any(source.coverage.is_partial for source in sources):",
-        after="    if False:",
-        guard=(
-            "tests_arch/test_ai_bom.py::"
-            "test_any_unreachable_target_makes_the_document_partial"
-        ),
-        consequence=(
-            "An entire AWS account that returned AccessDenied disappears behind "
-            "a working Kubernetes scan, and the document says COMPLETE. "
-            "Coverage exists precisely so a count has a denominator."
-        ),
-    ),
-    Mutation(
-        name="a_connector_can_self_certify_as_attested",
-        path="sentinel/domain/ai_bom.py",
-        before="            if level is Provenance.ATTESTED and not digest:",
-        after="            if False:",
-        guard=(
-            "tests_arch/test_ai_bom.py::"
-            "test_a_source_claiming_attested_without_a_digest_is_downgraded"
-        ),
-        consequence=(
-            "Any connector mints verification by writing the word 'attested' "
-            "into a field. The provenance census -- the one number that says "
-            "how much of the inventory is actually verified -- becomes "
-            "attacker-controlled, and an estate that verified nothing reports "
-            "itself fully attested."
-        ),
-    ),
-    Mutation(
         name="ungranted_capability_use_is_discarded_again",
         path="sentinel/domain/effective_permissions.py",
         before="        for capability in sorted(exercised - held)",
@@ -350,55 +285,6 @@ MUTATIONS: tuple[Mutation, ...] = (
             "A revocation is an inference from ABSENCE, so an agent whose "
             "activity went unrecorded for a fortnight looks identical to one "
             "that did nothing -- and acting on the list breaks it."
-        ),
-    ),
-    Mutation(
-        name="an_unscanned_scope_stops_making_absence_unknown",
-        path="sentinel/domain/exposure_graph.py",
-        before="        if self.coverage.unscanned:",
-        after="        if False:",
-        guard=(
-            "tests_arch/test_exposure_graph.py::"
-            "test_an_unscanned_scope_makes_every_absence_unknown"
-        ),
-        consequence=(
-            "An AWS account nobody could scan reports its agents as NOT "
-            "REACHABLE -- indistinguishable from isolated, which is the most "
-            "reassuring thing a graph can say. False comfort delivered during "
-            "the one hour the graph is actually being read."
-        ),
-    ),
-    Mutation(
-        name="a_node_known_only_by_name_reports_isolation",
-        path="sentinel/domain/exposure_graph.py",
-        before="        if not self.coverage.covers(source):",
-        after="        if False:",
-        guard=(
-            "tests_arch/test_exposure_graph.py::"
-            "test_a_node_the_graph_only_knows_by_name_reports_unknown"
-        ),
-        consequence=(
-            "An agent the graph knows only because somebody else's edge named "
-            "it -- neighbourhood never enumerated -- is reported as reaching "
-            "nothing. The graph knows it exists and knows nothing about it, and "
-            "would be claiming the opposite."
-        ),
-    ),
-    Mutation(
-        name="shared_credential_edges_stop_being_derived",
-        path="sentinel/domain/exposure_graph.py",
-        before="        if len(principals) < 2:",
-        after="        if True:",
-        guard=(
-            "tests_arch/test_exposure_graph.py::"
-            "test_two_agents_on_one_credential_reach_each_other"
-        ),
-        consequence=(
-            "Two agents sharing one key stop reaching each other in the graph. "
-            "No permission table records credential sharing, so if this graph "
-            "does not derive the edge, NOTHING in the product ever shows it -- "
-            "and a leaked key's blast radius is reported as a fraction of its "
-            "real size."
         ),
     ),
     Mutation(

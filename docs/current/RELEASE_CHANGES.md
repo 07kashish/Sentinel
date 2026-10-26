@@ -148,7 +148,6 @@ Migration: no application/schema change. Existing image candidates may correctly
 
 **Workflow metrics.** `GET /v1/workflow/metrics` adds a `value` report and `slo` verdicts. Additive.
 
-**MCP estate.** `GET /v1/analysis/mcp-estate` now reports shadow and unused servers from the proxy's audit rows over `?days=` (default 30). `observed_source` changed wording; anything matching on `NOT_SUPPLIED` must be updated.
 
 **Console.** The overview's attention list includes agent requests awaiting a decision and executions with an unknown outcome.
 
@@ -188,17 +187,9 @@ Built from commit 42eadd9 on one laptop, because GitHub Actions is still held by
 
 The operator console adopts the visual language of the owner's marketing site (joinsentinelai.com): a dark-only canvas (`#050505`), `#0b0b0d` cards with hairline borders and 14px radii, one red accent (`#ff2a1f`), Space Grotesk for titles and JetBrains Mono for data, with system fallbacks because the CSP allows no external fonts. Colours, type and shapes only: the console keeps its own name, copy and structure, and every semantic colour (ok/warn/bad/critical) stays distinct from the accent so a primary button and an error never look the same. No behaviour changed; the bundle tests (no external resources, no inline styles, every nav entry has a view) pass unchanged.
 
-## 2026-09-27: shareable read-only console
+## 2026-09-27: shareable read-only console (parked)
 
-**Server.** `SENTINEL_CONSOLE_DEMO_TOKEN` names one key from `SENTINEL_API_KEYS` that the console may publish on its sign-in page, served unauthenticated at `/console/demo.json` (`Cache-Control: no-store`). The service refuses to start if that key's role is anything but `viewer`, so a misconfiguration fails at boot instead of publishing an approver key. The throttle gives a published key one bucket per client address. Tests: `tests_arch/test_console_demo.py` (both refusals, the read/decide boundary, per-address buckets, private keys unaffected).
-
-**Stack.** The ECS task now trusts one proxy hop (`SENTINEL_TRUSTED_PROXY_HOPS=1`); before this, every client behind the load balancer shared one address bucket and the audit trail recorded the balancer's address. `console_demo_enabled` adds an injected secret for the published key.
-
-**Console.** A sign-in screen replaces the header token box; "Explore the live demo" appears only when a key is published; the token is verified before entering; a session badge and sign-out (a page reload) sit in the header; the navigation is grouped. In demo mode the console polls every 30 seconds, states on every view that it is a read-only demonstration with sample data, hides the operator capability diagnostics, and disables decision controls.
-
-**Deployed** on the `proof` environment on 2026-09-27 with a `demo` tenant seeded by `scripts/seed_console_demo.py` through the public API. Verified from outside: `/console/demo.json` publishes the viewer key; it reads (200); approving and containing are refused (403).
-
-**Limits.** Plain HTTP (no domain, so browsers mark it "Not secure"); pending demo requests expire after five minutes by design and the seeder must be rerun to refresh them; the demo keys and the published key live in Secrets Manager (`sentinel/proof/api-keys`, `sentinel/proof/console-demo-token`); the environment costs roughly $40 a month while it stays up. The in-app browser of the Claude desktop app blocks the page's subresources for an unapproved site; ordinary browsers load them.
+Shared demo publication and its seeder were retired in Phase 3; see [PARKED.md](../PARKED.md). Operator sign-in, per-credential throttling and trusted proxy-hop handling remain.
 
 ## 2026-10-13: fuzzer health check, certificate timed out
 
@@ -262,7 +253,7 @@ Not established: a person using the app on their own Windows PC; the Windows ins
 
 ## 2026-10-03 (runbook)
 
-`docs/current/DEMO_RUNBOOK.md`: how the owner prepares and gives the demo, a minute-by-minute script using the console's real view names, how to show a live approval locally, what to send people, how to run it for a partner, and the gaps between an invited preview and a public launch. `scripts/try_sentinel.py --demo` loads the sample story into the local trial. `TRY_SENTINEL.md` named two views that do not exist (*Protected changes*, *Incidents*); corrected to the console's labels. First fully green hosted run on `main` since mid-September: run 37117421791, all 18 jobs.
+`docs/current/DEMO_RUNBOOK.md`: how the owner prepares and gives the demo, a minute-by-minute script using the console's real view names, how to show a live approval locally, what to send people, how to run it for a partner, and the gaps between an invited preview and a public launch. The sample seeder is now parked; the local trial starts with an empty database. `TRY_SENTINEL.md` named two views that do not exist (*Protected changes*, *Incidents*); corrected to the console's labels. First fully green hosted run on `main` since mid-September: run 37117421791, all 18 jobs.
 
 
 Not established: either app signed or notarised (both show an operating-system warning on first open; signing needs the owner's Apple Developer ID and a Windows certificate); the Windows app opened on a real Windows desktop; the Windows folder list checked against real installs; a public download location.

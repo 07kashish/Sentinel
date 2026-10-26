@@ -76,9 +76,6 @@ module "secrets" {
   kms_key_arn = module.kms.key_arns["secrets"]
 
   extra_secrets = merge(
-    var.console_demo_enabled ? {
-      console-demo-token = "SENTINEL_CONSOLE_DEMO_TOKEN: a VIEWER key the console publishes on its sign-in page. The service refuses to start if it names any other role."
-    } : {},
     var.advisor.endpoint != "" ? {
       advisor-token = "SENTINEL_ADVISOR_TOKEN: the advisory model provider's API key. Advisory only; the service refuses to start while this is empty."
     } : {},
@@ -208,12 +205,8 @@ module "ecs" {
     SENTINEL_DATA_KEY_K1   = module.secrets.secret_arns["evidence-data-key"]
   }
 
-  # Optional, and only for an environment that states it: the console's
-  # published read-only key.
+  # Optional advisor credential, injected only when an endpoint is configured.
   extra_secret_arns = merge(
-    var.console_demo_enabled ? {
-      SENTINEL_CONSOLE_DEMO_TOKEN = module.secrets.secret_arns["console-demo-token"]
-    } : {},
     var.advisor.endpoint != "" ? {
       SENTINEL_ADVISOR_TOKEN = module.secrets.secret_arns["advisor-token"]
     } : {},

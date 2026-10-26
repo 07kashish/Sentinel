@@ -59,8 +59,8 @@ def test_an_empty_window_reports_nothing_rather_than_zero_latency(app):
     assert body["interruptions"]["per_100_attempts"] is None
 
 
-def test_the_value_report_and_slo_verdicts_refuse_what_the_sample_cannot_support(app):
-    """The once-dormant `value_metrics` and `slo` modules now judge live data."""
+def test_slo_verdicts_refuse_what_the_sample_cannot_support(app):
+    """SLO verdicts must reflect the available live samples."""
     token = _evaluate(app).json()["authorization"]["token"]
     assert _execute(app, token).status_code == 200
     body = app.client.get("/v1/workflow/metrics?days=1", headers=_h(ANALYST)).json()
@@ -68,4 +68,3 @@ def test_the_value_report_and_slo_verdicts_refuse_what_the_sample_cannot_support
     verdicts = {v["name"]: v for v in body["slo"]}
     assert set(verdicts) == {"approval_latency_p95", "unknown_outcome_settled_p95"}
     assert all(v["state"] != "met" for v in verdicts.values()), "an SLO was declared met with no samples behind it"
-    assert isinstance(body["value"], dict) and body["value"]

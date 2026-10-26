@@ -6,7 +6,6 @@
 
 
   var ROUTES = [
-    "/console/demo.json",
     "/v1/dashboard",
     "/v1/incidents",
     "/v1/incidents/",
@@ -16,11 +15,6 @@
     "/v1/agents/",
     "/v1/graph/sessions/",
     "/v1/graph/coverage",
-    "/v1/analysis/mcp-estate",
-    "/v1/analysis/blast-radius/",
-    "/v1/estate/ai-bom",
-    "/v1/estate/exposure",
-    "/v1/estate/adoption",
     "/v1/policy/versions",
     "/v1/policy/versions/",
     "/v1/policy/validate",
@@ -77,11 +71,6 @@
 
   var caps = { decide_approval: null, manage_containment: null, manage_policy: null, read_diagnostics: null };
 
-  /* The read-only key the server may publish for a shared link, and whether
-     this tab is using it. A demo visitor polls less often, because every
-     visitor holds the same key. */
-  var demo = null;
-  var demoMode = false;
 
   var containments = [];
 
@@ -596,7 +585,7 @@
 
 
   function loadOverview() {
-    var attention = { approvals: null, requests: null, unknown: null, revoked: null, unpinned: null, bypass: null };
+    var attention = { approvals: null, requests: null, unknown: null, revoked: null, bypass: null };
 
     var dashboard = panel(el("incident-states"), "/v1/dashboard", function (data) {
       var states = data.incidents_by_state || {};
@@ -687,24 +676,6 @@
       incidentRows(el("incidents"), rows.slice(0, 15));
     });
 
-    var bom = api("/v1/estate/ai-bom").then(
-      function (data) {
-        var servers = (data.components || []).filter(function (row) {
-          return String(row.kind) === "mcp_server";
-        });
-        attention.unpinned = {
-          rows: servers.filter(function (row) {
-            return !row.is_pinned;
-          }),
-          total: servers.length,
-          completeness: data.completeness,
-        };
-      },
-      function () {
-        attention.unpinned = null;
-      }
-    );
-
     // The OTHER approval queue. An agent asking to act is not an incident, so it
     // never appears in /v1/incidents; without this row an analyst watching the
     // overview would not learn that a change is waiting on them.
@@ -725,7 +696,7 @@
       }
     );
 
-    return Promise.all([dashboard, coverage, bypass, agents, incidents, bom, requests, unknown]).then(function () {
+    return Promise.all([dashboard, coverage, bypass, agents, incidents, requests, unknown]).then(function () {
       renderAttention(attention);
     });
   }
@@ -770,10 +741,6 @@
     if (a.revoked) {
       host.appendChild(attentionRow("crit", a.revoked.rows.length, "revoked-but-active agents", "of " + a.revoked.total + " observed agents; " + a.revoked.needs + " need attention (/v1/inventory/agents)", "agents"));
     } else host.appendChild(box("li", "bad", [dot("bad"), text("span", "agents: /v1/inventory/agents could not be read", "fail")]));
-
-    if (a.unpinned) {
-      host.appendChild(attentionRow("warn", a.unpinned.rows.length, "unpinned MCP servers", "of " + a.unpinned.total + " mcp_server components in the AI-BOM (completeness: " + show(a.unpinned.completeness) + ")", "estate"));
-    } else host.appendChild(box("li", "bad", [dot("bad"), text("span", "MCP servers: /v1/estate/ai-bom could not be read", "fail")]));
 
     if (a.bypass) {
       host.appendChild(attentionRow("warn", a.bypass.length, "possible bypass signals", "enrolled agents with no observed events inside the idle window (/v1/protect/bypass-signals)", "governance"));
@@ -945,7 +912,7 @@
       reasonInput.disabled = true;
       approve.disabled = true;
       reject.disabled = true;
-      reasonInput.placeholder = demoMode ? "read-only demo: decisions are disabled" : "this token's role cannot decide";
+      reasonInput.placeholder = "this token's role cannot decide";
     }
     card.appendChild(box("div", "row", [reasonInput, approve, reject]));
     card.appendChild(resultHost);
@@ -1471,85 +1438,6 @@
 
 
 
-  function loadEstate() {
-    var report = panel(el("estate-findings"), "/v1/analysis/mcp-estate", function (data) {
-      var summary = el("estate-summary");
-      clear(summary);
-      var findings = Array.isArray(data.findings) ? data.findings : [];
-      var byKind = {};
-      findings.forEach(function (f) {
-        byKind[f.kind] = (byKind[f.kind] || 0) + 1;
-      });
-      summary.appendChild(pill("enrolled servers", data.enrolled_count, "muted"));
-      summary.appendChild(pill("observed servers", data.observed_count, "muted"));
-      summary.appendChild(pill("tool collisions", byKind.cross_server_tool_collision || 0, byKind.cross_server_tool_collision ? "bad" : "ok"));
-      summary.appendChild(pill("credential sprawl", byKind.credential_sprawl || 0, byKind.credential_sprawl ? "warn" : "ok"));
-      summary.appendChild(pill("blocked still used", byKind.blocked_server_still_used || 0, byKind.blocked_server_still_used ? "crit" : "ok"));
-      summary.appendChild(pill("shadow servers", byKind.shadow_mcp_server || 0, "unknown"));
-      summary.appendChild(pill("unused enrolments", byKind.unused_enrolment || 0, "unknown"));
-      el("estate-limits").textContent = show(data.observed_source) + " " + show(data.limits);
-
-      var list = el("estate-findings");
-      clear(list);
-      findings.forEach(function (f) {
-        list.appendChild(
-          box("li", wordKind(f.severity) || "warn", [
-            text("span", show(f.kind), "tag " + (severityClassFor(f.severity))),
-            text("span", show(f.detail)),
-            text("span", (f.subjects || []).join(", "), "mono hint"),
-          ])
-        );
-      });
-      if (!findings.length) list.appendChild(text("li", "no collision or credential-sprawl finding over " + show(data.enrolled_count) + " enrolled servers; shadow and unused findings cannot be produced by this build (see limits)", "empty"));
-    });
-
-    var servers = panel(el("estate-servers"), "/v1/estate/ai-bom", function (data) {
-      var rows = (data.components || []).filter(function (row) {
-        var kind = String(row.kind);
-        return kind === "mcp_server" || kind === "tool";
-      });
-      var host = el("estate-servers");
-      clear(host);
-      var unpinned = rows.filter(function (row) {
-        return !row.is_pinned;
-      }).length;
-      host.appendChild(
-        box("div", "pills", [
-          pill("servers and tools in AI-BOM", rows.length, "muted"),
-          pill("unpinned", unpinned, unpinned ? "warn" : "ok"),
-          pill("completeness " + show(data.completeness), null, data.completeness === "complete" ? "ok" : "warn"),
-        ])
-      );
-      var drift = (data.findings || []).filter(function (f) {
-        return rows.some(function (row) {
-          return row.identifier === f.component;
-        });
-      });
-      var tableHost = box("div");
-      host.appendChild(tableHost);
-      table(
-        tableHost,
-        [
-          { label: "kind", key: "kind" },
-          { label: "identifier", key: "identifier", className: "mono" },
-          { label: "provenance", key: "provenance" },
-          { label: "pinned", render: function (row) { return row.is_pinned ? pill("pinned", null, "ok") : pill("UNPINNED", null, "warn"); } },
-          { label: "version / digest", render: function (row) { return [row.version, shortDigest(row.digest)].filter(Boolean).join(" "); }, className: "mono" },
-          { label: "used by", render: function (row) { return (row.used_by || []).join(", "); } },
-        ],
-        rows
-      );
-      if (drift.length) {
-        host.appendChild(text("h3", "drift and provenance findings"));
-        var list = box("ul", "rows");
-        drift.forEach(function (f) {
-          list.appendChild(box("li", "warn", [text("span", show(f.kind), "tag"), text("span", show(f.component), "mono"), text("span", show(f.detail), "hint")]));
-        });
-        host.appendChild(list);
-      }
-    });
-    return Promise.all([report, servers]);
-  }
 
   function severityClassFor(word) {
     return "sev-" + String(word || "moderate").toLowerCase();
@@ -2051,11 +1939,9 @@
     var profileHost = box("div");
     var edgesHost = box("div");
     var baselineHost = box("div");
-    var radiusHost = box("div");
     body.appendChild(section("Profile", [profileHost]));
     body.appendChild(section("Observed edges", [edgesHost]));
     body.appendChild(section("Behaviour baseline", [text("p", "established=false means too little history, not normal behaviour.", "hint"), baselineHost]));
-    body.appendChild(section("Blast radius", [text("p", "Sensitivity is declared, never inferred: read coverage before score. Declarations are posted, not put in a query string.", "hint"), blastRadiusForm(agentId, radiusHost), radiusHost]));
 
     api("/v1/inventory/agents/" + encodeURIComponent(agentId)).then(
       function (data) {
@@ -2109,69 +1995,7 @@
     );
   }
 
-  function blastRadiusForm(agentId, resultHost) {
-    var declarations = document.createElement("textarea");
-    declarations.rows = 4;
-    declarations.placeholder = "one declaration per line: asset, sensitivity (public|internal|confidential|restricted|unknown)[, production]\ndb://customers, restricted, production";
-    var declaredBy = document.createElement("input");
-    declaredBy.type = "text";
-    declaredBy.placeholder = "declared by (required when declaring)";
-    var run = text("button", "Compute blast radius", "primary small");
-    run.type = "button";
-    run.addEventListener("click", function () {
-      var lines = declarations.value.split("\n").map(function (line) { return line.trim(); }).filter(Boolean);
-      var who = declaredBy.value.trim();
-      if (lines.length && !who) {
-        toast("warn", "declared_by is required when supplying declarations");
-        declaredBy.focus();
-        return;
-      }
-      var body = {
-        declarations: lines.map(function (line) {
-          var parts = line.split(",").map(function (p) { return p.trim(); });
-          return { asset: parts[0], sensitivity: (parts[1] || "unknown").toLowerCase(), declared_by: who, production: /^(prod|production|true|yes)$/i.test(parts[2] || "") };
-        }),
-      };
-      loadBlastRadius(agentId, body, resultHost);
-    });
-    return box("div", "form", [declarations, declaredBy, run]);
-  }
 
-  function loadBlastRadius(agentId, body, host) {
-    clear(host);
-    host.appendChild(text("p", "computing…", "hint"));
-    return post("/v1/analysis/blast-radius/" + encodeURIComponent(agentId), body).then(
-      function (data) {
-        clear(host);
-        var coverage = num(data.coverage);
-        host.appendChild(
-          box("div", "row", [
-            stat(show(data.score), "score", coverage === 0 ? "warn" : severityKind(data.score)),
-            stat(Math.round(coverage * 100) + "%", "coverage of reachable assets classified", coverage === 0 ? "warn" : coverage < 1 ? "warn" : "ok"),
-            stat(num(data.reachable_count), "reachable"),
-            stat((data.unclassified || []).length, "unclassified", (data.unclassified || []).length ? "warn" : "ok"),
-          ])
-        );
-        if (coverage === 0) host.appendChild(text("p", "coverage 0: nobody has classified this estate here. The score is not evidence of safety.", "gate"));
-        var list = box("ul", "rows");
-        (data.critical_paths || []).forEach(function (path) {
-          list.appendChild(box("li", path.production ? "crit" : "bad", [text("span", path.asset, "mono"), pill(show(path.sensitivity), null, "bad"), path.production ? pill("production", null, "crit") : null, text("span", "via " + ((path.via || []).join(" → ") || "direct"), "hint")]));
-        });
-        (data.unclassified || []).forEach(function (asset) {
-          list.appendChild(box("li", "warn", [text("span", asset, "mono"), pill("undeclared", null, "warn")]));
-        });
-        (data.rejected_declarations || []).forEach(function (r) {
-          list.appendChild(box("li", "bad", [text("span", r.asset, "mono"), pill("declaration rejected", null, "bad"), text("span", r.reason, "hint")]));
-        });
-        if (!list.firstChild) list.appendChild(text("li", "nothing reachable from recorded grants", "empty"));
-        host.appendChild(list);
-        host.appendChild(text("p", show(data.declaration_source) + " " + show(data.limits), "hint"));
-      },
-      function (err) {
-        failed(host, reasonFor(err), err.status);
-      }
-    );
-  }
 
 
   function loadReach(event) {
@@ -2203,82 +2027,6 @@
 
 
 
-  function loadSupplyChain() {
-    var bom = panel(el("bom"), "/v1/estate/ai-bom", function (data) {
-      var verdict = el("bom-verdict");
-      clear(verdict);
-      var word = show(data.completeness);
-      var line = text("p", "completeness: " + word);
-      line.setAttribute("data-verdict", word);
-      verdict.appendChild(line);
-      if (word === "unusable") verdict.appendChild(text("p", "This document knows nothing about the estate. It is NOT a report that the estate is clean.", "gate"));
-      var census = data.provenance_census || {};
-      var host = el("bom");
-      clear(host);
-      host.appendChild(pill("components", data.component_count, "muted"));
-      host.appendChild(pill("attested", census.attested, "ok"));
-      host.appendChild(pill("observed", census.observed, "muted"));
-      host.appendChild(pill("declared", census.declared, "warn"));
-      host.appendChild(pill("findings", (data.findings || []).length, (data.findings || []).length ? "warn" : "ok"));
-      host.appendChild(pill("sources consulted", (data.sources || []).length, "muted"));
-      table(
-        el("bom-components"),
-        [
-          { label: "kind", key: "kind" },
-          { label: "identifier", key: "identifier", className: "mono" },
-          { label: "provenance", key: "provenance" },
-          { label: "pinned", render: function (row) { return row.is_pinned ? pill("pinned", null, "ok") : pill("UNPINNED", null, "warn"); } },
-          { label: "sources", render: function (row) { return (row.sources || []).join(", "); } },
-        ],
-        Array.isArray(data.components) ? data.components : []
-      );
-      var findings = el("bom-findings");
-      clear(findings);
-      (data.findings || []).forEach(function (row) {
-        findings.appendChild(box("li", "warn", [text("span", show(row.kind), "tag"), text("span", show(row.component), "mono"), text("span", show(row.detail), "hint")]));
-      });
-      if (!findings.firstChild) findings.appendChild(text("li", "no findings over " + show(data.component_count) + " components (completeness: " + word + ")", "empty"));
-    });
-
-    var exposure = panel(el("exposure"), "/v1/estate/exposure", function (data) {
-      var coverage = data.coverage || {};
-      var host = el("exposure");
-      clear(host);
-      host.appendChild(
-        box("div", "pills", [
-          pill("nodes", data.node_count, "muted"),
-          pill("edges", data.edge_count, "muted"),
-          pill(coverage.is_partial ? "coverage PARTIAL" : "coverage complete", null, coverage.is_partial ? "warn" : "ok"),
-          pill("unscanned scopes", (coverage.unscanned || []).length, (coverage.unscanned || []).length ? "warn" : "ok"),
-        ])
-      );
-      (coverage.unscanned || []).forEach(function (u) {
-        host.appendChild(text("p", show(u.scope) + ": " + show(u.reason), "hint"));
-      });
-      var byKind = {};
-      (data.edges || []).forEach(function (e) {
-        byKind[e.target_kind] = (byKind[e.target_kind] || 0) + 1;
-      });
-      var pills = box("div", "pills");
-      Object.keys(byKind).sort().forEach(function (k) {
-        pills.appendChild(pill("edges → " + k, byKind[k], "muted"));
-      });
-      host.appendChild(pills);
-    });
-
-    var adoption = panel(el("adoption"), "/v1/estate/adoption", function (data) {
-      var counts = data.counts || {};
-      kv(el("adoption"), [
-        ["stage", pill(show(data.stage), null, "ok")],
-        ["evidence", data.evidence],
-        ["blocking next stage", data.blocking_next_stage],
-        ["engagement rate", data.engagement_rate == null ? "not quoted: " + show(data.rate_refusal_reason) : data.engagement_rate],
-        ["agents / events / incidents", show(counts.agents_observed) + " / " + show(counts.events_ingested) + " / " + show(counts.incidents_raised)],
-        ["not measured by this build", (data.counts_not_measured_by_this_build || []).join(" · ")],
-      ]);
-    });
-    return Promise.all([bom, exposure, adoption]);
-  }
 
   function loadGovernance() {
     renderLimits();
@@ -2355,9 +2103,6 @@
     binding: function () {
       return loadBinding();
     },
-    estate: function () {
-      return loadEstate();
-    },
     containment: function () {
       renderContainments();
       return Promise.resolve();
@@ -2370,9 +2115,6 @@
     },
     agents: function () {
       return loadAgents();
-    },
-    supply: function () {
-      return loadSupplyChain();
     },
     governance: function () {
       return loadGovernance();
@@ -2454,34 +2196,23 @@
     if (!document.hidden) tick();
   });
 
-  function pollSeconds() {
-    return demoMode && demo ? Math.max(15, Number(demo.poll_seconds) || 30) : 5;
-  }
 
   function enterConsole() {
     document.body.className = "";
     var badge = el("session-badge");
     badge.hidden = false;
-    badge.textContent = demoMode ? "Demo \u00b7 read-only \u00b7 tenant " + demo.tenant : "Signed in";
+    badge.textContent = "Signed in";
     el("signout").hidden = false;
-    var note = el("demo-banner");
-    note.hidden = !demoMode;
-    note.textContent = demoMode
-      ? "You are viewing a read-only demonstration of tenant \u201c" + demo.tenant + "\u201d with sample data. Approving, containing and changing policy are disabled for this key."
-      : "";
-    /* The capability pills diagnose an operator's token. A demo visitor's
-       key is read-only by construction and the banner says so. */
-    el("caps").hidden = demoMode;
     signatures = {};
     Object.keys(caps).forEach(function (cap) {
-      caps[cap] = demoMode ? false : null;
+      caps[cap] = null;
     });
     renderCaps();
     applyGates();
     showView(currentView);
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(tick, pollSeconds() * 1000);
-    toast("ok", "refreshing the active view every " + pollSeconds() + "s while this tab is visible");
+    pollTimer = setInterval(tick, 5000);
+    toast("ok", "refreshing the active view every 5s while this tab is visible");
   }
 
   function signinError(message) {
@@ -2492,9 +2223,9 @@
 
   function signIn() {
     signinError("");
-    if (!demoMode && !privateTransportAllowed()) {
+    if (!privateTransportAllowed()) {
       tokenInput.value = "";
-      signinError("Private sign-in requires HTTPS. Use the public demo or ask for the secure URL.");
+      signinError("Private sign-in requires HTTPS. Ask for the secure URL.");
       return;
     }
     if (!tokenInput.value.trim()) {
@@ -2506,7 +2237,6 @@
       function (res) {
         el("connect").disabled = false;
         if (res.status === 401) {
-          demoMode = false;
           signinError("That token was not recognised.");
           return;
         }
@@ -2532,13 +2262,6 @@
 
   el("signin-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    demoMode = false;
-    signIn();
-  });
-  el("demo-enter").addEventListener("click", function () {
-    if (!demo) return;
-    demoMode = true;
-    tokenInput.value = demo.token;
     signIn();
   });
   el("signout").addEventListener("click", function () {
@@ -2547,20 +2270,6 @@
     tokenInput.value = "";
     window.location.reload();
   });
-
-  fetch("/console/demo.json", { headers: { Accept: "application/json" } })
-    .then(function (res) {
-      return res.ok ? res.json() : null;
-    })
-    .then(
-      function (body) {
-        if (body && body.enabled === true && typeof body.token === "string" && body.token) {
-          demo = body;
-          el("demo-entry").hidden = false;
-        }
-      },
-      function () {}
-    );
 
   setStatus("DISCONNECTED");
   if (!privateTransportAllowed()) {

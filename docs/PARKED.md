@@ -28,6 +28,11 @@ the scan checks every other tracked or unignored product file.
 <!-- removed-settings:start -->
 ```json
 [
+  "SENTINEL_CONSOLE_DEMO_TOKEN",
+  "SENTINEL_DEMO_",
+  "SENTINEL_DEMO_ADMIN_KEY",
+  "SENTINEL_DEMO_ANALYST_KEY",
+  "SENTINEL_DEMO_INGEST_KEY",
   "SENTINEL_DETONATION_IMAGE",
   "SENTINEL_DETONATION_TRACING",
   "SENTINEL_DISCOVERY_",
@@ -161,3 +166,25 @@ Tests recover from `tests_arch/`; exact retired paths and case deltas are in the
 - `sentinel/infrastructure/platforms/identity_agents.py` and `sentinel/infrastructure/platforms/discovery_support.py`: shared paging and credential-handling patterns.
 
 These archived modules are reference material. Phase 5 implements cursor-based audit-log connectors; it does not reinstate the old discovery contract.
+
+## Estate analysis and shared console demo
+
+Purpose: AI bill of materials, adoption/value reports, exposure and blast-radius scoring, MCP estate analytics and pre-seeded shared demonstrations. Removed 19 whole files (6,394 physical lines) plus their console panels and wiring.
+Removed routes: `/v1/analysis/mcp-estate`, `/v1/analysis/blast-radius/{agent_id}`, `/v1/estate/ai-bom`, `/v1/estate/ai-bom/cyclonedx`, `/v1/estate/adoption`, `/v1/estate/exposure`, `/console/demo.json`. No dedicated tables. The workflow-metrics route retains counted activity and SLOs; only its commercial value report is retired.
+Removed settings: `SENTINEL_CONSOLE_DEMO_TOKEN`, `SENTINEL_DEMO_INGEST_KEY`, `SENTINEL_DEMO_ANALYST_KEY`, `SENTINEL_DEMO_ADMIN_KEY`, the `SENTINEL_DEMO_` family and their `_FILE` forms.
+Restore signal: a paying customer needs a named inventory analysis with verifiable source coverage, or a maintained isolated demonstration tenant with an explicit owner.
+
+Recovery paths at `archive/pre-cleanup`:
+
+- `scripts/seed_console_demo.py`
+- `sentinel/domain/adoption.py`
+- `sentinel/domain/ai_bom.py`
+- `sentinel/domain/blast_radius.py`
+- `sentinel/domain/exposure_graph.py`
+- `sentinel/domain/mcp_estate.py`
+- `sentinel/domain/value_metrics.py`
+- `sentinel/interface/analysis_routes.py`
+- `sentinel/interface/console_demo.py`
+- `sentinel/interface/estate_routes.py`
+
+Feature tests recover from `tests_arch/`; exact paths and case deltas are recorded in the cleanup inventory and evidence. Core workflow, SLO, transport and authorization assertions are retained.

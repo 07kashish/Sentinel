@@ -50,10 +50,7 @@ __all__ = [
     "evaluate_all",
 ]
 
-#: Below this, a ratio or a percentile describes the samples rather than the
-#: system. Same threshold and same reasoning as `value_metrics.MINIMUM_SAMPLES`
-#: -- and deliberately the same number, because two honesty floors that
-#: disagree invite picking whichever one a result needs.
+#: Below this, a ratio or percentile describes the samples rather than the system.
 MINIMUM_SAMPLES = 5
 
 #: How much of a target's window a run must cover before an availability
@@ -212,7 +209,7 @@ class SloVerdict:
 def _percentile(values: Sequence[float], percentile: int) -> float:
     """Nearest-rank percentile. No interpolation.
 
-    Same choice as `value_metrics.percentile`: an interpolated percentile
+    An interpolated percentile
     reports a latency no request actually experienced, and the whole point of
     a p95 is that some real request was that slow.
     """

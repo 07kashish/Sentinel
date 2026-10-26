@@ -61,8 +61,6 @@ from sentinel.interface.principals import (
 from sentinel.interface.extra_routes import register_extra_routes
 from sentinel.interface.mcp_proxy_routes import register_mcp_proxy_routes
 from sentinel.interface.a2a_proxy_routes import register_a2a_proxy_routes
-from sentinel.interface.analysis_routes import register_analysis_routes
-from sentinel.interface.estate_routes import register_estate_routes
 from sentinel.interface.transparency_routes import (
     register_transparency_routes,
 )
@@ -88,7 +86,6 @@ from sentinel.interface.http_models import (
     McpCallPayload,
     ProtectPayload,
 )
-from sentinel.interface.console_demo import console_demo_key, register_console_demo
 from sentinel.interface.throttle import ThrottlePolicy, install_throttle
 
 __all__ = ["Principal", "create_app"]
@@ -130,9 +127,6 @@ def create_app(container: Container) -> FastAPI:
             return settings.api_keys[digest].tenant_id
         return tenant_for_jwt(container, token)
 
-    # Validated here, at app creation: a demo key with any role but viewer
-    # refuses to start the service rather than be published.
-    demo_key = console_demo_key(settings)
 
     # Registered BEFORE the header middleware so it runs after it in Starlette's
     # reverse order -- which means a 429 still carries the full security header set.
@@ -151,7 +145,6 @@ def create_app(container: Container) -> FastAPI:
         # how credentials are configured.
         tenant_of=lambda digest, token: _tenant_of_credential(digest, token),
         logger=container.logger,
-        shared_digests=frozenset({demo_key.digest}) if demo_key is not None else frozenset(),
     )
 
     @app.middleware("http")
@@ -745,12 +738,10 @@ def create_app(container: Container) -> FastAPI:
     # Read-only analysis over stored state. Registered unconditionally:
     # it needs no credential and no new store, and a capability with no
     # HTTP surface is one an operator does not have.
-    register_analysis_routes(app, container, require=require)
     # The AI-BOM, exposure graph and reachability surfaces. Registered for
     # the same reason as the line above: five domain modules were written,
     # tested and committed with ZERO references from anywhere else in the
     # system. Library code, not product.
-    register_estate_routes(app, container, require=require)
     # The transparency log's root and proofs. Read-only: appending is a
     # consequence of recording an execution, and a POST here would let
     # anyone holding the ingest credential write history.
@@ -769,7 +760,6 @@ def create_app(container: Container) -> FastAPI:
         authenticate=authenticate,
         require=require,
     )
-    register_console_demo(app, demo_key)
     register_app_routes(app, container, require=require)
 
     return app

@@ -45,7 +45,6 @@
 !scripts/run_release_gates.py
 !scripts/run_workflow_loadtest.py
 !scripts/scan_release_for_secrets.py
-!scripts/seed_console_demo.py
 !scripts/smoke_clean_install.py
 !scripts/smoke_sdks.py
 !scripts/try_sentinel.py
@@ -101,13 +100,10 @@
 !sentinel/domain/__init__.py
 !sentinel/domain/a2a.py
 !sentinel/domain/action_semantics.py
-!sentinel/domain/adoption.py
-!sentinel/domain/ai_bom.py
 !sentinel/domain/assets.py
 !sentinel/domain/attestation.py
 !sentinel/domain/authorization.py
 !sentinel/domain/baseline.py
-!sentinel/domain/blast_radius.py
 !sentinel/domain/bounded.py
 !sentinel/domain/change_summary.py
 !sentinel/domain/containment.py
@@ -122,12 +118,10 @@
 !sentinel/domain/execution.py
 !sentinel/domain/execution_binding.py
 !sentinel/domain/execution_graph.py
-!sentinel/domain/exposure_graph.py
 !sentinel/domain/incident.py
 !sentinel/domain/inventory.py
 !sentinel/domain/keys.py
 !sentinel/domain/mcp.py
-!sentinel/domain/mcp_estate.py
 !sentinel/domain/modes.py
 !sentinel/domain/operations.py
 !sentinel/domain/passport.py
@@ -143,7 +137,6 @@
 !sentinel/domain/stream_guard.py
 !sentinel/domain/tenant_integrations.py
 !sentinel/domain/transparency.py
-!sentinel/domain/value_metrics.py
 !sentinel/infrastructure/__init__.py
 !sentinel/infrastructure/a2a_registry.py
 !sentinel/infrastructure/a2a_wire.py
@@ -228,7 +221,6 @@
 !sentinel/interface/__init__.py
 !sentinel/interface/a2a_proxy_routes.py
 !sentinel/interface/a2a_routes.py
-!sentinel/interface/analysis_routes.py
 !sentinel/interface/app_routes.py
 !sentinel/interface/asgi.py
 !sentinel/interface/authorizations.py
@@ -237,9 +229,7 @@
 !sentinel/interface/console/app.css
 !sentinel/interface/console/app.js
 !sentinel/interface/console/index.html
-!sentinel/interface/console_demo.py
 !sentinel/interface/delegation_verification.py
-!sentinel/interface/estate_routes.py
 !sentinel/interface/evidence_cli.py
 !sentinel/interface/extra_routes.py
 !sentinel/interface/health_routes.py

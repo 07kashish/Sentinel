@@ -132,7 +132,6 @@ def install_throttle(
     audit: Any,
     tenant_of: Any,
     logger: Any,
-    shared_digests: frozenset[str] = frozenset(),
 ) -> None:
     """Attach the throttle to `app`. Registered before the security headers.
 
@@ -173,13 +172,7 @@ def install_throttle(
                 )
 
         if tenant is not None:
-            # A credential PUBLISHED on purpose (the console's read-only demo
-            # key) is held by everyone at once. One bucket for all of them
-            # would let a single visitor exhaust it for the rest, so its
-            # bucket is per address as well.
             bucket = f"{tenant}:{presented[:12]}"
-            if presented in shared_digests:
-                bucket += ":" + _client_address(request, policy.trusted_proxy_hops)
             decision = limiter.check(tenant_id=bucket, klass="credential")
             if not decision.allowed:
                 return _refused(

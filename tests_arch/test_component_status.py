@@ -19,7 +19,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 #: On the request or maintenance path of the running service.
 LIVE = {"slo": "judges the workflow targets in GET /v1/workflow/metrics",
-        "value_metrics": "value report in GET /v1/workflow/metrics",
         "stream_guard": "interface/mcp_streaming.py: every MCP notification relayed to a client is offered to RelayGuard first"}
 
 #: Used by operator or assurance scripts, never by the running service.

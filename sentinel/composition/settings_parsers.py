@@ -695,10 +695,6 @@ class WorkflowSettings:
     #: JSON, which production accepts only when stated explicitly.
     evidence_keys: Mapping[str, str] = dc_field(default_factory=dict, repr=False)
     evidence_active_key: str = ""
-    #: A VIEWER API key the console may publish on its sign-in page, so a
-    #: link can be shared with people who hold no credential. Empty (default)
-    #: publishes nothing. The app refuses to start if it names any other role.
-    console_demo_token: str = dc_field(default="", repr=False)
 
 
 def workflow_settings(source: Mapping[str, str]) -> WorkflowSettings:
@@ -737,5 +733,4 @@ def workflow_settings(source: Mapping[str, str]) -> WorkflowSettings:
         approval_separation_of_duties=flag(source, "SENTINEL_APPROVAL_SEPARATION_OF_DUTIES", default=True),
         reconcile_max_attempts=positive_int(source, "SENTINEL_RECONCILE_MAX_ATTEMPTS", default=5),
         mcp_proxy_streaming=flag(source, "SENTINEL_MCP_PROXY_STREAMING", default=False),
-        console_demo_token=source.get("SENTINEL_CONSOLE_DEMO_TOKEN", "").strip(),
     )

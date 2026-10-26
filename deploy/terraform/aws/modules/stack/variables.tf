@@ -305,14 +305,3 @@ variable "root_publish_tenants" {
     error_message = "tenant ids: lowercase letters, digits and hyphens."
   }
 }
-
-variable "console_demo_enabled" {
-  description = <<-EOT
-    Publish a VIEWER key on the console's sign-in page so its link can be
-    shared with people who hold no credential. Anyone with the link holds
-    that key; the service refuses to start if it names any other role.
-    False everywhere except an environment built for demonstration.
-  EOT
-  type        = bool
-  default     = false
-}

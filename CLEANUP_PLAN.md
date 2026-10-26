@@ -2484,3 +2484,17 @@ are the group gate, with original MCP/native assertions left unchanged.
 - Verified touched cases, with corrected reruns superseding earlier failures: 322 passed, 1 skipped, zero remaining failures/errors. Reports: targeted.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 70. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### P3-011 — analysis boundary (before removal)
+
+Park the plan's analysis modules, their routes, estate/supply-chain/blast-radius console panels, shared demo publication and seeder, their deployment inputs and feature-only tests. The preflight found that the remaining test_policy_diff_and_blast_radius.py contains eleven blast-radius tests and unused policy helpers, but no policy-diff tests; remove that feature-only file as well. Retain the two core tests already preserved in test_pilot_onboarding.py, all native-remediation BlastRadius types/tests, and the separate policy-diff implementation and coverage wherever retained.
+
+Keep /v1/workflow/metrics and its counted execution, approval, interruption, adoption and reconciliation data, plus domain.slo and every SLO assertion. Remove only its commercial value_metrics enrichment and the sole value assertion; remove the now-unused evidence export used only to count that report. Keep the trial launcher and advisor options, removing only seeding/demo options. Keep transport-safe operator sign-in, credential throttling, capability gates, all core console panels and their tests. Remove the demo-specific Terraform input and secret map entries without applying infrastructure changes. No tables are dropped in this group.
+
+### Phase 3 group complete: analysis
+
+- Removed 19 whole files (6,394 lines); changed-path and numstat records: baseline/phase3/analysis/result.json.
+- Collection: 3532 cases; 259 removed IDs and 2 added IDs since the preceding collection (baseline/phase3/analysis/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 162 passed, 6 skipped, zero remaining failures/errors. Reports: targeted.xml, security.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 70. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

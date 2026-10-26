@@ -66,13 +66,7 @@ PUBLIC_BY_DESIGN: dict[tuple[str, str], str] = {
         "in this list because the generator reads decorators, and that "
         "difference is worth a reader's attention rather than an inference."
     ),
-    ("GET", "/console/demo.json"): (
-        "The console's published read-only demonstration key. It exists only "
-        "when the operator set SENTINEL_CONSOLE_DEMO_TOKEN, the service refuses "
-        "to boot unless that key carries the viewer role and nothing more, and "
-        "the throttle keys the shared credential per caller address. Publishing "
-        "a viewer key IS the feature; it must be reachable before sign-in."
-    ),
+
 }
 
 

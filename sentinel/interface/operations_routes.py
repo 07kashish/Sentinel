@@ -22,7 +22,6 @@ from pydantic import BaseModel, Field
 from sentinel.application.bypass_detection import detect_possible_bypasses
 from sentinel.domain.authorization import Capability
 from sentinel.domain.slo import SloKind, SloTarget, evaluate_slo
-from sentinel.domain.value_metrics import measure as measure_value
 from sentinel.domain.operations import OperationState
 from sentinel.infrastructure.persistence.audit import Outcome
 
@@ -42,20 +41,9 @@ WORKFLOW_SLOS = (
 )
 
 
-def judged(summary: dict, *, days: int, committed: int) -> dict:
-    """Add the value report and SLO verdicts to a counted summary.
-
-    Both come from domain modules that refuse to produce a number the sample
-    does not support: `value_metrics` reports UNMEASURABLE rather than a vanity
-    figure, and `slo` reports UNVERIFIED rather than MET on four samples.
-    """
+def judged(summary: dict) -> dict:
+    """Add SLO verdicts, refusing to declare success without enough samples."""
     samples = summary.pop("_samples")
-    executions = summary["executions"]
-    summary["value"] = measure_value(
-        window_days=days, executions_total=executions["attempted"],
-        executions_bound=executions["attempted"], substitutions_refused=executions["refused"],
-        approval_wait_seconds=samples["approval_seconds"], evidence_verified=committed,
-    ).as_dict()
     series = {"approval_latency_p95": samples["approval_seconds"],
               "unknown_outcome_settled_p95": samples["reconcile_seconds"]}
     summary["slo"] = [
@@ -233,7 +221,7 @@ def register_operations_routes(app: FastAPI, container: Any, *, require: Any) ->
 
         since = (container.clock.now().value - timedelta(days=days)).isoformat()
         summary = container.workflow_metrics.summary(str(principal.tenant), since=since)
-        return judged(summary, days=days, committed=len(container.evidence.export(str(principal.tenant), limit=500)))
+        return judged(summary)
 
     @app.get("/v1/coverage")
     def coverage(principal=Depends(require(Capability.READ_INCIDENT))):
@@ -268,7 +256,7 @@ def register_operations_routes(app: FastAPI, container: Any, *, require: Any) ->
         return {
             "discovered_agents": {
                 "count": discovered,
-                "source": "GET /v1/inventory/agents (observed traffic + connectors)",
+                "source": "GET /v1/inventory/agents (observed traffic)",
             },
             "observed_traffic": {
                 "events": int(graph.get("total_nodes", 0)),

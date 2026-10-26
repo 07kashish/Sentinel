@@ -492,14 +492,3 @@ def test_removing_the_data_key_from_the_task_is_caught(monkeypatch):
     env = _ecs_environment_as_the_task_sees_it()
     env.pop("SENTINEL_DATA_KEY_K1")
     assert not validate_production_configuration(env).ok
-
-
-def test_no_retained_environment_publishes_a_console_key():
-    """`console_demo_enabled` puts a read-only key on a public sign-in page.
-    That is a decision for a demonstration environment and nothing else: a
-    pilot or production environment that turned it on would hand every visitor
-    a key to a real tenant's records."""
-    for environment in sorted(p.name for p in ENVS.iterdir() if p.is_dir()):
-        source = (ENVS / environment / "main.tf").read_text(encoding="utf-8")
-        enabled = re.search(r"^\s*console_demo_enabled\s*=\s*true\b", source, re.M) is not None
-        assert enabled is False, f"{environment}: console_demo_enabled={enabled}"
