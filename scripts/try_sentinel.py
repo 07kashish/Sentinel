@@ -2,7 +2,6 @@
 """Run Sentinel on your own laptop for a trial: one command, nothing leaves the machine.
 
     python scripts/try_sentinel.py            # start; Ctrl-C stops it
-    python scripts/try_sentinel.py --scan     # also scan this device for AI tools and import the result
     python scripts/try_sentinel.py --demo     # also load the sample story to click through
     python scripts/try_sentinel.py --fresh-requests   # (second terminal) two new waiting requests
 
@@ -10,9 +9,7 @@ What it does, in order:
   1. creates `./.sentinel-trial/` (mode 0700) with a SQLite database and four
      freshly generated keys (viewer, ingest, analyst, admin) for a tenant `trial`;
   2. migrates the schema;
-  3. with --scan: runs the consent-based presence scanner (`sentinel-discover
-     --consent --all`) and imports its report, exactly as the console would;
-  4. serves the API and console on http://127.0.0.1:<port>/console.
+  3. serves the API and console on http://127.0.0.1:<port>/console.
 
 The admin key is printed once so you can sign in; it is also in
 `.sentinel-trial/keys.env`. This is a development posture: one process, SQLite,
@@ -37,7 +34,6 @@ ROLES = ("viewer", "ingest", "analyst", "admin")
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--scan", action="store_true", help="scan this device for AI tools (presence only) and import the report")
     parser.add_argument("--fresh-requests", action="store_true",
                         help="the trial is already running: load a new sample story (two new waiting requests) and exit")
     parser.add_argument("--demo", action="store_true", help="load the sample story: incidents, approved/rejected/pending changes, a containment")
@@ -87,14 +83,6 @@ def main(argv: list[str] | None = None) -> int:
                 break
             except OSError:
                 time.sleep(0.2)
-        if args.scan:
-            report = home / f"device-{secrets.token_hex(4)}.json"
-            subprocess.run([sys.executable, str(ROOT / "sentinel/sdk/discovery.py"), "--consent", "--all",
-                            "--output", str(report), "--html", str(report.with_suffix(".html"))], check=True)
-            request = urllib.request.Request(base + "/v1/pilot/devices", data=report.read_bytes(), method="POST",
-                                             headers={"Authorization": "Bearer " + keys["admin"], "Content-Type": "application/json"})
-            with urllib.request.urlopen(request, timeout=20) as response:
-                print(f"device report imported (HTTP {response.status}); readable copy: {report.with_suffix('.html')}")
         if args.demo:
             seeded = subprocess.run([sys.executable, str(ROOT / "scripts/seed_console_demo.py"), "--base", base],
                                     env=dict(env, SENTINEL_DEMO_INGEST_KEY=keys["ingest"], SENTINEL_DEMO_ANALYST_KEY=keys["analyst"],
@@ -107,11 +95,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nSentinel is running.\n  console : {base}/console\n  sign in : paste the admin key below as the operator token\n"
               f"  admin   : {keys['admin']}\n  all keys: {keys_file}\n  stop    : Ctrl-C\n")
         if args.check:
-            request = urllib.request.Request(base + "/v1/pilot/devices", headers={"Authorization": "Bearer " + keys["viewer"]})
+            request = urllib.request.Request(base + "/v1/dashboard", headers={"Authorization": "Bearer " + keys["viewer"]})
             with urllib.request.urlopen(request, timeout=20) as response:
-                devices = len(json.load(response)["devices"])
-            print("devices visible to the viewer:", devices)
-            return 0 if (devices >= 1 or not args.scan) else 1
+                json.load(response)
+            print("dashboard available to the viewer")
+            return 0
         server.wait()
     except KeyboardInterrupt:
         pass

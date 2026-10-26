@@ -79,7 +79,6 @@ from sentinel.interface.a2a_routes import (
 )
 from sentinel.interface.policy_routes import register_policy_routes
 from sentinel.interface.app_routes import register_app_routes
-from sentinel.interface.pilot_routes import register_pilot_routes
 from sentinel.interface.http_models import (
     SECURITY_HEADERS,
     UNKNOWN_TENANT,
@@ -771,7 +770,6 @@ def create_app(container: Container) -> FastAPI:
         require=require,
     )
     register_console_demo(app, demo_key)
-    register_pilot_routes(app, container, require=require)
     register_app_routes(app, container, require=require)
 
     return app

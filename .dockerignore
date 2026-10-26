@@ -38,7 +38,6 @@
 !scripts/run_dr_postgres_wal_pitr_drill.py
 !scripts/run_dr_sqlite_drill.py
 !scripts/run_dr_test.py
-!scripts/run_endpoint_sensor.py
 !scripts/run_ingest_loadtest.py
 !scripts/run_local_kind_smoke.py
 !scripts/run_mcp_proxy_bench.py
@@ -118,7 +117,6 @@
 !sentinel/domain/delegation_passport.py
 !sentinel/domain/detection_metrics.py
 !sentinel/domain/effective_permissions.py
-!sentinel/domain/endpoint_sensor.py
 !sentinel/domain/errors.py
 !sentinel/domain/event_normaliser.py
 !sentinel/domain/event_normaliser_markers.py
@@ -162,7 +160,6 @@
 !sentinel/infrastructure/delegation_signing.py
 !sentinel/infrastructure/detection.py
 !sentinel/infrastructure/directory.py
-!sentinel/infrastructure/endpoint_scan.py
 !sentinel/infrastructure/enterprise.py
 !sentinel/infrastructure/evidence.py
 !sentinel/infrastructure/execution_graph.py
@@ -205,7 +202,6 @@
 !sentinel/infrastructure/platforms/identity_agents.py
 !sentinel/infrastructure/platforms/kubernetes.py
 !sentinel/infrastructure/platforms/kubernetes_outcome.py
-!sentinel/infrastructure/platforms/local_mcp_configs.py
 !sentinel/infrastructure/platforms/postgres.py
 !sentinel/infrastructure/platforms/remediation.py
 !sentinel/infrastructure/platforms/salesforce_agentforce.py
@@ -271,7 +267,6 @@
 !sentinel/interface/mcp_streaming.py
 !sentinel/interface/operations_routes.py
 !sentinel/interface/passport_cli.py
-!sentinel/interface/pilot_routes.py
 !sentinel/interface/policy_routes.py
 !sentinel/interface/principals.py
 !sentinel/interface/reply_inspection.py
@@ -285,8 +280,6 @@
 !sentinel/sdk/adapters/gemini.py
 !sentinel/sdk/adapters/langchain.py
 !sentinel/sdk/adapters/openai_agents.py
-!sentinel/sdk/discovery.py
-!sentinel/sdk/discovery_app.py
 !sentinel/sdk/interceptor.py
 !sentinel/sdk/local.py
 !sentinel/sdk/mcp_stdio.py

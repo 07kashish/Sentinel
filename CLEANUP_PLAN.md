@@ -2402,3 +2402,52 @@ prior cleanup commits; no user or global Git configuration is changed.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 71. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
 - The three added cases belong to the preceding MCP extraction; detonation adds no architectural cases. The documentation citation failure is corrected without changing the guard.
+
+### Ruling P3-008: endpoint parking and retained migration/MCP seams
+
+The fresh graph and recursive consumers are in baseline/phase3/endpoint. Park
+the local endpoint sensor, companion SDK, desktop discovery app and
+sentinel-discover entrypoint. The pilot route module exclusively serves this
+local device feature, so move its removal from the later analysis group to
+this group, including setup/download/import/list/delete routes and the pilot
+console screen. Preserve the console's shared privateTransportAllowed helper
+and land sign-in on the existing overview screen.
+
+Keep the separate mcp-discover command and all its tests unchanged: it observes
+an explicitly supplied remote MCP server under the existing egress policy and
+never enrolls it. It is not the local sentinel-discover companion being parked.
+Remove local_mcp_configs wiring from discovery_breadth before deleting it;
+the remaining vendor connectors are parked next. Record the now-retired local
+configuration setting and its _FILE variant.
+
+Retain DEVICE_STATEMENTS byte-for-byte in sql/device_discovery.py for historical
+migration 38; remove only SqlDeviceDiscovery and its imports. Remove the device
+retention reader/counts now, with the table drop deferred to the single final
+migration. No existing migration callback or schema DDL is changed.
+
+The mixed pilot test module contains independent advisor credential/HTTPS tests
+and a historical schema-upgrade test: retain those functions and every assertion
+while removing only local scanner/route tests. Keep the generic local trial
+launcher; remove its --scan option and make --check query the retained dashboard.
+Its demo options are handled with the analysis group. If this boundary is wrong,
+enrollment or identity checks could be lost; unchanged MCP/native tests plus
+retention, migration, advisor and console tests cover the retained behavior.
+
+### Ruling P3-009: keep housekeeping until the final table drop
+
+Refinement of P3-008 before editing retention: migration head 39 still creates
+device_discovery, and the retention fitness guard requires every current table
+to have an explicit lifetime policy. Keep its existing housekeeping reader and
+counts until the single final drop migration, then remove them together with
+the live-table view update. Endpoint collection/storage routes and runtime
+store methods are removed now. This avoids an intermediate schema with an
+unmaintained table and preserves migration-history semantics; no new device
+observations can enter through the removed routes.
+
+### Phase 3 group complete: endpoint
+
+- Removed 8 whole files (2,327 lines); changed-path and numstat records: baseline/phase3/endpoint/result.json.
+- Collection: 3901 cases; 62 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/endpoint/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 193 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 71. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

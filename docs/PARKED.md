@@ -29,7 +29,8 @@ the scan checks every other tracked or unignored product file.
 ```json
 [
   "SENTINEL_DETONATION_IMAGE",
-  "SENTINEL_DETONATION_TRACING"
+  "SENTINEL_DETONATION_TRACING",
+  "SENTINEL_DISCOVERY_MCP_CONFIG_PATHS"
 ]
 ```
 <!-- removed-settings:end -->
@@ -55,3 +56,25 @@ Recovery paths at `archive/pre-cleanup`:
 - `sentinel/infrastructure/strace_parse.py`
 
 Test recovery directory: `tests_arch/` at the same archive tag. Exact retired test paths are listed in [the cleanup inventory](../CLEANUP_PLAN.md).
+
+## Local endpoint and device discovery
+
+Purpose: local presence scanning, endpoint inventory and consented device-report import.
+Removed 8 whole files (2,327 physical lines), the sentinel-discover entrypoint, and the pilot console screen.
+Removed routes: GET /v1/pilot/setup, GET /v1/pilot/discovery-script, GET and POST /v1/pilot/devices, DELETE /v1/pilot/devices/{device_id}.
+Removed setting: `SENTINEL_DISCOVERY_MCP_CONFIG_PATHS` and its `_FILE` variant.
+Table scheduled for the single final migration: `device_discovery`. Historical DEVICE_STATEMENTS and maintenance remain until that migration; the runtime store is removed.
+Restore signal: a contracted customer requires consented endpoint-installed-tool inventory and can validate its incomplete, self-reported coverage.
+Remote MCP enrollment/discovery, inventory/observation, identity and execution controls remain supported.
+
+Recovery paths at `archive/pre-cleanup`:
+
+- `scripts/run_endpoint_sensor.py`
+- `sentinel/domain/endpoint_sensor.py`
+- `sentinel/infrastructure/endpoint_scan.py`
+- `sentinel/infrastructure/platforms/local_mcp_configs.py`
+- `sentinel/sdk/discovery.py`
+- `sentinel/sdk/discovery_app.py`
+- `sentinel/interface/pilot_routes.py`
+
+Runtime store recovery: `sentinel/infrastructure/sql/device_discovery.py`. Tests recover from `tests_arch/`; exact retired paths are in [the cleanup inventory](../CLEANUP_PLAN.md).

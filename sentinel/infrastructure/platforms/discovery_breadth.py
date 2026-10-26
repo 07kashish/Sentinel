@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any, Mapping
 
 from sentinel.infrastructure.outbound import HardenedHttpClient
@@ -22,10 +21,6 @@ from sentinel.infrastructure.platforms.gitlab_discovery import (
 from sentinel.infrastructure.platforms.identity_agents import (
     entra_agent_id_connector,
     okta_agents_connector,
-)
-from sentinel.infrastructure.platforms.local_mcp_configs import (
-    LocalMcpConfigPath,
-    local_mcp_config_connector,
 )
 from sentinel.infrastructure.platforms.salesforce_agentforce import (
     salesforce_agentforce_connector,
@@ -56,10 +51,6 @@ BREADTH_CONFIGURATION = (
     (
         "databricks_agents",
         "SENTINEL_DISCOVERY_DATABRICKS_HOST + _TOKEN [+ _WORKSPACE]",
-    ),
-    (
-        "local_mcp_configs",
-        "SENTINEL_DISCOVERY_MCP_CONFIG_PATHS=client=/path,client2=/path",
     ),
     (
         "slack_apps",
@@ -133,14 +124,6 @@ def _copilot_environments(
     return tuple(environments)
 
 
-def _local_mcp_paths(source: Mapping[str, str]) -> tuple[LocalMcpConfigPath, ...]:
-    paths: list[LocalMcpConfigPath] = []
-    for entry in _list(source, "SENTINEL_DISCOVERY_MCP_CONFIG_PATHS"):
-        client, _, path = entry.partition("=")
-        if not (client.strip() and path.strip()):
-            continue
-        paths.append(LocalMcpConfigPath(client=client.strip(), path=Path(path)))
-    return tuple(paths)
 
 
 def _gitlab_projects(source: Mapping[str, str]) -> tuple[GitlabProject, ...]:
@@ -196,11 +179,6 @@ def build_breadth_connectors(
         credentials = _host_credentials(source, prefix=prefix, scope_name=scope_name)
         if credentials is not None:
             connectors[key] = factory(client=client, credentials=credentials)
-
-    mcp_paths = _local_mcp_paths(source)
-    if mcp_paths:
-        connector = local_mcp_config_connector(paths=mcp_paths)
-        connectors[connector.name] = connector
 
     slack = _text(source, "SENTINEL_DISCOVERY_SLACK_TOKEN")
     if slack:

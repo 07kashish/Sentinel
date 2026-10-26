@@ -1,6 +1,6 @@
 # Try Sentinel — a tester's guide
 
-For someone who has never seen the product and wants to know, in an hour, what it does. Four things you can do, from least to most effort. Every command here was run on 2026-10-03 at the commit that added this file.
+For someone who has never seen the product and wants to know, in an hour, what it does. Several things you can do, from least to most effort. Every command here was run on 2026-10-03 at the commit that added this file.
 
 **What Sentinel is.** A control point for AI agents: before an agent's tool call changes something, Sentinel decides *allow / needs a human / block* by deterministic policy, records who approved what, and refuses replays. It also keeps an inventory of the agents and AI tools it is told about. It is a developer preview (see `STATUS.md`); nothing here is a production claim.
 
@@ -16,33 +16,11 @@ Open the shared console. It signs you in with a published **read-only** key; you
 http://sentinel-proof-557842222.ap-south-1.elb.amazonaws.com/console
 ```
 
-What to look at: **Agent requests** (two waiting for a human), **Approved vs executed** (what ran against what was approved; one replay refused), **Execution graph** (three detected chains), **Containment** (one agent paused, with a reason and expiry), **Overview → open incident** (the report, with the advisory note), **Pilot setup** (a real device's AI inventory). The data is a seeded sample tenant. The address is plain HTTP, so the console refuses operator sign-in there by design; that is why step 3 runs on your own machine.
+What to look at: **Agent requests** (two waiting for a human), **Approved vs executed** (what ran against what was approved; one replay refused), **Execution graph** (three detected chains), **Containment** (one agent paused, with a reason and expiry), **Overview → open incident** (the report, with the advisory note). The data is a seeded sample tenant. The address is plain HTTP, so the console refuses operator sign-in there by design; that is why step 3 runs on your own machine.
 
-## 2. Find the AI tools from a terminal
+## 3. Run your own Sentinel (10 minutes)
 
-The scanner is one Python file with no dependencies. Download it from the console (**Pilot setup → Download discovery script**) or use `sentinel/sdk/discovery.py` from a checkout. Requires Python 3.9+ (`python3 --version`).
-
-```bash
-python3 sentinel-discover.py --explain
-```
-
-That prints the complete list of what would be checked. Then, if you agree:
-
-```bash
-python3 sentinel-discover.py --consent --all --output my-device.json --html my-device.html
-```
-
-Open `my-device.html` in a browser. Windows: use `py` instead of `python3`; applications are looked for as per-user install folders under your home and commands in the usual per-user command folders (tested with a synthetic home, not on a real Windows machine).
-
-**What it checks, and only this:** whether a file, folder, application or command *with a known name* exists — for Gemini CLI, Antigravity, Claude, Cursor, Codex, Continue, GitHub Copilot, Windsurf, Zed, Aider, Goose, OpenCode, ChatGPT, Perplexity, Ollama, LM Studio, Jan and GPT4All. Three categories, each needing your consent: configuration (`--config-presence`), applications (`--app-presence`, macOS), commands (`--cli-presence`, macOS and Linux).
-
-**What it never does:** open a file, follow a link, run a command, read a key, record a path, a host name or a user name, or send anything anywhere. The report holds a random device ID, a timestamp, the OS family, what you consented to, and `present / not_found / inaccessible / unsupported / not_consented` per check.
-
-**What it cannot see:** AI used in a browser, cloud-only assistants, renamed or custom installs, anything inside a container or VM. *Present* means installed, not used, and says nothing about whether the tool is governed. `tests_arch/test_pilot_onboarding.py` holds the checks that the scanner opens no content, follows no link and runs nothing.
-
-## 3. Run your own Sentinel and see your device in the dashboard (10 minutes)
-
-Needs a checkout and Python 3.12+. The commands below are for macOS and Linux; on **Windows** (PowerShell) use `py -m venv .venv`, then `.venv\Scripts\pip install -e ".[server]"`, then `.venv\Scripts\python scripts\try_sentinel.py --scan --demo`.
+Needs a checkout and Python 3.12+. The commands below are for macOS and Linux; on **Windows** (PowerShell) use `py -m venv .venv`, then `.venv\Scripts\pip install -e ".[server]"`, then `.venv\Scripts\python scripts\try_sentinel.py --demo`.
 
 ```bash
 python3 -m venv .venv
@@ -53,12 +31,12 @@ python3 -m venv .venv
 ```
 
 ```bash
-.venv/bin/python scripts/try_sentinel.py --scan --demo
+.venv/bin/python scripts/try_sentinel.py --demo
 ```
 
-The last command creates `.sentinel-trial/` with a SQLite database and four fresh keys, migrates, scans this device (the same consented checks as step 2), imports the report, loads a sample story to click through (`--demo`), and serves the console. It prints the address and the **admin key**. Open `http://127.0.0.1:8000/console`, paste the admin key as the *operator token* (that is all "operator token" means: an API key with a role), and open **Pilot setup** to see your device. `Ctrl-C` stops it; delete `.sentinel-trial/` to remove every trace.
+The last command creates `.sentinel-trial/` with a SQLite database and four fresh keys, migrates, loads a sample story to click through (`--demo`), and serves the console. It prints the address and the **admin key**. Open `http://127.0.0.1:8000/console`, paste the admin key as the *operator token* (that is all "operator token" means: an API key with a role), and open **Overview** to see current incidents. `Ctrl-C` stops it; delete `.sentinel-trial/` to remove every trace.
 
-Without `--scan` it only starts the service; you can then import a report by hand under **Pilot setup** (preview → tick consent → import).
+Without `--demo` it starts the service without sample records. Local device discovery is parked; see [PARKED.md](../PARKED.md).
 
 ## 4. Put one agent action behind it (15 minutes)
 

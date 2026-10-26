@@ -119,8 +119,6 @@ PUBLISHED_EXAMPLES = frozenset({b"AKIAIOSFODNN7EXAMPLE", b"AKIAI44QH8DHBEXAMPLE"
 #: entry still matches something, so a stale entry cannot linger.
 TREE_ALLOWLIST: tuple[tuple[str, str, str], ...] = (
     (".gitleaks.toml", "private-key-block", "a comment quoting the header it allowlists"),
-    ("tests_arch/test_endpoint_sensor.py", "anthropic-key", "fake token proving the sensor redacts"),
-    ("tests_arch/test_endpoint_sensor.py", "openai-key", "same fixture, matched by the broader rule"),
     ("tests_arch/test_sdk_remote.py", "openai-key", "sk-test fixture proving the SDK never logs a key"),
     ("tests_arch/test_tenant_integrations.py", "slack-token", "xoxb-1234 fixture for the integration redactor"),
 )

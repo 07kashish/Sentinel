@@ -63,7 +63,6 @@ anthropic = ["anthropic"]
 
 [project.scripts]
 sentinel-mcp-stdio = "sentinel.sdk.mcp_stdio:main"
-sentinel-discover = "sentinel.sdk.discovery:main"
 
 [tool.setuptools.packages.find]
 include = ["sentinel*"]

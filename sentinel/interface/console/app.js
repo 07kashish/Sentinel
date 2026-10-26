@@ -6,10 +6,6 @@
 
 
   var ROUTES = [
-    "/v1/pilot/setup",
-    "/v1/pilot/devices",
-    "/v1/pilot/devices/",
-    "/v1/pilot/discovery-script",
     "/console/demo.json",
     "/v1/dashboard",
     "/v1/incidents",
@@ -75,7 +71,7 @@
   var bannerEl = document.getElementById("banner");
   var lastOk = 0;
   var pollTimer = null;
-  var currentView = "pilot";
+  var currentView = "overview";
   var agentFilter = "";
   var bindingOnlyMismatched = false;
 
@@ -1975,131 +1971,10 @@
 
 
 
-  var pilotSetup = null;
-  var discoveryReport = null;
-
   function privateTransportAllowed() {
     return window.location.protocol === "https:" ||
       ["localhost", "127.0.0.1", "[::1]"].indexOf(window.location.hostname) >= 0;
   }
-
-  function updateImportButton() {
-    el("discovery-import").disabled = demoMode || !pilotSetup || !pilotSetup.can_import ||
-      !discoveryReport || !el("discovery-consent").checked;
-  }
-
-  function loadPilot() {
-    return api("/v1/pilot/setup").then(function (setup) {
-      pilotSetup = setup;
-      kv(el("pilot-status"), [["Organisation", setup.tenant], ["Your role", setup.role],
-        ["Protection mode", setup.protection_mode], ["MCP proxy", setup.mcp_proxy_enabled ? "Enabled; each server still needs enrollment" : "Not enabled"],
-        ["Inventory imports", setup.can_import ? "Permitted" : "Administrator required"]]);
-      clear(el("pilot-limits"));
-      (setup.limits || []).forEach(function (message) { el("pilot-limits").appendChild(text("li", message)); });
-      kv(el("pilot-brain"), [["Policy engine", setup.brain.deterministic_policy],
-        ["Model advisor", setup.brain.advisor_configured ? "Configured; connectivity not checked here" : "Not connected"],
-        ["Authority", "Advisory only; cannot approve or execute"]]);
-      updateImportButton();
-      return api("/v1/pilot/devices");
-    }).then(function (data) {
-      var host = el("pilot-devices");
-      clear(host);
-      if (!data.devices.length) host.appendChild(text("p", "No device reports imported. This says nothing about how many AI tools exist.", "hint"));
-      data.devices.forEach(function (entry) {
-        var report = entry.report;
-        var card = box("section", "");
-        card.appendChild(text("h3", "Device " + report.device_id));
-        card.appendChild(text("p", report.platform + " · scanned " + report.scanned_at + " · received " + entry.received_at));
-        var rows = report.observations.map(function (item) {
-          return {tool: pilotSetup.tools[item.tool] || "Unknown", probe: item.probe, state: item.state, enforcement: "Not established"};
-        });
-        var grid = box("div", "");
-        table(grid, [{label: "Tool", key: "tool"}, {label: "Check", key: "probe"},
-          {label: "Presence", key: "state"}, {label: "Enforcement", key: "enforcement"}], rows);
-        card.appendChild(grid);
-        if (pilotSetup.can_import && !demoMode) {
-          var forget = text("button", "Delete report");
-          forget.type = "button";
-          forget.addEventListener("click", function () {
-            if (!window.confirm("Delete this device's stored inventory report?")) return;
-            del("/v1/pilot/devices/" + encodeURIComponent(report.device_id)).then(loadPilot,
-              function () { toast("warn", "Could not delete the report."); });
-          });
-          card.appendChild(forget);
-        }
-        host.appendChild(card);
-      });
-      if (data.truncated) host.appendChild(text("p", "Showing the 100 most recently received device reports. More reports exist.", "hint"));
-    }).catch(function (err) { failed(el("pilot-status"), reasonFor(err), err.status); });
-  }
-
-  el("discovery-download").addEventListener("click", function () {
-    fetch("/v1/pilot/discovery-script", {headers: authHeaders()}).then(function (res) {
-      if (!res.ok) throw new Error("Download refused");
-      return res.blob();
-    }).then(function (blob) {
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement("a");
-      link.href = url;
-      link.download = "sentinel-discover.py";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    }).catch(function () { toast("warn", "Discovery script could not be downloaded."); });
-  });
-
-  el("discovery-file").addEventListener("change", function () {
-    discoveryReport = null;
-    el("discovery-consent").checked = false;
-    updateImportButton();
-    var file = this.files[0];
-    var preview = el("discovery-preview");
-    clear(preview);
-    if (!file) return;
-    if (file.size > 32768) { preview.appendChild(text("p", "Report exceeds 32 KiB.", "fail")); return; }
-    file.text().then(function (raw) {
-      var report = JSON.parse(raw);
-      var expected = ["consent", "device_id", "observations", "platform", "scanned_at", "schema"];
-      if (!report || JSON.stringify(Object.keys(report).sort()) !== JSON.stringify(expected) ||
-          report.schema !== "sentinel.device-discovery/v2" || !Array.isArray(report.observations) ||
-          report.observations.length > 64 || typeof report.device_id !== "string" ||
-          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(report.device_id) ||
-          ["Darwin", "Linux", "Windows", "Other"].indexOf(report.platform) < 0 ||
-          typeof report.scanned_at !== "string" || report.scanned_at.length > 40 || isNaN(Date.parse(report.scanned_at)) ||
-          !report.consent || JSON.stringify(Object.keys(report.consent).sort()) !== '["app_presence","cli_presence","config_presence"]' ||
-          typeof report.consent.app_presence !== "boolean" || typeof report.consent.config_presence !== "boolean" ||
-          typeof report.consent.cli_presence !== "boolean") throw new Error("Invalid report");
-      report.observations.forEach(function (item) {
-        if (!item || JSON.stringify(Object.keys(item).sort()) !== '["probe","state","tool"]' ||
-            !pilotSetup || !Object.prototype.hasOwnProperty.call(pilotSetup.tools, item.tool) ||
-            typeof item.probe !== "string" || !/^[a-z-]{1,40}$/.test(item.probe) ||
-            ["present", "not_found", "inaccessible", "unsupported", "not_consented"].indexOf(item.state) < 0) throw new Error("Invalid observation");
-      });
-      discoveryReport = report;
-      kv(preview, [["Device", report.device_id], ["Platform", report.platform], ["Scanned", report.scanned_at],
-        ["Configuration checks approved", report.consent.config_presence], ["App checks approved", report.consent.app_presence], ["Command checks approved", report.consent.cli_presence],
-        ["Positive presence checks", report.observations.filter(function (o) { return o.state === "present"; }).length],
-        ["Destination organisation", pilotSetup.tenant], ["Trust", "Self-reported; not enforcement evidence"]]);
-      var details = box("div", "");
-      table(details, [{label: "Tool", key: "tool"}, {label: "Check", key: "probe"}, {label: "State", key: "state"}], report.observations);
-      preview.appendChild(details);
-      updateImportButton();
-    }).catch(function () { discoveryReport = null; preview.appendChild(text("p", "Invalid report. Generate a new report with the discovery script.", "fail")); updateImportButton(); });
-  });
-  el("discovery-consent").addEventListener("change", updateImportButton);
-  el("discovery-import").addEventListener("click", function () {
-    if (this.disabled) return;
-    this.disabled = true;
-    post("/v1/pilot/devices", discoveryReport).then(function () {
-      discoveryReport = null;
-      el("discovery-file").value = "";
-      el("discovery-consent").checked = false;
-      clear(el("discovery-preview"));
-      el("discovery-result").textContent = "Inventory imported. No tools were enrolled or granted access.";
-      return loadPilot();
-    }).catch(function () { el("discovery-result").textContent = "Import failed. Check your role and report; no enforcement was enabled."; updateImportButton(); });
-  });
 
   function loadAgents() {
     return panel(el("agents"), "/v1/inventory/agents", function (data) {
@@ -2465,9 +2340,6 @@
 
 
   var LOADERS = {
-    pilot: function () {
-      return loadPilot();
-    },
     overview: function () {
       return loadOverview();
     },
@@ -2646,7 +2518,7 @@
           signinError(res.status === 403 ? "This credential cannot open the operator console. Ask for a viewer, analyst or admin Sentinel token." : "Sign-in failed. Try again when the service is healthy.");
           return;
         }
-        currentView = demoMode ? "overview" : "pilot";
+        currentView = "overview";
         enterConsole();
         if (res.ok) lastOk = Date.now();
         refreshMonitor();
