@@ -10,8 +10,6 @@ sections were unreachable in production:
   * `GuardedRemediationExecutor` implemented dry run, authorization, audit,
     idempotency and rollback, and the container hardcoded
     `NullRemediationExecutor` beside it.
-  * `SoarDispatcher` had six connectors and injection escaping, and was
-    constructed by nothing, so no incident reached ServiceNow or Slack.
   * `ApprovalRecord.expires_at` had a column, a hydration line and an enforced
     branch in `DecideApprovalHandler` -- and nothing SET it, so every real
     approval had no expiry and the branch could never be taken.
@@ -57,7 +55,6 @@ MUST_BE_REACHABLE = {
     # Phase 4 -- all four were unreachable when first reported complete.
     "decide_response": "sentinel/domain/remediation.py",
     "GuardedRemediationExecutor": "sentinel/infrastructure/remediation.py",
-    "SoarDispatcher": "sentinel/infrastructure/soar.py",
     "ContainmentGuard": "sentinel/infrastructure/containment.py",
     "evaluate_containment": "sentinel/domain/containment.py",
     # Phase 3 -- the graph hook was once placed after an early return, which had

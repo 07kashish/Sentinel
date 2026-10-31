@@ -86,7 +86,6 @@
 !sentinel/composition/container.py
 !sentinel/composition/delegation_wiring.py
 !sentinel/composition/evidence_wiring.py
-!sentinel/composition/notifications.py
 !sentinel/composition/platform_wiring.py
 !sentinel/composition/preflight.py
 !sentinel/composition/proxy_wiring.py
@@ -192,7 +191,6 @@
 !sentinel/infrastructure/siem.py
 !sentinel/infrastructure/siem_routing.py
 !sentinel/infrastructure/siem_transports.py
-!sentinel/infrastructure/soar.py
 !sentinel/infrastructure/sql/__init__.py
 !sentinel/infrastructure/sql/authorization_store.py
 !sentinel/infrastructure/sql/connected_apps.py

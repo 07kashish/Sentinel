@@ -138,7 +138,6 @@ from sentinel.composition.remediation_wiring import build_executor
 from sentinel.infrastructure.containment import ContainmentGuard
 from sentinel.infrastructure.a2a_wire import A2AUpstreamClient
 from sentinel.infrastructure.mcp_wire import McpUpstreamClient
-from sentinel.composition.notifications import subscribers_with_soar
 from sentinel.infrastructure.sql.engine import ConnectionPool, build_engine
 from sentinel.infrastructure.sql.migrate import verify
 from sentinel.infrastructure.sql.read_model import SqlReadModel
@@ -361,11 +360,7 @@ def build_container(
         events = EventBus(
             subscribers=dict(
                 event_subscribers
-                or subscribers_with_soar(
-                    settings,
-                    logger=resolved_logger,
-                    defaults=_default_subscribers(resolved_logger),
-                )
+                or _default_subscribers(resolved_logger)
             ),
             logger=resolved_logger,
         )

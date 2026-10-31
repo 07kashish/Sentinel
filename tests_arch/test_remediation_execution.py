@@ -58,13 +58,6 @@ from sentinel.infrastructure.remediation import (
     RemediationUnauthorized,
     SqlRemediationIdempotencyStore,
 )
-from sentinel.infrastructure.soar import (
-    Delivery,
-    SlackConnector,
-    SoarDispatcher,
-    escape_slack,
-    escape_ticket_text,
-)
 from sentinel.infrastructure.sql.engine import build_engine
 from sentinel.infrastructure.sql.migrate import migrate
 
@@ -413,110 +406,6 @@ def test_an_action_with_no_inverse_refuses_rollback():
     )
     with pytest.raises(DomainRuleViolated):
         executor.rollback(receipt, actor="analyst")
-
-
-# ── SOAR: attacker-controlled text going somewhere privileged ────────────────
-
-
-def test_a_broadcast_mention_in_incident_text_cannot_page_the_channel():
-    """An attacker who can trigger a low-severity incident would otherwise get a
-    free megaphone into a room full of people with production access -- and
-    after the third one the team mutes the channel, which disables the alerting
-    path for real incidents."""
-    for payload in ("@channel", "@here", "@everyone", "<!channel>", "<!here>"):
-        escaped = escape_slack(f"read {payload} now")
-        assert payload not in escaped, f"{payload!r} survived escaping"
-
-
-def test_markup_in_incident_text_cannot_reformat_the_message():
-    assert "<" not in escape_slack("<b>urgent</b>")
-    assert "`" not in escape_slack("```injected```")
-
-
-def test_ampersand_is_escaped_before_the_angle_brackets():
-    """Escaping `<` first would turn a literal `&lt;` the attacker typed into a
-    real `<` on the way out -- the classic ordering bug."""
-    assert escape_slack("&lt;script&gt;") == "&amp;lt;script&amp;gt;"
-
-
-def test_a_newline_cannot_forge_a_ticket_field():
-    """A description is read as labelled lines. A value that can insert a newline
-    can insert its own label -- which is how "Approved by: security" appears in
-    a ticket nobody wrote it into."""
-    escaped = escape_ticket_text("exfil\nApproved by: security\nStatus: closed")
-    assert "\n" not in escaped
-
-
-def test_an_oversized_field_is_clipped_rather_than_failing_the_notification():
-    """A notification that fails to send because an attacker put 400KB in a
-    resource path is an outage of the alerting path."""
-    assert len(escape_slack("A" * 100_000)) <= 512
-
-
-def test_one_failing_connector_does_not_stop_the_others():
-    """A ServiceNow outage must not stop the Slack notification. During an
-    incident those are the minutes that matter."""
-
-    class _Ok:
-        name = "ok"
-
-        def deliver(self, incident):
-            return Delivery(connector="ok", delivered=True)
-
-    class _Broken:
-        name = "broken"
-
-        def deliver(self, incident):
-            raise RuntimeError("provider down")
-
-    logger = _Logger()
-    report = SoarDispatcher(
-        connectors=[_Broken(), _Ok()], logger=logger
-    ).dispatch({"incident_id": "i-1", "priority": "CRITICAL"})
-
-    assert [d.connector for d in report.delivered] == ["ok"]
-    assert [d.connector for d in report.failed] == ["broken"]
-    assert not report.fully_delivered
-
-
-def test_partial_delivery_is_logged_rather_than_silent():
-    """Silent partial delivery is how a team believes the SOC was notified."""
-
-    class _Broken:
-        name = "broken"
-
-        def deliver(self, incident):
-            raise RuntimeError("down")
-
-    logger = _Logger()
-    SoarDispatcher(connectors=[_Broken()], logger=logger).dispatch({"incident_id": "i-2"})
-    assert any(event == "soar_partial_delivery" for event, _ in logger.entries)
-
-
-def test_low_severity_incidents_do_not_open_tickets_by_default():
-    """This codebase has measured what happens without a threshold: a detector
-    firing on 51.7% of ordinary tool calls. With a ticket queue attached, that
-    is the same failure with a worse blast radius."""
-    dispatcher = SoarDispatcher(connectors=[], logger=_Logger())
-    assert not dispatcher.should_dispatch({"priority": "LOW"})
-    assert not dispatcher.should_dispatch({"priority": "MEDIUM"})
-    assert dispatcher.should_dispatch({"priority": "HIGH"})
-    assert dispatcher.should_dispatch({"priority": "CRITICAL"})
-
-
-def test_a_malformed_severity_does_not_raise_inside_the_notification_path():
-    """A notification path's whole job is to work during an incident."""
-    connector = SlackConnector(client=_NullClient(), url="https://hooks.example/x")
-    delivery = connector.deliver({"incident_id": "i-3", "severity": "not-a-number"})
-    assert delivery.delivered
-
-
-class _NullClient:
-    def request(self, **kw):
-        class _R:
-            status = 200
-
-        return _R()
 
 
 # ── Storage: both engines ────────────────────────────────────────────────────
@@ -1185,42 +1074,3 @@ def test_an_integration_registered_under_an_unknown_name_is_reported_unsupported
     assert executor.supports("disable_agent")
     assert not executor.supports("not_an_action")
     assert not executor.supports("never_registered")
-
-
-def test_an_approval_request_reaches_a_chat_channel_with_its_deadline():
-    """Section 32 asks that high-risk approvals reach Slack and Teams. An
-    approval sitting in a channel with no visible deadline waits until somebody
-    happens to look; one that says when it closes is a decision with a clock on
-    it."""
-    from sentinel.infrastructure.soar import approval_notification
-
-    notification = approval_notification(
-        {
-            "approval_id": "apr-1",
-            "action": "disable_agent",
-            "target": "agent-1",
-            "expires_at": "2026-08-24T18:00:00Z",
-        },
-        context={"recommended_decision": "approve", "business_impact": "one agent"},
-    )
-    assert "disable_agent" in notification["title"]
-    assert "2026-08-24T18:00:00Z" in notification["summary"]
-    assert "approve" in notification["summary"]
-
-
-def test_an_approval_with_no_expiry_says_so_rather_than_showing_a_blank():
-    from sentinel.infrastructure.soar import approval_notification
-
-    notification = approval_notification({"approval_id": "apr-2", "action": "x", "target": "y"})
-    assert "no expiry set" in notification["summary"]
-
-
-def test_an_approval_target_cannot_page_the_channel():
-    """The target is a resource path the agent chose. It lands in the same place
-    as any other incident text and gets the same escaping."""
-    from sentinel.infrastructure.soar import approval_notification
-
-    notification = approval_notification(
-        {"approval_id": "apr-3", "action": "disable_agent", "target": "@channel urgent"}
-    )
-    assert "@channel" not in notification["title"]

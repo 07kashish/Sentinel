@@ -2311,6 +2311,20 @@ removal or inventory rewrite has been performed while the answer is pending.
 
 ## Phase 3 decisions
 
+### User decision — 2026-10-31: remediation webhooks are Act
+
+Keep SENTINEL_REMEDIATION_ENDPOINTS, its settings parser, composition/remediation_wiring.py,
+HttpRemediationIntegration, build_remediation_executor and explicit-endpoint-wins
+precedence. test_native_remediation.py remains unchanged and must pass.
+Park only SOAR playbooks, composition/notifications.py and automation triggering
+actions outside approval plus execution binding. Keep unclear shared pieces and
+list them here before acting. Remediation webhooks are deliberately retained as
+Act execution adapters, not SOAR notification/automation.
+Push existing commits through c3c8eb1 before SOAR edits. Then complete SOAR, orgs,
+A2A, one appended drop migration, full Phase 3 verification, records and push;
+STOP before Phase 4. Update CHANGES.md after each completed group.
+
+
 The user approved the following decisions on 2026-10-25, before implementation.
 
 1. Retire the A2A-specific policy inputs. The extracted MCP reply inspector must
@@ -2497,4 +2511,25 @@ Keep /v1/workflow/metrics and its counted execution, approval, interruption, ado
 - Collection: 3532 cases; 259 removed IDs and 2 added IDs since the preceding collection (baseline/phase3/analysis/test-delta.json).
 - Verified touched cases, with corrected reruns superseding earlier failures: 162 passed, 6 skipped, zero remaining failures/errors. Reports: targeted.xml, security.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 70. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### P3-012: SOAR removal boundary
+
+The fresh graph/consumer scan is in baseline/phase3/soar. Remove notification
+composition and the six-connector SOAR dispatcher; no separate production
+playbook module exists in the current tree. Keep deterministic planning,
+tenant integration metadata (including its legacy SOAR enum), domain and
+infrastructure remediation, native integrations, and all supplied event
+subscribers: these are shared core contracts, not automatic SOAR execution.
+Default incident subscribers become the existing audit/log subscribers directly.
+Keep remediation endpoint configuration and explicit HTTP endpoint precedence.
+Remove only SOAR sections from mixed tests; native remediation stays byte-identical.
+No SOAR tables or routes are dropped. The three SOAR settings are retired.
+
+### Phase 3 group complete: soar
+
+- Removed 2 whole files (680 lines); changed-path and numstat records: baseline/phase3/soar/result.json.
+- Collection: 3512 cases; 20 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/soar/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 123 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 67. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.

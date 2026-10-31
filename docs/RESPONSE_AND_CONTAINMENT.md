@@ -276,48 +276,9 @@ business impact, recommended decision.
 
 ## 6. SOAR / ITSM (§37)
 
-ServiceNow, Jira, PagerDuty, Slack, Teams and a generic webhook.
-
-### The content is attacker-controlled and going somewhere privileged
-
-This is what makes SOAR different from an ordinary integration. Incident fields
-carry text the attacker chose — the tool name they invoked, the resource path,
-the destination, and since Phase 3 the prompt text itself. That text is about to
-render in a Slack channel full of people with production access, and in a ticket
-an on-call engineer will read at 3am and act on.
-
-Two concrete failures, both closed:
-
-- **`@channel` in a resource path pages the entire security team.** An attacker
-  who can trigger a low-severity incident gets a free megaphone — and after the
-  third one the team mutes the channel, which disables the alerting path for
-  real incidents. Denial of service by alert fatigue.
-  (`test_a_broadcast_mention_in_incident_text_cannot_page_the_channel`)
-- **A ticket description containing `Approved by: security — safe to close`** is
-  a social-engineering payload delivered by the security tool itself, with the
-  credibility of having arrived through it. Newlines are collapsed so a value
-  cannot insert its own label.
-  (`test_a_newline_cannot_forge_a_ticket_field`)
-
-Escaping order follows the same rule as `escape_cef_header`: ampersand before
-angle brackets, or a literal `&lt;` the attacker typed becomes a real `<` on the
-way out. (`test_ampersand_is_escaped_before_the_angle_brackets`)
-
-### Delivery
-
-Fan-out is independent and failures are collected, never raised. A ServiceNow
-outage must not stop the Slack notification — during an incident those are the
-minutes that matter. Partial delivery is logged, because silent partial delivery
-is how a team believes the SOC was notified.
-
-- `test_one_failing_connector_does_not_stop_the_others`
-- `test_partial_delivery_is_logged_rather_than_silent`
-
-`should_dispatch` defaults to HIGH and above. This codebase has measured what
-happens without a threshold — a detector firing on 51.7% of ordinary tool calls
-— and the same failure with a ticket queue attached is worse.
-
----
+SOAR incident fan-out is parked; see [PARKED.md](PARKED.md).
+Approved remediation webhooks remain part of Act, with the guarded executor
+and explicit endpoint precedence retained.
 
 ## 7. Known limits
 
@@ -353,35 +314,6 @@ Stated rather than left to be discovered:
   requires the action to be in the catalogue, so a misconfigured registration
   surfaces as a clear refusal rather than as a retryable "provider trouble" that
   would be retried for ever.
-- **SOAR dispatch is synchronous, inside the request path.** The subscriber
-  fires after the transaction commits — so a slow ServiceNow cannot hold a
-  database transaction open — but it still runs before the ingest response is
-  returned. A slow or hanging connector therefore adds latency to the request
-  that triggered it.
-
-  Two things bound the damage today: only HIGH and CRITICAL incidents dispatch
-  at all, and a failing connector is caught rather than raised. Neither helps
-  during an incident storm, which is precisely when ingest latency matters most
-  and when the most notifications fire.
-
-  **The correct fix is the outbox that already exists** — `outbox` is described
-  in this codebase as "a durable intent to perform an externally-visible
-  effect", which is exactly what a SOAR notification is, and it already has a
-  separate dispatcher with leased delivery and retry. Routing SOAR through it
-  would remove the latency coupling and make delivery survive a process
-  restart, which the current design does not. This is a known gap, not a
-  finished design.
-
-- **SOAR connectors are configured per DEPLOYMENT, not per tenant.** One set of
-  endpoints receives every tenant's incidents in that deployment. For a
-  single-tenant install (customer VPC, on-premises) that is exactly right. For a
-  multi-tenant SaaS install it means incident summaries for all tenants reach
-  the operator's own SOC tooling — which is the vendor's SOC, and defensible,
-  but it is not the same thing as each customer's incidents reaching their own
-  Slack. Per-tenant connector configuration is not implemented. A deployment
-  that needs it should run one deployment per tenant, which the residency work
-  in `ENTERPRISE_CONTROLS.md` already assumes is possible.
-
 - **Containment cache TTL bounds propagation across replicas.** The process that
   handled the operator's request invalidates immediately; others wait out
   `CACHE_TTL_SECONDS`.
@@ -398,7 +330,6 @@ passing tests, and was called by nothing:
 |---|---|
 | `decide_response` | 12 passing tests, **zero callers** |
 | `GuardedRemediationExecutor` | 20 passing tests, container hardcoded `NullRemediationExecutor` |
-| `SoarDispatcher` | 6 connectors + escaping, **constructed by nothing** |
 | `ApprovalRecord.expires_at` | column + hydration + enforced branch, **nothing set it** |
 
 The last one is the clearest: the expiry had a database column, a hydration
@@ -443,17 +374,13 @@ names no agent emits.
 ```bash
 SENTINEL_REMEDIATION_ENDPOINTS="disable_agent=https://...,notify_owner=https://..."
 SENTINEL_REMEDIATION_DRY_RUN=false
-SENTINEL_SOAR_ENDPOINTS="slack=https://...,servicenow=https://..."
-SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY="..."
-SENTINEL_SOAR_MIN_PRIORITY=HIGH
 ```
 
-Both endpoint maps are validated **at startup**, not at first use: an action or
-connector name that is not recognised, or any non-HTTPS URL, refuses to boot. A
+Remediation endpoints are validated **at startup**, not at first use: an action name that is not recognised, or any non-HTTPS URL, refuses to boot. A
 typo would otherwise register an integration under a name no proposal can
 produce, and the deployment would look configured while being unable to
 remediate anything — discovered during an incident. A plaintext endpoint that
 can disable production agents can be forged by anyone on the path.
 
 Unset means unconfigured, which is an explicit supported state: `Null` refuses
-every action with a reason, and no SOAR dispatcher is built at all.
+every action with a reason, with no automatic incident fan-out.

@@ -1,5 +1,28 @@
 # Sentinel change record
 
+Updated: 2026-10-31 (Asia/Calcutta).
+
+## Current checkpoint
+
+Phases 0–2 are complete. Phase 3 is in progress in WSL `/home/lenovo2/sentinel`.
+Completed before this continuation: MCP extraction (`0c57dd3`), detonation
+(`b7292c1`), endpoint (`d75b1bd`), discovery (`c15703c`) and analysis (`c3c8eb1`).
+All five commits were pushed; GitHub branch SHA verified as
+`c3c8eb16db1da676c2d085803e1e67765c5619c3` before SOAR edits.
+Recorded targeted checks: endpoint 193 passed; discovery 322 passed, 1 skipped;
+analysis 162 passed, 6 skipped. Full Phase 3 verification remains pending.
+
+The October 31 decision retains remediation webhooks as Act, including
+SENTINEL_REMEDIATION_ENDPOINTS, its parser, remediation_wiring.py,
+HttpRemediationIntegration, build_remediation_executor and explicit endpoint
+precedence. Native remediation tests remain unchanged. Park only SOAR fan-out,
+playbooks and automation outside approval plus execution binding; keep unclear
+shared helpers and record them in CLEANUP_PLAN.md. See docs/PARKED.md for why.
+Continue SOAR, orgs, A2A, one appended table-drop migration, full verification,
+records and push; STOP before Phase 4. Completed groups are appended below.
+
+The older phase sections below are historical results, not current stop points.
+
 ## Phase 2 results — 2026-10-24
 
 **Ready for Phase 3: yes; Phase 3 has not started.** Cleanup on
@@ -310,3 +333,11 @@ A2A-originated events cease when A2A is parked. MCP reply events retain the exis
 agent_delegation eventType. All pre-existing MCP proxy tests remain unchanged.
 The removed-setting scan exempts exactly CHANGES.md, CLEANUP_PLAN.md and
 docs/PARKED.md; full environment-variable names remain in removal records.
+
+### Phase 3 group complete: soar
+
+- Removed 2 whole files (680 lines); changed-path and numstat records: baseline/phase3/soar/result.json.
+- Collection: 3512 cases; 20 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/soar/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 123 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 67. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

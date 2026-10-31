@@ -27,7 +27,6 @@ __all__ = [
     "platform_adapters",
     "siem_transports",
     "remediation_endpoints",
-    "soar_endpoints",
 ]
 
 
@@ -96,38 +95,6 @@ def metrics_token_from(source: Mapping[str, str]) -> str:
         ) from exc
 
 
-def soar_endpoints(source: Mapping[str, str]) -> Mapping[str, str]:
-    """Parse `connector=url,connector=url`.
-
-    Connector names are validated here for the same reason remediation
-    actions are: a typo would otherwise configure a connector nothing
-    constructs, and the deployment would believe its SOC was wired up.
-    """
-    from sentinel.composition.settings import ConfigurationError
-
-    raw = (source.get("SENTINEL_SOAR_ENDPOINTS") or "").strip()
-    if not raw:
-        return MappingProxyType({})
-    known = {"servicenow", "jira", "pagerduty", "slack", "teams", "webhook"}
-    parsed: dict[str, str] = {}
-    for entry in raw.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        name, _, url = entry.partition("=")
-        name, url = name.strip().lower(), url.strip()
-        if name not in known:
-            raise ConfigurationError(
-                f"SENTINEL_SOAR_ENDPOINTS names unknown connector {name!r}; "
-                f"known connectors are {', '.join(sorted(known))}"
-            )
-        if not url.lower().startswith("https://"):
-            raise ConfigurationError(
-                f"SOAR endpoint for {name!r} must be https; incident details "
-                f"are sensitive and a plaintext webhook leaks them"
-            )
-        parsed[name] = url
-    return MappingProxyType(parsed)
 
 
 def remediation_endpoints(source: Mapping[str, str]) -> Mapping[str, str]:

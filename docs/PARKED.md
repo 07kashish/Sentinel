@@ -82,7 +82,10 @@ the scan checks every other tracked or unignored product file.
   "SENTINEL_DISCOVERY_SLACK_WORKSPACE",
   "SENTINEL_DISCOVERY_VERTEX_LOCATION",
   "SENTINEL_DISCOVERY_VERTEX_PROJECT",
-  "SENTINEL_DISCOVERY_VERTEX_TOKEN"
+  "SENTINEL_DISCOVERY_VERTEX_TOKEN",
+  "SENTINEL_SOAR_ENDPOINTS",
+  "SENTINEL_SOAR_MIN_PRIORITY",
+  "SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY"
 ]
 ```
 <!-- removed-settings:end -->
@@ -188,3 +191,23 @@ Recovery paths at `archive/pre-cleanup`:
 - `sentinel/interface/estate_routes.py`
 
 Feature tests recover from `tests_arch/`; exact paths and case deltas are recorded in the cleanup inventory and evidence. Core workflow, SLO, transport and authorization assertions are retained.
+
+## Retained Act remediation webhooks — 2026-10-31
+
+Remediation webhooks were deliberately retained as Act execution adapters:
+SENTINEL_REMEDIATION_ENDPOINTS, its parser, remediation wiring,
+HttpRemediationIntegration, build_remediation_executor and explicit endpoint
+precedence remain. They support the approved, execution-bound remediation path;
+SOAR playbooks and notification automation are the parking target. Native
+remediation tests remain unchanged. Unclear shared executor helpers are kept.
+
+## SOAR incident fan-out
+
+Removed 2 source files (680 lines): `sentinel/composition/notifications.py`
+and `sentinel/infrastructure/soar.py`, recoverable from `archive/pre-cleanup`.
+Retired settings: SENTINEL_SOAR_ENDPOINTS, SENTINEL_SOAR_MIN_PRIORITY, SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY (including their _FILE variants).
+Routes/tables: none. SOAR-only cases were removed from mixed tests; retained
+executor, containment, approval and outbound failure assertions remain.
+Return signal: a customer needs approved, tenant-scoped incident delivery with
+durable retry and bounded latency. Remediation webhooks are retained Act adapters,
+not this parked incident-triggered fan-out.

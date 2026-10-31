@@ -157,8 +157,7 @@ degrades safely, not merely that nothing crashes:
 - a timing-out remediation endpoint produces **no receipt**, stays classified
   transient so the claim is released and the action is retryable, and is audited
   as failed
-- a hanging SOAR connector cannot fail the incident that produced it, and one
-  hanging connector cannot stop the others
+
 - an unreadable containment store does not halt the estate, and says so loudly
 
 ### The keyword audit was wrong, and here is the real one

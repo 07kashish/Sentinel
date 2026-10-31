@@ -49,7 +49,6 @@ from sentinel.infrastructure.remediation import (
     HttpRemediationIntegration,
     InMemoryIdempotencyStore,
 )
-from sentinel.infrastructure.soar import SoarDispatcher
 
 AT = "2026-08-24T12:00:00Z"
 
@@ -170,70 +169,6 @@ def test_a_timed_out_action_can_be_retried_under_the_same_key():
                 actor="analyst",
             )
     assert client.calls == 2, "the retry did not reach the integration"
-
-
-# ── A hanging SOAR connector ─────────────────────────────────────────────────
-
-
-def test_a_hanging_soar_connector_does_not_raise_into_the_caller():
-    """The incident is the durable artifact; the notification is a best-effort
-    copy. An incident REJECTED because Slack was down is a broken system."""
-
-    class _Hanging:
-        name = "slack"
-
-        def deliver(self, incident):
-            raise OutboundUnavailable("hooks.slack.test timed out")
-
-    logger = _Logger()
-    report = SoarDispatcher(connectors=[_Hanging()], logger=logger).dispatch(
-        {"incident_id": "i-1", "priority": "CRITICAL"}
-    )
-    assert not report.fully_delivered
-    assert [d.connector for d in report.failed] == ["slack"]
-
-
-def test_one_hanging_connector_does_not_stop_the_rest():
-    """During an incident these are the minutes that matter."""
-
-    class _Hanging:
-        name = "servicenow"
-
-        def deliver(self, incident):
-            raise OutboundUnavailable("timed out")
-
-    class _Working:
-        name = "slack"
-
-        def deliver(self, incident):
-            from sentinel.infrastructure.soar import Delivery
-
-            return Delivery(connector="slack", delivered=True)
-
-    report = SoarDispatcher(
-        connectors=[_Hanging(), _Working()], logger=_Logger()
-    ).dispatch({"incident_id": "i-2", "priority": "CRITICAL"})
-    assert [d.connector for d in report.delivered] == ["slack"]
-
-
-def test_a_total_soar_outage_is_reported_rather_than_silent():
-    """Silent total failure is how a team believes the SOC was notified."""
-
-    class _Hanging:
-        def __init__(self, name):
-            self.name = name
-
-        def deliver(self, incident):
-            raise OutboundUnavailable("timed out")
-
-    logger = _Logger()
-    report = SoarDispatcher(
-        connectors=[_Hanging("slack"), _Hanging("jira")], logger=logger
-    ).dispatch({"incident_id": "i-3", "priority": "CRITICAL"})
-
-    assert len(report.failed) == 2
-    assert report.delivered == ()
-    assert any(event == "soar_partial_delivery" for event, _ in logger.entries)
 
 
 # ── The containment store failing ────────────────────────────────────────────

@@ -209,14 +209,6 @@ class Settings:
     #: When true, remediation is evaluated and audited but never performed. For
     #: rehearsing a response plan against production without touching it.
     remediation_dry_run: bool
-    #: connector name -> endpoint URL. Empty means no SOAR fan-out, which is a
-    #: supported state: incidents still land in the console and the API.
-    soar_endpoints: Mapping[str, str]
-    soar_pagerduty_routing_key: str
-    #: Only incidents at or above this priority are dispatched. HIGH by default:
-    #: this codebase measured a detector firing on 51.7% of ordinary tool calls,
-    #: and the same rate with a ticket queue attached is worse.
-    soar_min_priority: str
     #: When True (default), the MCP gateway refuses a call to a server that has
     #: no pinned tool definitions. Set False only for an OBSERVE-mode rollout,
     #: while an operator is still discovering which servers exist -- it relaxes
@@ -507,13 +499,6 @@ class Settings:
             protect_kill_switch=_parsers.flag(source, "SENTINEL_PROTECT_KILL_SWITCH", default=False),
             remediation_endpoints=_parsers.remediation_endpoints(source),
             remediation_dry_run=_parsers.flag(source, "SENTINEL_REMEDIATION_DRY_RUN", default=False),
-            soar_endpoints=_parsers.soar_endpoints(source),
-            soar_pagerduty_routing_key=(
-                source.get("SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY") or ""
-            ).strip(),
-            soar_min_priority=(
-                source.get("SENTINEL_SOAR_MIN_PRIORITY") or "HIGH"
-            ).strip().upper(),
             mcp_require_pin=_parsers.flag(source, "SENTINEL_MCP_REQUIRE_PIN", default=True),
             mcp_proxy_enabled=_parsers.flag(source, "SENTINEL_MCP_PROXY_ENABLED", default=False),
             a2a_proxy_enabled=_parsers.flag(source, "SENTINEL_A2A_PROXY_ENABLED", default=False),
