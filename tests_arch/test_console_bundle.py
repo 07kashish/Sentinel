@@ -340,15 +340,6 @@ def test_the_reach_panel_explains_itself_before_anything_is_typed():
     assert "enter a pattern to search the reach graph" in HTML
 
 
-def test_a_404_on_the_organisation_is_shown_as_a_state_not_a_failure():
-    """No organisation created for this tenant is an answer, not an outage.
-
-    Rendering "could not load: 404" told an operator the console was broken
-    when the truth was "there is nothing here yet". The distinction has to be
-    explicit so a REAL failure still reads as one.
-    """
-    assert 'err.message === "404"' in JS
-    assert "no organisation has been created for this tenant" in JS
 
 
 def test_every_view_panel_carries_the_class_the_switcher_selects():
@@ -633,14 +624,13 @@ def test_operator_console_live_routes_and_actions(engine_config, tmp_path: Path)
             "/v1/transparency/root",
             "/v1/transparency/published",
             "/v1/protect/bypass-signals",
-            "/v1/orgs/current/members",
             "/health/diagnostics",
             "/v1/executions/binding/coverage",
             "/v1/executions/binding/diff",
         ):
             status, payload, _headers = _request(base, "GET", path, ADMIN_KEY)
             assert status in {200, 404, 503}, (path, status, payload)
-            assert status != 404 or path == "/v1/orgs/current"
+            assert status != 404
 
         root_status, root_payload, _headers = _request(
             base, "GET", "/v1/transparency/root", ADMIN_KEY

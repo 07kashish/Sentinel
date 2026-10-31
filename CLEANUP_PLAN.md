@@ -2533,3 +2533,25 @@ No SOAR tables or routes are dropped. The three SOAR settings are retired.
 - Verified touched cases, with corrected reruns superseding earlier failures: 123 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 67. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### P3-013: org/SCIM boundary and shared directory
+
+Remove all eight org/SCIM routes, their models, organization store and console
+org/member panels; retain diagnostics, tools, containment, tenant provisioning,
+inventory and identity. Keep test_tenant_directory.py unchanged: it verifies
+configured/OIDC tenant provisioning and maintenance coverage, not SCIM.
+Keep SqlDirectory/container.directory temporarily because A2A known-principal
+inspection still reads it; remove it in the next A2A group once that reader is
+gone. Tables and historical DDL remain until the one final migration.
+Remove only the three SCIM/org cases from test_gap_closures.py. Retain every
+tool execution, budget, CSP and transport assertion. Native/MCP tests unchanged.
+
+Org verification found one remaining organization-only empty-state test; removed it with its parked panel. Other 86 targeted checks passed; console rerun required.
+
+### Phase 3 group complete: orgs
+
+- Removed 1 whole files (127 lines); changed-path and numstat records: baseline/phase3/orgs/result.json.
+- Collection: 3508 cases; 4 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/orgs/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 86 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml, console-fixed.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 67. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

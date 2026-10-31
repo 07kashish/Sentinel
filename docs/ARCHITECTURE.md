@@ -70,8 +70,9 @@ No fabricated AUC. No production-ready claim.
 ### Risks accepted at Phase 0
 
 2. Protect enforced=true is a configured contractual gate, not packet interception.
-3. Human passkey identity schema may still be WIP; directory SCIM Users + org
-   HTTP APIs are behind `MANAGE_USERS` (agent enrolment remains CLI-only).
+3. Human passkeys, SCIM and organization management are parked. Tenant
+   provisioning and OIDC identity remain.
+
 4. Not a SOC replacement; not multi-region HA.
 
 <a id="architecture_baseline--strong-components-to-preserve"></a>

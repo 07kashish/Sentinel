@@ -1,4 +1,4 @@
-"""Extra HTTP routes: tools proxy, SCIM, org, console static.
+"""Extra HTTP routes: tools proxy, containment and console static.
 
 Registered from create_app so http.py stays the composition point for the ASGI
 app while these routes live in a dedicated module.
@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field, model_validator
 
@@ -19,8 +19,6 @@ from sentinel.domain.sequences import detect_sequences
 from sentinel.application.tool_proxy import ToolProxyRefused
 from sentinel.composition.container import Container
 from sentinel.domain.authorization import Capability
-from sentinel.infrastructure.directory import DirectoryError
-from sentinel.infrastructure.orgs import OrgError
 from sentinel.application.commands.manage_containment import (
     ActivateContainment,
     LiftContainment,
@@ -70,16 +68,8 @@ class ToolExecutePayload(BaseModel):
         return refuse_trust_level(data)
 
 
-class ScimUserPayload(BaseModel):
-    userName: str = Field(min_length=3, max_length=320)
-    displayName: str = Field(default="", max_length=256)
-    externalId: str = Field(default="", max_length=256)
-    active: bool = True
-    roles: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class OrgCreatePayload(BaseModel):
-    name: str = Field(min_length=1, max_length=256)
 
 
 def register_extra_routes(
@@ -89,7 +79,7 @@ def register_extra_routes(
     authenticate,
     require,
 ) -> None:
-    """Attach tool proxy, SCIM, org, and console routes."""
+    """Attach tool proxy, containment and console routes."""
 
     @app.post("/v1/tools/execute")
     def tools_execute(
@@ -396,119 +386,15 @@ def register_extra_routes(
         }
 
 
-    # ── SCIM 2.0 (Users) ────────────────────────────────────────────────────
 
-    @app.get("/scim/v2/Users")
-    def scim_list_users(
-        startIndex: int = 1,
-        count: int = 50,
-        principal=Depends(require(Capability.MANAGE_USERS)),
-    ):
-        users = container.directory.list_users(
-            principal.tenant, start=startIndex, count=count
-        )
-        resources = [u.as_scim() for u in users]
-        return {
-            "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-            "totalResults": len(resources),
-            "startIndex": startIndex,
-            "itemsPerPage": len(resources),
-            "Resources": resources,
-        }
 
-    @app.post("/scim/v2/Users", status_code=status.HTTP_201_CREATED)
-    def scim_create_user(
-        payload: ScimUserPayload,
-        principal=Depends(require(Capability.MANAGE_USERS)),
-    ):
-        role = "viewer"
-        if payload.roles:
-            role = str(payload.roles[0].get("value") or "viewer")
-        try:
-            user = container.directory.create(
-                principal.tenant,
-                email=payload.userName,
-                display_name=payload.displayName,
-                role=role,
-                external_id=payload.externalId,
-                at=container.clock.now(),
-                active=payload.active,
-            )
-        except DirectoryError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-        return user.as_scim()
 
-    @app.get("/scim/v2/Users/{user_id}")
-    def scim_get_user(
-        user_id: str, principal=Depends(require(Capability.MANAGE_USERS))
-    ):
-        user = container.directory.get(principal.tenant, user_id)
-        if user is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="user not found")
-        return user.as_scim()
 
-    @app.put("/scim/v2/Users/{user_id}")
-    def scim_replace_user(
-        user_id: str,
-        payload: ScimUserPayload,
-        principal=Depends(require(Capability.MANAGE_USERS)),
-    ):
-        role = None
-        if payload.roles:
-            role = str(payload.roles[0].get("value") or "viewer")
-        try:
-            user = container.directory.replace(
-                principal.tenant,
-                user_id,
-                email=payload.userName,
-                display_name=payload.displayName,
-                role=role,
-                active=payload.active,
-                at=container.clock.now(),
-            )
-        except DirectoryError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-        return user.as_scim()
 
-    @app.delete("/scim/v2/Users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-    def scim_deactivate_user(
-        user_id: str, principal=Depends(require(Capability.MANAGE_USERS))
-    ):
-        try:
-            container.directory.deactivate(
-                principal.tenant, user_id, at=container.clock.now()
-            )
-        except DirectoryError as exc:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    # ── Organization APIs ───────────────────────────────────────────────────
 
-    @app.post("/v1/orgs", status_code=status.HTTP_201_CREATED)
-    def create_org(
-        payload: OrgCreatePayload,
-        principal=Depends(require(Capability.MANAGE_USERS)),
-    ):
-        try:
-            org = container.orgs.create_org(
-                principal.tenant, name=payload.name, at=container.clock.now()
-            )
-        except OrgError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-        return org.as_dict()
 
-    @app.get("/v1/orgs/current")
-    def get_org(principal=Depends(require(Capability.MANAGE_USERS))):
-        org = container.orgs.get_org(principal.tenant)
-        if org is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="no organization")
-        return org.as_dict()
 
-    @app.get("/v1/orgs/current/members")
-    def list_org_members(principal=Depends(require(Capability.MANAGE_USERS))):
-        users = container.directory.list_users(principal.tenant, start=1, count=200)
-        members = container.orgs.list_members_from_directory(principal.tenant, users)
-        return {"members": [m.as_dict() for m in members]}
 
     # ── Analyst console (Phase 13) ──────────────────────────────────────────
 

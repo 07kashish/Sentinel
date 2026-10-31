@@ -34,8 +34,6 @@
     "/v1/executions/operations/",
     "/v1/containments",
     "/v1/containments/",
-    "/v1/orgs/current",
-    "/v1/orgs/current/members",
     "/health/diagnostics",
   ];
 
@@ -2031,22 +2029,6 @@
   function loadGovernance() {
     renderLimits();
 
-    var org = api("/v1/orgs/current").then(
-      function (data) {
-        kv(el("org"), pairsOf(data));
-      },
-      function (err) {
-        if (err.status === "404" || err.message === "404") {
-          clear(el("org"));
-          el("org").appendChild(text("p", "no organisation has been created for this tenant", "empty"));
-          return;
-        }
-        failed(el("org"), reasonFor(err), err.status);
-      }
-    );
-    var members = panel(el("members"), "/v1/orgs/current/members", function (data) {
-      table(el("members"), [{ label: "user", key: "user_id", className: "mono" }, { label: "role", render: function (m) { return pill(show(m.role), null, "muted"); } }, { label: "email", key: "email" }], Array.isArray(data.members) ? data.members : []);
-    });
     var diagnostics = panel(
       el("diagnostics"),
       "/health/diagnostics",
@@ -2066,7 +2048,7 @@
       },
       "read_diagnostics"
     );
-    return Promise.all([org, members, diagnostics]);
+    return diagnostics;
   }
 
 

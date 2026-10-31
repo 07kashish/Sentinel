@@ -211,3 +211,14 @@ executor, containment, approval and outbound failure assertions remain.
 Return signal: a customer needs approved, tenant-scoped incident delivery with
 durable retry and bounded latency. Remediation webhooks are retained Act adapters,
 not this parked incident-triggered fan-out.
+
+## Organization management and SCIM Users
+
+Parked the five `/scim/v2/Users` collection/item routes and three `/v1/orgs`
+create/current/members routes, with the console organization/member panels.
+Removed `sentinel/infrastructure/orgs.py` (127 lines), recoverable from
+`archive/pre-cleanup`. No feature-specific settings. Tables `organizations`
+and SCIM identity tables await the final migration. Directory storage remains
+temporarily for A2A; tenant provisioning and its tests remain core.
+Return signal: a customer needs managed human membership and lifecycle sync,
+with a defined tenant boundary and audit contract.

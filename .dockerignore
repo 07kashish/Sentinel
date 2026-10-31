@@ -163,7 +163,6 @@
 !sentinel/infrastructure/observability.py
 !sentinel/infrastructure/oidc.py
 !sentinel/infrastructure/openapi.py
-!sentinel/infrastructure/orgs.py
 !sentinel/infrastructure/outbound.py
 !sentinel/infrastructure/passport_signing.py
 !sentinel/infrastructure/persistence/audit.py

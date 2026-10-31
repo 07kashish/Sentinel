@@ -205,77 +205,8 @@ def test_tool_budget_exhaustion_via_proxy():
         proxy.execute(agent_id="a", tool="noop", trust=TrustLevel.VERIFIED, action="ls")
 
 
-def test_scim_user_lifecycle_tenant_bound(tmp_path):
-    client, container = _app(tmp_path)
-    try:
-        created = client.post(
-            "/scim/v2/Users",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-            json={
-                "userName": "alice@acme.test",
-                "displayName": "Alice",
-                "externalId": "ext-1",
-                "roles": [{"value": "viewer"}],
-            },
-        )
-        assert created.status_code == 201, created.text
-        user_id = created.json()["id"]
-        listed = client.get(
-            "/scim/v2/Users", headers={"Authorization": "Bearer " + ("a" * 40)}
-        )
-        assert listed.status_code == 200
-        assert listed.json()["totalResults"] >= 1
-        deactivated = client.delete(
-            f"/scim/v2/Users/{user_id}",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-        )
-        assert deactivated.status_code == 204
-        got = client.get(
-            f"/scim/v2/Users/{user_id}",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-        )
-        assert got.status_code == 200
-        assert got.json()["active"] is False
-        # viewer cannot SCIM
-        denied = client.post(
-            "/scim/v2/Users",
-            headers={"Authorization": "Bearer " + ("v" * 40)},
-            json={"userName": "bob@acme.test"},
-        )
-        assert denied.status_code == 403
-    finally:
-        container.close()
 
 
-def test_org_create_and_members(tmp_path):
-    client, container = _app(tmp_path)
-    try:
-        org = client.post(
-            "/v1/orgs",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-            json={"name": "Acme SOC"},
-        )
-        assert org.status_code == 201, org.text
-        cur = client.get(
-            "/v1/orgs/current", headers={"Authorization": "Bearer " + ("a" * 40)}
-        )
-        assert cur.status_code == 200
-        client.post(
-            "/scim/v2/Users",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-            json={
-                "userName": "ops@acme.test",
-                "roles": [{"value": "analyst"}],
-            },
-        )
-        members = client.get(
-            "/v1/orgs/current/members",
-            headers={"Authorization": "Bearer " + ("a" * 40)},
-        )
-        assert members.status_code == 200
-        assert any(m["email"] == "ops@acme.test" for m in members.json()["members"])
-    finally:
-        container.close()
 
 
 
@@ -305,62 +236,5 @@ def test_console_route_serves_csp(tmp_path):
         # in the static JS (no innerHTML). Served page is static shell only.
         assert "<script>" not in res.text.lower().split("app.js")[0] or True
         assert "innerHTML" not in (Path(container.settings.engine.dsn) if False else "")
-    finally:
-        container.close()
-
-
-def test_scim_pagination_bounds_do_not_overflow_the_database(tmp_path):
-    """A query-string integer must not reach the driver unbounded.
-
-    FOUND BY THE SCHEMA FUZZER IN CI, not by a hand-written test:
-
-        GET /scim/v2/Users?startIndex=1141909118505301951119360&count=-3802
-        OverflowError: Python int too large to convert to SQLite INTEGER
-        -> TransientFailure -> HTTP 500 with a traceback
-
-    `SqlDirectory.list_users` clamped `start` at the BOTTOM (`max(1, start)`)
-    and nothing clamped it at the top, so the value became a SQL `OFFSET` no
-    64-bit column can hold. Nobody writes that number by hand, which is the
-    whole argument for running a fuzzer against the published schema.
-
-    Clamped rather than rejected: RFC 7644 3.4.2.4 makes a startIndex past the
-    end a VALID request that returns no resources, and real SCIM clients (Okta,
-    Entra) page until they see an empty page. A 4xx here would break them.
-    """
-    client, container = _app(tmp_path)
-    admin = {"Authorization": "Bearer " + ("a" * 40)}
-    try:
-        # The exact request from the CI failure.
-        response = client.get(
-            "/scim/v2/Users?startIndex=1141909118505301951119360&count=-3802",
-            headers=admin,
-        )
-        assert response.status_code == 200, response.text
-        assert response.json()["Resources"] == []
-
-        # Every other way to say "absurd", including the negative and zero
-        # cases the same fuzz run produced.
-        for query in (
-            "?startIndex=0",
-            "?count=0",
-            "?startIndex=-5&count=-5",
-            "?startIndex=999999999999999999999999999",
-            "?count=99999999999999999999999999999",
-        ):
-            probe = client.get("/scim/v2/Users" + query, headers=admin)
-            assert probe.status_code == 200, f"{query} -> {probe.status_code}"
-
-        # And the endpoint still WORKS -- a handler that returned an empty list
-        # for everything would satisfy every assertion above.
-        created = client.post(
-            "/scim/v2/Users",
-            headers=admin,
-            json={"userName": "paged@example.com", "displayName": "Paged"},
-        )
-        assert created.status_code == 201, created.text
-
-        listed = client.get("/scim/v2/Users", headers=admin)
-        assert listed.status_code == 200
-        assert listed.json()["totalResults"] == 1, listed.json()
     finally:
         container.close()

@@ -6,7 +6,6 @@
 
 - Bearer API keys; optional OIDC JWT (RS256/ES256, tenant claim required).
 - API-key and OIDC authentication; the unused SAML validator was removed in Phase 2.
-- SCIM 2.0 Users (`/scim/v2/Users`) and org APIs (`/v1/orgs*`) behind `MANAGE_USERS`.
 - Capability grants; ingest cannot read incidents.
 
 ## Protect (F-11 in-product)
@@ -33,7 +32,7 @@
 ## Known limitations
 
 - Hosted SAML IdP and SAML assertion validation are not provided; the unused
-  legacy validator was removed in Phase 2. SCIM Groups sync productization is incomplete.
+  legacy validator was removed in Phase 2. SCIM and organization management are parked; tenant provisioning and OIDC identity remain.
 - Remote GitHub branch protection UNVERIFIED until an operator runs
   `python scripts/apply_branch_protection.py OWNER/REPO --apply`.
 

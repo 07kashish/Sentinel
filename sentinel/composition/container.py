@@ -90,7 +90,6 @@ from sentinel.domain.events import (
 from sentinel.domain.primitives import TenantId
 from sentinel.application.ports import DetectionPolicy
 from sentinel.infrastructure.directory import SqlDirectory
-from sentinel.infrastructure.orgs import SqlOrgRegistry
 from sentinel.infrastructure.observability import MetricsRegistry, OtelHooks
 from sentinel.infrastructure.oidc import OidcVerifier
 from sentinel.infrastructure.agent_identity_providers import (
@@ -297,8 +296,6 @@ class Container:
     agents: SqlAgentRegistry
     #: SCIM user directory.
     directory: SqlDirectory
-    #: Organization registry.
-    orgs: SqlOrgRegistry
     #: Process-local Prometheus registry (authenticated scrape).
     metrics: MetricsRegistry
     #: Optional OTLP-shaped span hooks (no-op without endpoint).
@@ -571,7 +568,6 @@ def build_container(
         )
         resolved_a2a_upstream: A2AUpstreamClient | None = build_a2a_upstream(settings)
         directory = SqlDirectory(pool=pool)
-        orgs = SqlOrgRegistry(pool=pool)
         metrics = MetricsRegistry()
         # Preserve the authenticated detector metrics for existing scrapers.
         metrics.set_gauge(
@@ -744,7 +740,6 @@ def build_container(
             retention=SqlRetention(pool=pool),
             agents=agents,
             directory=directory,
-            orgs=orgs,
             metrics=metrics,
             otel=otel,
             oidc=oidc,

@@ -251,7 +251,7 @@ and cannot quietly widen what the estate permits.
 
 ## 7. Known limits
 
-- **Existing OIDC and SCIM routes remain.** The unused SAML validator was
+- **OIDC identity remains; SCIM/org routes are parked.** The unused SAML validator was
   removed in cleanup Phase 2; SAML support is not counted as a shipped capability.
 - **The enterprise console** is the existing `interface/console`. The Phase 5
   controls above are API-only; no console screens were added for policy
