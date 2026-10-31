@@ -58,7 +58,7 @@ from sentinel.infrastructure.sql.retention import (
     INCIDENT_CHILD_TABLES,
     SqlRetention,
 )
-from sentinel.infrastructure.sql.schema import CURRENT_TABLES
+from sentinel.infrastructure.sql.schema_cleanup import CURRENT_TABLES
 from sentinel.interface.worker import MaintenanceLoop
 
 TENANT = TenantId("acme")

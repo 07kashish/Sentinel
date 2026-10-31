@@ -252,3 +252,11 @@ transparency table is dropped. Retained tables' indexes, grants, roles and RLS
 policies are covered by before/after local upgrade tests. This migration removes
 parked-feature data when an operator runs it; archive the old DB if that data
 must be recovered. No production database was changed in this cleanup.
+
+## Discovery vocabulary follow-up
+
+`sentinel/domain/assets.py` (251 lines) became unused after discovery removal;
+fresh import and symbol searches found no retained consumer. It is parked and
+recoverable from `archive/pre-cleanup`. No settings/routes/tables changed.
+Return signal: a future connector needs a shared asset and scan-coverage contract;
+evaluate this archived vocabulary then, rather than shipping unused definitions.

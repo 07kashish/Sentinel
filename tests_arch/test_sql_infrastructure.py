@@ -201,7 +201,7 @@ def test_a_tenant_scoped_table_added_late_is_still_protected(pool, engine_config
 
 def _declared_tables() -> set[str]:
     """Live DDL-derived tables, excluding only migration 40's explicit drops."""
-    from sentinel.infrastructure.sql.schema import CURRENT_TABLES
+    from sentinel.infrastructure.sql.schema_cleanup import CURRENT_TABLES
     return set(CURRENT_TABLES)
 
 

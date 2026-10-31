@@ -96,7 +96,6 @@
 !sentinel/composition/topology.py
 !sentinel/domain/__init__.py
 !sentinel/domain/action_semantics.py
-!sentinel/domain/assets.py
 !sentinel/domain/attestation.py
 !sentinel/domain/authorization.py
 !sentinel/domain/baseline.py
@@ -198,6 +197,7 @@
 !sentinel/infrastructure/sql/repositories.py
 !sentinel/infrastructure/sql/retention.py
 !sentinel/infrastructure/sql/schema.py
+!sentinel/infrastructure/sql/schema_cleanup.py
 !sentinel/infrastructure/sql/schema_execution.py
 !sentinel/infrastructure/sql/schema_registries.py
 !sentinel/infrastructure/sql/transparency_store.py

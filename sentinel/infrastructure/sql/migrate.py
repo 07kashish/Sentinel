@@ -27,6 +27,8 @@ from datetime import datetime, timezone
 from typing import Callable, Sequence
 
 from sentinel.infrastructure.sql.engine import Connection, ConnectionPool, Dialect
+from sentinel.infrastructure.sql.schema_cleanup import drop_parked_features as _drop_parked_features
+
 from sentinel.infrastructure.sql.schema import (
     PROTECTED_TABLES,
     SCHEMA_STATEMENTS,
@@ -476,18 +478,6 @@ def _add_execution_binding_tables(conn: Connection) -> None:
     """
     _create_baseline(conn)
     _apply_rls(conn)
-
-
-def _drop_parked_features(conn: Connection) -> None:
-    """Retire only the enumerated Phase 3 feature tables; never cascade."""
-    conn.execute_rowcount("DROP TABLE IF EXISTS user_credentials")
-    conn.execute_rowcount("DROP TABLE IF EXISTS user_sessions")
-    conn.execute_rowcount("DROP TABLE IF EXISTS enrolment_tickets")
-    conn.execute_rowcount("DROP TABLE IF EXISTS webauthn_challenges")
-    conn.execute_rowcount("DROP TABLE IF EXISTS users")
-    conn.execute_rowcount("DROP TABLE IF EXISTS organizations")
-    conn.execute_rowcount("DROP TABLE IF EXISTS a2a_agent_cards")
-    conn.execute_rowcount("DROP TABLE IF EXISTS device_discovery")
 
 
 MIGRATIONS: Sequence[tuple[int, str, Callable[[Connection], None]]] = (

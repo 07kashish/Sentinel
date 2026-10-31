@@ -78,7 +78,7 @@ def test_cleanup_drops_only_parked_tables_and_preserves_core(engine_config, monk
         assert migrations.verify(pool) == 40
         after = _catalog(pool)
         assert not (PARKED & after["tables"])
-        from sentinel.infrastructure.sql.schema import CURRENT_TABLES, CURRENT_PROTECTED_TABLES
+        from sentinel.infrastructure.sql.schema_cleanup import CURRENT_TABLES, CURRENT_PROTECTED_TABLES
         assert after["tables"] == set(CURRENT_TABLES)
         assert len(CURRENT_TABLES) >= 30
         assert set(CURRENT_PROTECTED_TABLES) <= after["tables"]

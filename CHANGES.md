@@ -365,3 +365,11 @@ docs/PARKED.md; full environment-variable names remain in removal records.
 - Verified touched cases, with corrected reruns superseding earlier failures: 132 passed, 8 skipped, zero remaining failures/errors. Reports: targeted.xml, guard-fixed.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Migration 40 is implemented; full Phase 3 Linux verification remains pending.
+
+### Phase 3 group complete: discovery-remainder
+
+- Removed 1 whole files (251 lines); changed-path and numstat records: baseline/phase3/discovery-remainder/result.json.
+- Collection: 3358 cases; 0 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/discovery-remainder/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 82 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml, fixed.xml, manifest-fixed.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Migration 40 is implemented; full Phase 3 Linux verification remains pending.

@@ -2607,3 +2607,30 @@ the non-SQL inventory projection. No guard assertion or SQL interpolation change
 - Verified touched cases, with corrected reruns superseding earlier failures: 132 passed, 8 skipped, zero remaining failures/errors. Reports: targeted.xml, guard-fixed.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Migration 40 is implemented; full Phase 3 Linux verification remains pending.
+
+### P3-016: final discovery orphan
+
+The final graph exposes domain/assets.py after vendor discovery was parked.
+Fresh recursive symbol/import search finds only its own definitions, no retained
+code, script or test consumers. Park this discovery vocabulary and its Docker
+allowlist entry; do not add a blanket graph exception. Keep the 11 documented
+external SDK, measurement and backup/PITR entrypoints. No settings/routes/tables
+or tests change in this final discovery follow-up.
+
+### P3-017: keep the schema module size guard
+
+The new live inventory pushed historical schema.py to 823 lines; the unchanged
+architecture guard rejected it. Move the new migration-40 callback and inventory
+to sql/schema_cleanup.py, imported by migrate.py. Restore schema.py byte-for-byte
+to the Phase 2 version. No historical callback, DDL or architecture limit changes.
+This is a final cleanup adjustment, with schema/security regressions rerun.
+
+The generated Docker allowlist requires canonical ordering; regenerated it with its existing generator after adding schema_cleanup.py. The manifest guard remains unchanged.
+
+### Phase 3 group complete: discovery-remainder
+
+- Removed 1 whole files (251 lines); changed-path and numstat records: baseline/phase3/discovery-remainder/result.json.
+- Collection: 3358 cases; 0 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/discovery-remainder/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 82 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml, fixed.xml, manifest-fixed.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Migration 40 is implemented; full Phase 3 Linux verification remains pending.
