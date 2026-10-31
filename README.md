@@ -85,9 +85,6 @@ The legacy `api/`, `app/`, `agents/`, and `dashboard/` trees are **gone**.
 | POST | `/v1/mcp/evaluate` | MCP tool call: server trust + tool-definition drift, then the same policy. Capability `evaluate_protect`. Enrolment is CLI-only. |
 | POST | `/v1/mcp/proxy/{server_id}` | MCP wire proxy (JSON-RPC/Streamable HTTP). Forwards to ENROLLED servers only; `tools/call` evaluated against the live definition; drifted listings, duplicate tool names, changed server identity and foreign OAuth issuers all refused. Registered only when `SENTINEL_MCP_PROXY_ENABLED` is set. Capability `execute_tool`. |
 | POST | `/v1/tools/execute` | Inline tool proxy. Effects register only where configured: `read_file`, `write_file`, `http_request`, plus `aws_api`, `github_api`, `kubernetes_api`, `sql_query` where platform credentials are supplied. Every platform effect carries a tier ceiling checked **after** the gate allows. |
-| POST | `/v1/a2a/evaluate` | Delegation chain: privilege amplification, loops, agent-card drift, cross-agent injection, then the same policy. Capability `evaluate_protect`. |
-| POST | `/v1/a2a/proxy/{agent_id}` | A2A wire proxy (JSON-RPC). Forwards to ENROLLED agents only; the delegation is refused BEFORE the message moves, the agent card is drift-checked against what the peer serves now, and the REPLY is inspected too. `message/stream` is NOT_SUPPORTED. Registered only when `SENTINEL_A2A_PROXY_ENABLED` is set. Capability `execute_tool`. |
-| POST | `/v1/a2a/cards` | Enrol an agent card and pin its fingerprint. Capability `manage_policy` (admin). **In-process store**. |
 | GET | `/v1/incidents`, `/v1/incidents/{id}`, history, report | Read capabilities |
 | GET | `/v1/dashboard` | Tenant summary JSON (not an HTML UI) |
 | POST | `/v1/approvals/{id}` | Approve/reject remediation |

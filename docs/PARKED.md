@@ -28,7 +28,11 @@ the scan checks every other tracked or unignored product file.
 <!-- removed-settings:start -->
 ```json
 [
+  "SENTINEL_A2A_PROXY_ALLOWED_HOSTS",
+  "SENTINEL_A2A_PROXY_ALLOW_PRIVATE",
+  "SENTINEL_A2A_PROXY_ENABLED",
   "SENTINEL_CONSOLE_DEMO_TOKEN",
+  "SENTINEL_DELEGATION_KEYS",
   "SENTINEL_DEMO_",
   "SENTINEL_DEMO_ADMIN_KEY",
   "SENTINEL_DEMO_ANALYST_KEY",
@@ -222,3 +226,17 @@ and SCIM identity tables await the final migration. Directory storage remains
 temporarily for A2A; tenant provisioning and its tests remain core.
 Return signal: a customer needs managed human membership and lifecycle sync,
 with a defined tenant boundary and audit contract.
+
+## A2A delegation and the SCIM directory adapter
+
+Removed 18 whole files (6711 lines), including the now-unshared
+directory adapter. Recover source paths from `archive/pre-cleanup`:
+`sentinel/application/a2a_gateway.py`, `sentinel/composition/delegation_wiring.py`, `sentinel/domain/a2a.py`, `sentinel/domain/delegation_constraints.py`, `sentinel/domain/delegation_passport.py`, `sentinel/infrastructure/a2a_registry.py`, `sentinel/infrastructure/a2a_wire.py`, `sentinel/infrastructure/delegation_signing.py`, `sentinel/interface/a2a_proxy_routes.py`, `sentinel/interface/a2a_routes.py`, `sentinel/interface/delegation_verification.py`, `sentinel/infrastructure/directory.py`.
+Feature-only test recovery paths are in CLEANUP_PLAN.md and the archived
+tests_arch/ directory. Retired settings: SENTINEL_A2A_PROXY_ALLOWED_HOSTS, SENTINEL_A2A_PROXY_ALLOW_PRIVATE, SENTINEL_A2A_PROXY_ENABLED, SENTINEL_DELEGATION_KEYS and _FILE variants.
+Routes removed: POST `/v1/a2a/cards`, POST `/v1/a2a/evaluate`, conditional POST
+`/v1/a2a/proxy/{agent_id}`. Skills assessment was removed with detonation.
+Tables await the single cleanup migration. Stable execution-binding and Passport
+delegation evidence fields remain; they are not the removed A2A protocol.
+Return signal: a customer needs cross-agent delegation with a specified trust,
+identity and credential boundary, measured against real peers.

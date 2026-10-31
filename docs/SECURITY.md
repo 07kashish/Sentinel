@@ -380,7 +380,6 @@ engagement.
 
 | Area | Known state |
 |---|---|
-| **A2A streaming** | The security guard exists; the transport is not wired. Nothing streams today |
 | **Per-server MCP usage** | No usage table, so shadow-server detection cannot fire. The endpoint says so in its response rather than reporting zero |
 | **Asset declarations** | No persistent store; blast radius takes declarations per request and reports `coverage` so a low score over low coverage cannot read as "safe" |
 | **ECDSA recovery** | The secp256k1 recovery primitive is unaudited |
@@ -404,7 +403,7 @@ Do not spend the engagement here unless you can beat it:
 <a id="pentest_package--8-scope"></a>
 ### 8. Scope
 
-**In scope:** the HTTP API, the console bundle, the MCP proxy, the A2A gateway,
+**In scope:** the HTTP API, the console bundle, the MCP proxy,
 authorization logic, tenant isolation, the evidence chain, the container image.
 
 **Out of scope unless agreed:** denial of service against shared

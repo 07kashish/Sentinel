@@ -194,13 +194,6 @@ class Settings:
     #: start unless the value is stated, same reasoning as
     #: `rate_limit_fail_open`. See docs/ARCHITECTURE.md.
     require_execution_binding: bool
-    #: Ed25519 public keys that may sign delegation hops, as
-    #: `(key_id, base64 raw public key)` pairs from `SENTINEL_DELEGATION_KEYS`.
-    #: The key id is `issuer#version`, which is what lets `verify_chain` tell
-    #: whose key signed a hop by reading the id. Empty means no key ring, so
-    #: every signed hop presented is refused as UNKNOWN_KEY -- an unverifiable
-    #: chain is not a valid one.
-    delegation_keys: tuple[tuple[str, str], ...]
     #: action -> HTTPS endpoint that performs it. Empty means this deployment has
     #: no remediation integrations, which is a supported and explicit state:
     #: `NullRemediationExecutor` then refuses every action and says why, rather
@@ -219,19 +212,6 @@ class Settings:
     #: forward JSON-RPC to ENROLLED servers. OFF by default: a new outbound
     #: network capability is opted into, never inherited.
     mcp_proxy_enabled: bool
-    #: Serve the A2A wire proxy. OFF by default, and absent rather than
-    #: disabled when off: `register_a2a_proxy_routes` returns without adding a
-    #: route, so a deployment that has not asked for it does not advertise it.
-    #:
-    #: Separate from `mcp_proxy_enabled` on purpose. They are different egress
-    #: surfaces to different classes of peer, and an operator who wants Sentinel
-    #: between their agents should not thereby be dialling MCP servers.
-    a2a_proxy_enabled: bool
-    #: Hosts the A2A proxy may dial. Empty means "any public address", which the
-    #: hardened client still bounds -- but an allowlist is the control to reach
-    #: for, and it is required when private destinations are permitted.
-    a2a_proxy_allowed_hosts: frozenset[str]
-    a2a_proxy_allow_private: bool
     #: Non-empty narrows the proxy below "any enrolled server": the endpoint's
     #: host must also appear here. Deployment-wide, on top of per-tenant
     #: enrolment; the stricter of the two wins.
@@ -479,7 +459,6 @@ class Settings:
             expose_api_docs=expose_docs,
             rate_limit_fail_open=fail_open,
             require_execution_binding=require_execution_binding,
-            delegation_keys=cls._delegation_keys(source),
             trusted_proxy_hops=_parsers.positive_int(
                 source, "SENTINEL_TRUSTED_PROXY_HOPS", 0, allow_zero=True
             ),
@@ -501,11 +480,6 @@ class Settings:
             remediation_dry_run=_parsers.flag(source, "SENTINEL_REMEDIATION_DRY_RUN", default=False),
             mcp_require_pin=_parsers.flag(source, "SENTINEL_MCP_REQUIRE_PIN", default=True),
             mcp_proxy_enabled=_parsers.flag(source, "SENTINEL_MCP_PROXY_ENABLED", default=False),
-            a2a_proxy_enabled=_parsers.flag(source, "SENTINEL_A2A_PROXY_ENABLED", default=False),
-            a2a_proxy_allowed_hosts=_parsers.host_set(source, "SENTINEL_A2A_PROXY_ALLOWED_HOSTS"),
-            a2a_proxy_allow_private=_parsers.flag(
-                source, "SENTINEL_A2A_PROXY_ALLOW_PRIVATE", default=False
-            ),
             mcp_proxy_allowed_hosts=_parsers.host_set(source, "SENTINEL_MCP_PROXY_ALLOWED_HOSTS"),
             mcp_proxy_allow_private=_parsers.flag(source, "SENTINEL_MCP_PROXY_ALLOW_PRIVATE", default=False),
             mcp_proxy_require_token_audience=_parsers.flag(
@@ -641,34 +615,6 @@ class Settings:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         return EngineConfig(dialect=Dialect.SQLITE, dsn=path, pool_min=1, pool_max=4)
 
-    @staticmethod
-    def _delegation_keys(source: Mapping[str, str]) -> tuple[tuple[str, str], ...]:
-        """`SENTINEL_DELEGATION_KEYS`: comma-separated `issuer#version=base64`.
-
-        Only the SHAPE is validated here; the bytes are decoded into keys by
-        the composition root, which is where a malformed key fails at startup
-        rather than at the first chain that names it. The `#` namespace
-        separator is required because `verify_chain` reads the issuer off the
-        key id, and a key id without one belongs to nobody.
-        """
-        raw = source.get("SENTINEL_DELEGATION_KEYS", "") or ""
-        pairs: list[tuple[str, str]] = []
-        for entry in (e.strip() for e in raw.split(",") if e.strip()):
-            key_id, separator, material = entry.partition("=")
-            key_id = key_id.strip()
-            material = material.strip()
-            if not separator or not key_id or not material:
-                raise ConfigurationError(
-                    "SENTINEL_DELEGATION_KEYS entries must be "
-                    f"`issuer#version=base64-public-key`; got {entry!r}"
-                )
-            if "#" not in key_id or key_id.startswith("#") or key_id.endswith("#"):
-                raise ConfigurationError(
-                    f"SENTINEL_DELEGATION_KEYS key id {key_id!r} is not "
-                    "namespaced as `issuer#version`, so no issuer owns it"
-                )
-            pairs.append((key_id, material))
-        return tuple(pairs)
 
     @staticmethod
     def _region(source: Mapping[str, str]) -> Region:

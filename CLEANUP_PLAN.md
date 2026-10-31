@@ -2555,3 +2555,26 @@ Org verification found one remaining organization-only empty-state test; removed
 - Verified touched cases, with corrected reruns superseding earlier failures: 86 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml, console-fixed.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 67. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### P3-014: A2A boundary
+
+Fresh graph/consumer evidence is in baseline/phase3/a2a. Park all 17 planned
+A2A files and the now-unshared SqlDirectory adapter. Remove A2A settings,
+constructors, routes and signing-key parsing. Keep the independent MCP reply
+inspector/text extraction and all pre-existing MCP/native tests unchanged.
+Keep delegation_passport_digest/delegation_chain fields in core execution binding,
+Passport, storage, serializers and their tests: those are stable evidence and
+authorization contracts, not the parked A2A verifier. Keep the generic task nonce
+table until the final consumer audit; no schema edits in this group.
+Remove only the delegation-constraint step from the mixed execution-trust demo;
+retain execution, binding, negative controls and evidence verification.
+Directory's tenant-provisioning tests remain; directory store tables are considered
+in the final migration together with organizations and A2A cards.
+
+### Phase 3 group complete: a2a
+
+- Removed 18 whole files (6,711 lines); changed-path and numstat records: baseline/phase3/a2a/result.json.
+- Collection: 3354 cases; 154 removed IDs and 0 added IDs since the preceding collection (baseline/phase3/a2a/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 252 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Full Phase 3 Linux verification and the single drop migration remain pending.

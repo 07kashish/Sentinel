@@ -58,11 +58,6 @@ from sentinel.application.tool_proxy import (  # noqa: E402
     ToolProxyRefused,
 )
 from sentinel.application.tool_runner import ProtectedToolRunner  # noqa: E402
-from sentinel.domain.delegation_constraints import (  # noqa: E402
-    DelegationConstraint,
-    DelegationContext,
-    evaluate,
-)
 from sentinel.domain.execution_binding import (  # noqa: E402
     ExecutionAuthorization,
     ExecutionRequest,
@@ -278,96 +273,6 @@ def _proxy(effect_log: list) -> InlineToolProxy:
 # -- the run ----------------------------------------------------------------
 
 
-def _step_delegation() -> bool:
-    """The delegation chain, evaluated hop by hop against where it is presented.
-
-    `evaluate` takes ONE constraint and ONE context, so a chain is a fold over
-    hops rather than a single call -- which is the right shape: hop 2 can be
-    escalation even when hop 1 is sound, and a single verdict over the whole
-    chain would not say which hop to fix.
-    """
-    _head("1. DELEGATED AUTHORITY -- human to coding agent to infra agent")
-
-    context = DelegationContext(
-        tenant_id="acme", environment="production", resource=RESOURCE,
-    )
-
-    hops = (
-        (
-            1, HUMAN, CODING_AGENT,
-            DelegationConstraint(
-                tenant_id="acme",
-                environment="production",
-                purpose="author the quarterly report",
-                resources=("arn:aws:s3:::acme-reports/*",),
-                issued_at=NOW - timedelta(minutes=10),
-                expires_at=NOW + timedelta(hours=1),
-                policy_version="14",
-            ),
-        ),
-        (
-            2, CODING_AGENT, INFRA_AGENT,
-            DelegationConstraint(
-                tenant_id="acme",
-                environment="production",
-                purpose="write the rendered report object",
-                # NARROWER than the parent's grant, which is what a sound
-                # delegation looks like: one prefix, not the estate.
-                resources=("arn:aws:s3:::acme-reports/q3/*",),
-                issued_at=NOW - timedelta(minutes=5),
-                expires_at=NOW + timedelta(minutes=30),
-                policy_version="14",
-            ),
-        ),
-    )
-
-    all_findings: list = []
-    for hop, issuer, subject, constraint in hops:
-        findings = evaluate(constraint, context=context, now=NOW, hop=hop)
-        all_findings.extend(findings)
-        if findings:
-            for finding in findings:
-                _refused(f"hop {hop} {issuer} -> {subject}: "
-                         f"{finding.kind.value} ({finding.severity.value})")
-        else:
-            _observed(f"hop {hop}  {issuer} -> {subject}")
-            _observed(f"          purpose {constraint.purpose!r}, "
-                      f"scope {constraint.resources[0]}, "
-                      f"expires in {constraint.expires_at - NOW}")
-
-    if all_findings:
-        return False
-
-    # AND THE NEGATIVE CONTROL, in the same run.
-    #
-    # Without it, every tick above would also appear against an `evaluate` that
-    # returned no findings for anything -- which is the shape of a check that
-    # is not checking. So a deliberately bad hop is presented and must be
-    # refused.
-    escalating = DelegationConstraint(
-        tenant_id="acme",
-        environment="staging",
-        purpose="write the rendered report object",
-        resources=("arn:aws:s3:::acme-reports/q3/*",),
-        issued_at=NOW - timedelta(minutes=5),
-        expires_at=NOW + timedelta(minutes=30),
-    )
-    bad = evaluate(escalating, context=context, now=NOW, hop=3)
-    if not bad:
-        _say(f"  {RED}a staging delegation presented in production produced no "
-             f"finding, so this check is not checking.{RESET}")
-        return False
-    _observed(f"control: a staging grant presented in production is refused "
-              f"({bad[0].kind.value}, {bad[0].severity.value})")
-
-    _answer(1, f"{INFRA_AGENT}, acting for {HUMAN}")
-    _answer(2, f"agent identity {INFRA_AGENT} (tenant acme, environment "
-               f"production)")
-    _answer(3, f"{CODING_AGENT}, itself delegated by {HUMAN} -- two signed-hop "
-               f"chain, each narrower than its parent")
-    _answer(4, "arn:aws:s3:::acme-reports/q3/* for 30 minutes, purpose "
-               "'write the rendered report object'")
-    return True
 
 
 def _step_authorize() -> ExecutionAuthorization:
@@ -687,8 +592,7 @@ def main() -> int:
 
     ledger = Ledger()
 
-    if not _step_delegation():
-        return 1
+    _say("A2A delegation verification is parked; chain fields below are evidence context.")
 
     authorization = _step_authorize()
 

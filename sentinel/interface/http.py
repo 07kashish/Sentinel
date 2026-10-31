@@ -60,7 +60,6 @@ from sentinel.interface.principals import (
 )
 from sentinel.interface.extra_routes import register_extra_routes
 from sentinel.interface.mcp_proxy_routes import register_mcp_proxy_routes
-from sentinel.interface.a2a_proxy_routes import register_a2a_proxy_routes
 from sentinel.interface.transparency_routes import (
     register_transparency_routes,
 )
@@ -72,9 +71,6 @@ from sentinel.interface.authorizations import (
     register_authorization_routes,
 )
 from sentinel.interface.health_routes import register_health_routes
-from sentinel.interface.a2a_routes import (
-    register_a2a_routes,
-)
 from sentinel.interface.policy_routes import register_policy_routes
 from sentinel.interface.app_routes import register_app_routes
 from sentinel.interface.http_models import (
@@ -728,13 +724,11 @@ def create_app(container: Container) -> FastAPI:
         return Response(content=body, media_type="text/plain; version=0.0.4")
 
     register_policy_routes(app, container, require=require)
-    register_a2a_routes(app, container, require=require)
     # A no-op unless the container carries a wire client, which only happens
     # when SENTINEL_MCP_PROXY_ENABLED is set (or a test injects one). A
     # deployment without the proxy does not even advertise the route.
     register_mcp_proxy_routes(app, container, require=require)
     # Same rule: a no-op unless the container carries an A2A wire client.
-    register_a2a_proxy_routes(app, container, require=require)
     # Read-only analysis over stored state. Registered unconditionally:
     # it needs no credential and no new store, and a capability with no
     # HTTP surface is one an operator does not have.

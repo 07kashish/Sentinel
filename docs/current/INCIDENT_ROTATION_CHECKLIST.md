@@ -41,7 +41,7 @@ issue new → deploy new → revoke old.
 | Redis (`REDIS_PASSWORD`, `SENTINEL_REDIS_URL`) | Set a new `requirepass`/ACL password, update consumers, restart | `AUTH` with the old password returns `WRONGPASS` |
 | Console / IdP admin (`GRAFANA_PASSWORD`, `KEYCLOAK_PASSWORD`, OIDC client secrets) | Reset in the product's admin UI, rotate the OIDC client secret, update consumers | Old password login fails; IdP audit log shows the rotation |
 | Third-party API keys (`VT_API_KEY`, `ABUSEIPDB_API_KEY`, PagerDuty routing keys) | Regenerate in the vendor console, update the secret | Vendor console shows the old key deleted |
-| Signing / attestation material (`SENTINEL_DELEGATION_KEYS`, attestation tokens, signer TLS) | Issue a new key pair, publish the new public key, re-enrol, revoke the old key id | Verifier rejects signatures made with the old key id after the revocation timestamp |
+| Signing / attestation material (attestation tokens, signer TLS) | Issue a new key pair, publish the new public key, re-enrol, revoke the old key id | Verifier rejects signatures made with the old key id after the revocation timestamp |
 | Metrics scrape token (`SENTINEL_METRICS_TOKEN`) | Write a new token file, roll the scraper and the pods | Scrape with the old token returns 401 |
 
 - [ ] Every row above that applies has "verify revoked" evidence attached to the ticket.

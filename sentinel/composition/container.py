@@ -31,11 +31,6 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
 from sentinel.application.bus import CommandBus, EventBus, QueryBus
-from sentinel.application.a2a_gateway import A2AGateway
-from sentinel.infrastructure.a2a_registry import (
-    SqlAgentCardRegistry,
-    SqlTaskLedger,
-)
 from sentinel.application.mcp_gateway import McpGateway
 from sentinel.application.reconciliation import OperationReconciler
 from sentinel.application.protect_gate import ProtectGate
@@ -89,7 +84,6 @@ from sentinel.domain.events import (
 )
 from sentinel.domain.primitives import TenantId
 from sentinel.application.ports import DetectionPolicy
-from sentinel.infrastructure.directory import SqlDirectory
 from sentinel.infrastructure.observability import MetricsRegistry, OtelHooks
 from sentinel.infrastructure.oidc import OidcVerifier
 from sentinel.infrastructure.agent_identity_providers import (
@@ -124,18 +118,15 @@ from sentinel.infrastructure.sql.operation_store import SqlOperationStore
 from sentinel.infrastructure.sql.coverage import SqlCoverageReader
 from sentinel.infrastructure.sql.protect_controls_store import SqlProtectControls
 from sentinel.infrastructure.sql.authorization_store import SqlAuthorizationStore
-from sentinel.infrastructure.delegation_signing import KeyRingVerifier
-from sentinel.composition.delegation_wiring import build_delegation_verifier
 from sentinel.application.agent_capabilities import AgentCapabilityGate
 from sentinel.infrastructure.agent_capabilities import SqlAgentCapabilities
 from sentinel.infrastructure.execution_graph import SqlExecutionGraph
 from sentinel.infrastructure.inventory import SqlAgentInventory
 from sentinel.infrastructure.tool_adapters import build_tool_adapters
 from sentinel.composition.platform_wiring import build_platform_effects
-from sentinel.composition.proxy_wiring import build_a2a_upstream, build_mcp_upstream
+from sentinel.composition.proxy_wiring import build_mcp_upstream
 from sentinel.composition.remediation_wiring import build_executor
 from sentinel.infrastructure.containment import ContainmentGuard
-from sentinel.infrastructure.a2a_wire import A2AUpstreamClient
 from sentinel.infrastructure.mcp_wire import McpUpstreamClient
 from sentinel.infrastructure.sql.engine import ConnectionPool, build_engine
 from sentinel.infrastructure.sql.migrate import verify
@@ -254,9 +245,6 @@ class Container:
     #: the MCP wire proxy asks the same capability question the inline proxy
     #: does rather than routing around it.
     capability_gate: AgentCapabilityGate
-    #: The delegation key ring. Verifies signed hops on `/v1/a2a/evaluate` and
-    #: the A2A proxy; empty refuses every signed chain as UNKNOWN_KEY.
-    delegation_verifier: KeyRingVerifier
     #: Causal traces: what followed what, per session. Evidence for an
     #: investigation, never consulted by the enforcement path.
     execution_graph: SqlExecutionGraph
@@ -264,17 +252,6 @@ class Container:
     #: `protect_gate` above. It does not decide ALLOW/BLOCK itself -- one ruleset
     #: governs both the direct and the MCP path, so they cannot disagree.
     mcp_gateway: McpGateway
-    #: A2A gateway: delegation-chain checks in front of the SAME
-    #: `protect_gate`. Privilege amplification, delegation loops, agent-card
-    #: drift and cross-agent injection are the questions a single tool call
-    #: cannot raise; the ALLOW/BLOCK decision stays with one ruleset, so the
-    #: protect, MCP and A2A paths cannot disagree.
-    #:
-    #: The card store is IN-PROCESS. That is a real limit and it is stated
-    #: rather than implied: a pin one replica holds is not a pin the next
-    #: request sees, so multi-replica A2A enforcement needs the SQL-backed
-    #: store this does not yet have.
-    a2a_gateway: A2AGateway
     #: Durable, tenant-scoped MCP enrolment. Backs `mcp_gateway`; also read
     #: directly for the operator listing, which the gateway has no reason to know
     #: how to produce.
@@ -285,17 +262,11 @@ class Container:
     #: either way. Absence is the default because the proxy is a new outbound
     #: capability, and those are opted into, never inherited.
     mcp_upstream: McpUpstreamClient | None
-    #: The A2A wire client, present only when `SENTINEL_A2A_PROXY_ENABLED` is
-    #: set. `None` is the honest state for a deployment that did not ask for the
-    #: proxy: the route is not registered at all, so there is nothing to reach.
-    a2a_upstream: A2AUpstreamClient | None
     #: Deletes finished operational rows past the retention window. Never the
     #: incident record or the ledger -- that is a compliance decision.
     retention: SqlRetention
     #: Enrolled agent addresses + last observed event times (bypass silence).
     agents: SqlAgentRegistry
-    #: SCIM user directory.
-    directory: SqlDirectory
     #: Process-local Prometheus registry (authenticated scrape).
     metrics: MetricsRegistry
     #: Optional OTLP-shaped span hooks (no-op without endpoint).
@@ -546,28 +517,9 @@ def build_container(
             servers=mcp_registry,
             require_pin=settings.mcp_require_pin,
         )
-        # DURABLE, not in-process. The predecessor held card pins in one
-        # worker's memory, so a card enrolled through one replica was invisible
-        # to the next -- which meant `card_drift` could not fire at all in any
-        # deployment running more than one, and `unenrolled_agent` fired for
-        # agents that WERE enrolled, just not here.
-        a2a_gateway = A2AGateway(
-            gate=protect_gate,
-            cards=SqlAgentCardRegistry(pool=pool),
-            tasks=SqlTaskLedger(
-                pool=pool, window_seconds=settings.replay_window_seconds
-            ),
-        )
-        # The two wire clients, and the egress policy each is allowed, live in
-        # `proxy_wiring.py`. They decide WHAT THIS PROCESS MAY DIAL, which is a
-        # security decision worth a file somebody can read end to end rather
-        # than one buried between a database pool and a metrics registry.
-        # `mcp_upstream` stays injectable so a test can supply its own.
         resolved_mcp_upstream: McpUpstreamClient | None = (
             mcp_upstream if mcp_upstream is not None else build_mcp_upstream(settings)
         )
-        resolved_a2a_upstream: A2AUpstreamClient | None = build_a2a_upstream(settings)
-        directory = SqlDirectory(pool=pool)
         metrics = MetricsRegistry()
         # Preserve the authenticated detector metrics for existing scrapers.
         metrics.set_gauge(
@@ -730,16 +682,12 @@ def build_container(
             nonces=nonces,
             authorizations=authorizations,
             capability_gate=capability_gate,
-            delegation_verifier=build_delegation_verifier(settings),
             execution_graph=execution_graph,
             mcp_gateway=mcp_gateway,
-            a2a_gateway=a2a_gateway,
             mcp_registry=mcp_registry,
             mcp_upstream=resolved_mcp_upstream,
-            a2a_upstream=resolved_a2a_upstream,
             retention=SqlRetention(pool=pool),
             agents=agents,
-            directory=directory,
             metrics=metrics,
             otel=otel,
             oidc=oidc,

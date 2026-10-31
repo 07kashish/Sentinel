@@ -52,7 +52,6 @@
 !scripts/verify_image_signature.py
 !sentinel/__init__.py
 !sentinel/application/__init__.py
-!sentinel/application/a2a_gateway.py
 !sentinel/application/agent_capabilities.py
 !sentinel/application/bus.py
 !sentinel/application/bypass_detection.py
@@ -84,7 +83,6 @@
 !sentinel/composition/advisor_wiring.py
 !sentinel/composition/app_wiring.py
 !sentinel/composition/container.py
-!sentinel/composition/delegation_wiring.py
 !sentinel/composition/evidence_wiring.py
 !sentinel/composition/platform_wiring.py
 !sentinel/composition/preflight.py
@@ -97,7 +95,6 @@
 !sentinel/composition/siem_wiring.py
 !sentinel/composition/topology.py
 !sentinel/domain/__init__.py
-!sentinel/domain/a2a.py
 !sentinel/domain/action_semantics.py
 !sentinel/domain/assets.py
 !sentinel/domain/attestation.py
@@ -106,8 +103,6 @@
 !sentinel/domain/bounded.py
 !sentinel/domain/change_summary.py
 !sentinel/domain/containment.py
-!sentinel/domain/delegation_constraints.py
-!sentinel/domain/delegation_passport.py
 !sentinel/domain/detection_metrics.py
 !sentinel/domain/effective_permissions.py
 !sentinel/domain/errors.py
@@ -137,8 +132,6 @@
 !sentinel/domain/tenant_integrations.py
 !sentinel/domain/transparency.py
 !sentinel/infrastructure/__init__.py
-!sentinel/infrastructure/a2a_registry.py
-!sentinel/infrastructure/a2a_wire.py
 !sentinel/infrastructure/agent_capabilities.py
 !sentinel/infrastructure/agent_identity_providers.py
 !sentinel/infrastructure/app_call.py
@@ -147,9 +140,7 @@
 !sentinel/infrastructure/cli_advisor.py
 !sentinel/infrastructure/containment.py
 !sentinel/infrastructure/default_policy.json
-!sentinel/infrastructure/delegation_signing.py
 !sentinel/infrastructure/detection.py
-!sentinel/infrastructure/directory.py
 !sentinel/infrastructure/enterprise.py
 !sentinel/infrastructure/evidence.py
 !sentinel/infrastructure/execution_graph.py
@@ -216,8 +207,6 @@
 !sentinel/infrastructure/tool_adapters.py
 !sentinel/infrastructure/trace_export.py
 !sentinel/interface/__init__.py
-!sentinel/interface/a2a_proxy_routes.py
-!sentinel/interface/a2a_routes.py
 !sentinel/interface/app_routes.py
 !sentinel/interface/asgi.py
 !sentinel/interface/authorizations.py
@@ -226,7 +215,6 @@
 !sentinel/interface/console/app.css
 !sentinel/interface/console/app.js
 !sentinel/interface/console/index.html
-!sentinel/interface/delegation_verification.py
 !sentinel/interface/evidence_cli.py
 !sentinel/interface/extra_routes.py
 !sentinel/interface/health_routes.py
