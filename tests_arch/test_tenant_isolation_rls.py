@@ -47,7 +47,7 @@ import pytest
 
 from sentinel.domain.errors import TransientFailure
 from sentinel.infrastructure.sql.engine import Dialect
-from sentinel.infrastructure.sql.schema import PROTECTED_TABLES, WORKER_SCOPED_TABLES
+from sentinel.infrastructure.sql.schema import CURRENT_PROTECTED_TABLES as PROTECTED_TABLES, WORKER_SCOPED_TABLES
 
 TENANT_A = "acme"
 TENANT_B = "globex"

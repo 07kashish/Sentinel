@@ -240,3 +240,15 @@ Tables await the single cleanup migration. Stable execution-binding and Passport
 delegation evidence fields remain; they are not the removed A2A protocol.
 Return signal: a customer needs cross-agent delegation with a specified trust,
 identity and credential boundary, measured against real peers.
+
+## Final table cleanup (migration 40)
+
+One appended migration drops `user_credentials`, `user_sessions`,
+`enrolment_tickets`, `webauthn_challenges`, `users`, `organizations`,
+`a2a_agent_cards`, and `device_discovery`, in that order without CASCADE.
+Historical DDL and migrations 1–39 remain available for replay. No tenant,
+approval, operation, receipt, remediation, policy, observation, audit or
+transparency table is dropped. Retained tables' indexes, grants, roles and RLS
+policies are covered by before/after local upgrade tests. This migration removes
+parked-feature data when an operator runs it; archive the old DB if that data
+must be recovered. No production database was changed in this cleanup.

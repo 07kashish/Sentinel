@@ -124,6 +124,13 @@ def test_every_declared_table_survives_an_upgrade_from_an_older_version(pool):
     """
     assert migrate(pool) == CURRENT_VERSION
 
+    # Restore the historical table set before replaying pre-cleanup versions.
+    from sentinel.infrastructure.sql.migrate import _create_baseline
+    with pool.acquire() as conn:
+        conn.begin()
+        _create_baseline(conn)
+        conn.commit()
+
     # Rewind to the state an older deployment is in: the tables are present but
     # the recorded version is behind, which is exactly what a build that shipped
     # before those migrations existed looks like.
@@ -190,30 +197,12 @@ def test_a_tenant_scoped_table_added_late_is_still_protected(pool, engine_config
     )
 
 
+
+
 def _declared_tables() -> set[str]:
-    """Table names parsed out of `SCHEMA_STATEMENTS`.
-
-    Parsed rather than hand-listed, so a table cannot be added to the schema and
-    quietly omitted from this check -- which is the very failure mode being
-    guarded against.
-    """
-    import re
-
-    from sentinel.infrastructure.sql.schema import SCHEMA_STATEMENTS
-
-    found: set[str] = set()
-    for statement in SCHEMA_STATEMENTS:
-        # `[a-z0-9_]`, not `[a-z_]`. The original excluded digits, so the first
-        # table whose name contains one -- `a2a_agent_cards` -- parsed as `a`,
-        # and the check then reported a missing table called "a" rather than the
-        # real name. Worse, a digit-containing name that DID exist would have
-        # been silently checked under the wrong identifier and passed.
-        match = re.search(
-            r"CREATE TABLE IF NOT EXISTS\s+([a-z0-9_]+)", statement, re.IGNORECASE
-        )
-        if match:
-            found.add(match.group(1))
-    return found
+    """Live DDL-derived tables, excluding only migration 40's explicit drops."""
+    from sentinel.infrastructure.sql.schema import CURRENT_TABLES
+    return set(CURRENT_TABLES)
 
 
 def _table_exists(pool, table: str) -> bool:
@@ -737,7 +726,7 @@ def test_a_scoped_read_sees_only_its_own_tenant(pool, uows):
 # verify() on version 30, start cleanly, and fail on the first query against a
 # table it had never created.
 SCHEMA_FINGERPRINT = "2b0df6c5920fc8cbe94a690bdb4fccc8dd57df2e27015e005b0c9b5511549a32"
-SCHEMA_FINGERPRINT_VERSION = 39
+SCHEMA_FINGERPRINT_VERSION = 40
 
 
 def test_a_schema_change_forces_a_migration_version_bump():

@@ -58,7 +58,7 @@ from sentinel.infrastructure.sql.retention import (
     INCIDENT_CHILD_TABLES,
     SqlRetention,
 )
-from sentinel.infrastructure.sql.schema import SCHEMA_STATEMENTS
+from sentinel.infrastructure.sql.schema import CURRENT_TABLES
 from sentinel.interface.worker import MaintenanceLoop
 
 TENANT = TenantId("acme")
@@ -685,14 +685,10 @@ def test_the_maintenance_loop_runs_the_incident_sweep_when_configured(
 # ── The gate that makes a NEW table impossible to leave unbounded ────────────
 
 
+
+
 def _schema_tables() -> set[str]:
-    pattern = re.compile(r"CREATE TABLE IF NOT EXISTS (\w+)")
-    return {
-        match.group(1)
-        for statement in SCHEMA_STATEMENTS
-        for match in [pattern.search(statement)]
-        if match
-    }
+    return set(CURRENT_TABLES)
 
 
 def _reaped_tables() -> set[str]:

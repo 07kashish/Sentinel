@@ -798,3 +798,26 @@ def _worker_scope_statements(table: str) -> tuple[str, ...]:
 SCHEMA_STATEMENTS: Final[tuple[str, ...]] = (
     _CORE_STATEMENTS + REGISTRY_STATEMENTS + EXECUTION_STATEMENTS + DEVICE_STATEMENTS + CONNECTED_APP_STATEMENTS
 )
+
+
+# Live inventories after migration 40. Historical DDL and PROTECTED_TABLES
+# above remain unchanged because migrations 1–39 replay them.
+PARKED_TABLES: Final[frozenset[str]] = frozenset({
+    "user_credentials", "user_sessions", "enrolment_tickets", "webauthn_challenges",
+    "users", "organizations", "a2a_agent_cards", "device_discovery",
+})
+
+
+def _current_tables() -> frozenset[str]:
+    import re
+
+    pattern = re.compile(r"CREATE TABLE IF NOT EXISTS\s+([a-z0-9_]+)", re.IGNORECASE)
+    historical = {match.group(1) for statement in SCHEMA_STATEMENTS
+                  if (match := pattern.search(statement))}
+    return frozenset(historical - PARKED_TABLES) | {"schema_migrations"}
+
+
+CURRENT_TABLES: Final[frozenset[str]] = _current_tables()
+CURRENT_PROTECTED_TABLES: Final[tuple[str, ...]] = tuple(
+    current_name for current_name in PROTECTED_TABLES if current_name not in PARKED_TABLES
+)

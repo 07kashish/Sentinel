@@ -2578,3 +2578,32 @@ in the final migration together with organizations and A2A cards.
 - Verified touched cases, with corrected reruns superseding earlier failures: 252 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Full Phase 3 Linux verification and the single drop migration remain pending.
+
+### P3-015: exact appended migration and current schema
+
+Append migration 40 only. Drop in this order: user_credentials, user_sessions,
+enrolment_tickets, webauthn_challenges, users, organizations, a2a_agent_cards,
+device_discovery. Fresh recursive SQL consumer search found no retained feature
+reader; only historical DDL and housekeeping remain. No CASCADE. Preserve
+migrations 1–39 and their DDL/helper inputs byte-for-byte. Keep replay_nonces:
+it is shared with retained execution replay prevention, not A2A-only storage.
+Keep all tenant/core tables, indexes, roles and RLS policies unchanged.
+Introduce current_schema inventories for live fitness checks; historical
+SCHEMA_STATEMENTS and PROTECTED_TABLES still replay the old migrations unchanged.
+Remove only parked-table housekeeping/counts. Update historical-upgrade fixtures
+to actually build the previous schema before replay, not delete version rows
+under an already-cleaned schema. Keep all retained schema/retention/RLS assertions.
+The production migration is operator-run; this work exercises local test DBs only.
+
+Migration verification: all four new real-database cases passed after migration 40.
+The SQL identifier guard flagged the metadata-only comprehension's `table` name;
+that name is reserved for audited SQL construction, so use `current_name` for
+the non-SQL inventory projection. No guard assertion or SQL interpolation changed.
+
+### Phase 3 group complete: migration
+
+- Removed 0 whole files (0 lines); changed-path and numstat records: baseline/phase3/migration/result.json.
+- Collection: 3358 cases; 0 removed IDs and 4 added IDs since the preceding collection (baseline/phase3/migration/test-delta.json).
+- Verified touched cases, with corrected reruns superseding earlier failures: 132 passed, 8 skipped, zero remaining failures/errors. Reports: targeted.xml, guard-fixed.xml.
+- Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
+- Migration 40 is implemented; full Phase 3 Linux verification remains pending.

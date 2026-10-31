@@ -478,6 +478,18 @@ def _add_execution_binding_tables(conn: Connection) -> None:
     _apply_rls(conn)
 
 
+def _drop_parked_features(conn: Connection) -> None:
+    """Retire only the enumerated Phase 3 feature tables; never cascade."""
+    conn.execute_rowcount("DROP TABLE IF EXISTS user_credentials")
+    conn.execute_rowcount("DROP TABLE IF EXISTS user_sessions")
+    conn.execute_rowcount("DROP TABLE IF EXISTS enrolment_tickets")
+    conn.execute_rowcount("DROP TABLE IF EXISTS webauthn_challenges")
+    conn.execute_rowcount("DROP TABLE IF EXISTS users")
+    conn.execute_rowcount("DROP TABLE IF EXISTS organizations")
+    conn.execute_rowcount("DROP TABLE IF EXISTS a2a_agent_cards")
+    conn.execute_rowcount("DROP TABLE IF EXISTS device_discovery")
+
+
 MIGRATIONS: Sequence[tuple[int, str, Callable[[Connection], None]]] = (
     (1, "baseline schema", _create_baseline),
     (2, "force row-level security on every tenant-scoped table", _apply_rls),
@@ -621,6 +633,7 @@ MIGRATIONS: Sequence[tuple[int, str, Callable[[Connection], None]]] = (
     (37, "evidence_commitments, tenant-scoped and append-only", _add_execution_binding_tables),
     (38, "consented device presence inventory, tenant-scoped", _add_device_discovery),
     (39, "connected applications with sealed credentials, tenant-scoped", _add_connected_apps),
+    (40, "drop parked Phase 3 feature tables", _drop_parked_features),
 )
 
 CURRENT_VERSION: int = max(version for version, _desc, _fn in MIGRATIONS)
@@ -680,4 +693,3 @@ def verify(pool: ConnectionPool) -> int:
             "schema is deliberate."
         )
     return found
-

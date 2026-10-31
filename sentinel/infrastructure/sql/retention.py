@@ -224,30 +224,11 @@ APPEND_ONLY_TABLES: Mapping[str, str] = MappingProxyType({
         "cannot tell from an unenrolled one, so ageing rows out would silently "
         "widen the bypass surface `detect_possible_bypasses` watches."
     ),
-    "users": "Human identity. Removing it is an offboarding decision with its own approval path.",
-    "user_credentials": "Authenticators for a live user; deleting one locks that human out.",
-    "user_sessions": (
-        "Bounded by its own `expires_at` and cleared on logout, so it does not "
-        "grow with traffic; ageing it out separately would only add a second, "
-        "disagreeing expiry."
-    ),
-    "enrolment_tickets": (
-        "Single-use and short-lived by construction; consumed on redemption "
-        "rather than swept."
-    ),
-    "organizations": "One row per tenant organisation. Bounded by tenant count, not by traffic.",
+
+
     "leader_locks": "One row per named job. Bounded by the number of jobs, which is a constant.",
     "schema_migrations": "One row per applied migration. Deleting one would re-run it.",
-    "a2a_agent_cards": (
-        "The trust anchor for A2A enrolment, and the same decision as "
-        "`mcp_servers` for the same reasons. Bounded by the number of agents a "
-        "tenant enrolled, not by traffic: one row per agent, updated in place "
-        "on re-enrolment rather than appended. Time-reaping it would be "
-        "actively unsafe -- an aged-out card silently makes an enrolled agent "
-        "read as UNENROLLED, which refuses every delegation to a peer that was "
-        "working yesterday, and it takes the pinned fingerprint with it so "
-        "drift detection stops rather than fires."
-    ),
+
     "mcp_servers": (
         "The trust anchor for MCP and OpenAPI enrolment: which servers an "
         "operator decided about, and what they decided. Bounded by the number of "
@@ -298,7 +279,6 @@ class RetentionSweep:
     outbox_delivered: int
     inbox_entries: int
     replay_nonces: int
-    webauthn_challenges: int = 0
     agent_observations: int = 0
     agent_observed_edges: int = 0
     execution_nodes: int = 0
@@ -307,7 +287,6 @@ class RetentionSweep:
     execution_authorizations: int = 0
     execution_operations: int = 0
     protect_control_state: int = 0
-    device_discovery: int = 0
 
     @property
     def total(self) -> int:
@@ -316,7 +295,6 @@ class RetentionSweep:
             + self.outbox_delivered
             + self.inbox_entries
             + self.replay_nonces
-            + self.webauthn_challenges
             + self.agent_observations
             + self.agent_observed_edges
             + self.execution_nodes
@@ -325,7 +303,6 @@ class RetentionSweep:
             + self.execution_authorizations
             + self.execution_operations
             + self.protect_control_state
-            + self.device_discovery
         )
 
     def as_dict(self) -> Mapping[str, int]:
@@ -334,7 +311,6 @@ class RetentionSweep:
             "retention_outbox_delivered": self.outbox_delivered,
             "retention_inbox_entries": self.inbox_entries,
             "retention_replay_nonces": self.replay_nonces,
-            "retention_webauthn_challenges": self.webauthn_challenges,
             "retention_agent_observations": self.agent_observations,
             "retention_agent_observed_edges": self.agent_observed_edges,
             "retention_execution_nodes": self.execution_nodes,
@@ -343,7 +319,6 @@ class RetentionSweep:
             "retention_execution_authorizations": self.execution_authorizations,
             "retention_execution_operations": self.execution_operations,
             "retention_protect_control_state": self.protect_control_state,
-            "retention_device_discovery": self.device_discovery,
             "retention_rows_deleted": self.total,
         }
 
@@ -460,7 +435,6 @@ class SqlRetention:
                 "execution_authorizations",
                 "execution_operations",
                 "protect_control_state",
-                "device_discovery",
             ),
             0,
         )
@@ -604,12 +578,6 @@ class SqlRetention:
                     f"AND last_seen<{p}",
                     (tenant.value, cutoff),
                 )
-                # Self-reported device inventory: a dated snapshot; reaped, not kept forever.
-                totals["device_discovery"] += conn.execute_rowcount(
-                    f"DELETE FROM device_discovery WHERE tenant_id={p} "
-                    f"AND received_at<{p}",
-                    (tenant.value, cutoff),
-                )
                 # Containments are reaped, but ONLY once they are no longer in
                 # force. The `revoked_at<>''` predicate is load-bearing: without
                 # it the sweep would delete an ACTIVE containment whose
@@ -633,31 +601,11 @@ class SqlRetention:
                 )
                 conn.commit()
 
-        # `webauthn_challenges` is deliberately NOT tenant-protected -- a
-        # challenge is issued before the caller is known, so there is no tenant
-        # to scope it to (see migrate.py v7). It is therefore swept ONCE, outside
-        # the per-tenant loop, and correctly needs no context.
-        #
-        # It is here at all because the declared-or-reaped gate found it: it
-        # ships `ix_challenges_issued ON webauthn_challenges(issued_at)`, an index
-        # whose only possible purpose is an age purge, and had no caller -- the
-        # same signature as `ix_inbox_age` and `ix_nonces_expiry` before this
-        # module existed. It has no writer in the tree TODAY, so this deletes
-        # nothing today; it means the table is bounded on the day a writer is
-        # added rather than six months after.
-        with self._pool.acquire() as conn:
-            conn.begin()
-            webauthn_challenges = conn.execute_rowcount(
-                f"DELETE FROM webauthn_challenges WHERE issued_at<{conn.p}", (cutoff,)
-            )
-            conn.commit()
-
         return RetentionSweep(
             work_queue_done=totals["work_queue"],
             outbox_delivered=totals["outbox"],
             inbox_entries=totals["inbox"],
             replay_nonces=totals["replay_nonces"],
-            webauthn_challenges=webauthn_challenges,
             agent_observations=totals["agent_observations"],
             agent_observed_edges=totals["agent_observed_edges"],
             execution_nodes=totals["execution_nodes"],
@@ -666,7 +614,6 @@ class SqlRetention:
             execution_authorizations=totals["execution_authorizations"],
             execution_operations=totals["execution_operations"],
             protect_control_state=totals["protect_control_state"],
-            device_discovery=totals["device_discovery"],
         )
 
     def sweep_incident_history(

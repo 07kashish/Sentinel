@@ -10,15 +10,16 @@ from sentinel.infrastructure.sql.migrate import CURRENT_VERSION, migrate
 ADMIN = "pilot-admin-synthetic-key-00000000000000"
 
 
-def test_upgrade_from_previous_schema(engine_config):
+def test_upgrade_from_previous_schema(engine_config, monkeypatch):
+    import importlib
+    migration_module = importlib.import_module("sentinel.infrastructure.sql.migrate")
     pool = build_engine(engine_config)
     try:
-        migrate(pool)
-        with pool.acquire() as conn:
-            conn.begin()
-            conn.execute_rowcount("DROP TABLE device_discovery")
-            conn.execute_rowcount("DELETE FROM schema_migrations WHERE version=38")
-            conn.commit()
+        with monkeypatch.context() as patch:
+            patch.setattr(migration_module, "MIGRATIONS", tuple(
+                row for row in migration_module.MIGRATIONS if row[0] <= 37
+            ))
+            assert migrate(pool) == 37
         assert migrate(pool) == CURRENT_VERSION
         assert migrate(pool) == CURRENT_VERSION
     finally:
