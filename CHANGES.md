@@ -4,17 +4,172 @@ Updated: 2026-11-12 (Asia/Calcutta).
 
 ## Current checkpoint
 
-**Phase 3 is complete; Ready for Phase 4: yes.** Phase 4 has not started.
-SOAR, orgs/SCIM and A2A parking plus migration 40 are committed. The five existing
-commits were backed up first, and origin was verified at `868bbf8`. The four
-pending documentation changes were committed as `e6fc483`; shared reply-text and
-private-credential throttle coverage were restored in `036c392` and `767bee6`.
+**Phase 4 cleanup and Linux verification are complete; Ready for Checkpoint 2: no.**
+Docker remains unavailable in WSL. The final uninterrupted suite passed with
+**3,321 passed, 41 skipped, 0 failed, 0 errors, 0 timeouts**; every skip ID/reason
+matches Phase 3. No Phase 5 work, merge or PR is performed.
 
-All six requested audits pass after those restorations. The exact checks and
-exhaustive deleted-test inventory are in [CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-3-results).
-User-approved P3-019 and the remaining migration fixtures (P3-020) are resolved
-in `73af863`. The final complete Linux suite passed uninterrupted: **3,321 passed,
-41 skipped, 0 failed, 0 errors, 0 timeouts**. No Phase 3 question remains open.
+## Phase 4 results
+
+**Ready for Checkpoint 2: no — blocked on Docker verification.**
+The cleanup implementation, native quickstart and complete Linux verification
+are finished. No Phase 5 work is started. The full per-reader/per-route evidence,
+protected-test edit inventory and all skipped case identities are retained in
+[CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-4-decisions), P4-005 through P4-013.
+
+| Group | Result | Commit |
+|---|---|---|
+| Settings | Remove one unused field and four unsupported/unused names; document retained inputs without changing defaults. | `aecd2a3` |
+| Routes | Remove three unused optional UIs; authenticate the retained schema. | `3756559` |
+| README | Current core, verified clean-venv quickstart, configuration/parked links and clearly unbuilt next work. | `5afaab9` |
+| Schema test callers | Authenticate two schema inspectors; preserve every original transparency assertion. | `a80efe7` |
+| Final records | Full-suite outcome, invariant/skip evidence, consistent measurements and Docker blocker. | `chore(phase4): record results` (this commit) |
+
+### Settings and route decisions
+
+The complete per-field/per-name reader audit and every constructed route are in
+[CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-4-decisions), decisions P4-005/P4-006.
+All 63 input Settings fields and 146 documented name/prefix entries were audited.
+The new [configuration reference](docs/CONFIGURATION.md) documents kept inputs
+and unchanged defaults, including operational and dynamic secret inputs.
+
+| Setting/name | Kept reader | Decision |
+|---|---|---|
+| `Settings.log_level` / `SENTINEL_LOG_LEVEL` | none; parsed value never reached the logger | Remove field, parser, example and Compose entry. |
+| `SENTINEL_REQUIRE_LIVE` | none | Remove unsupported documentation claim. |
+| `SENTINEL_ADDRESS_LIMIT_PER_MINUTE` | none | Remove ignored benchmark spelling; effective limiter defaults unchanged. |
+| `SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE` | none | Remove ignored benchmark spelling; effective limiter defaults unchanged. |
+| `region` / `SENTINEL_REGION` | none in runtime code | Keep by explicit user instruction; document limitation. |
+| Other 61 Settings fields | executable kept readers, listed in P4-005 | Keep; no default changes. |
+| Remediation, retention, attestation, DB/backup/WAL and security controls | kept consumers documented in P4-005 | Keep all specified controls. |
+
+The four removed names are catalogued in PARKED.md. The retired-name scanner
+has exactly three exemptions: CHANGES.md, CLEANUP_PLAN.md and docs/PARKED.md.
+Historical unsupported spelling examples remain negative examples, not settings.
+There was no supported log-level `_FILE` parser or validation branch to remove.
+
+| Method | Route(s) | Decision and consumer/authentication |
+|---|---|---|
+| GET, HEAD | `/docs` | Remove unused framework documentation UI. |
+| GET, HEAD | `/docs/oauth2-redirect` | Remove unused framework documentation redirect. |
+| GET, HEAD | `/redoc` | Remove unused framework documentation UI. |
+| GET | `/openapi.json` | Keep for CI schema fuzzing; opt-in, now bearer + READ_DIAGNOSTICS. No kept HEAD consumer; framework HEAD removed. |
+| GET | `/health/live`, `/health/ready` | Keep public health/readiness allowlist. |
+| GET | `/console`, `/console/app.js`, `/console/app.css` | Keep public static console allowlist; its data/action APIs remain authenticated. |
+| GET | `/metrics/prometheus` | Keep separate scrape bearer protection; returns 503 when not configured. |
+| Various | Other retained APIs, individually listed in P4-006 | Keep for console, SDK, CLI, worker, MCP or documented manual operator use; principal authentication and capabilities required. |
+
+All 17 constructed-app scenarios passed their authentication/capability audit.
+The default app remains 52 routes; the optional union falls from 57 to 54.
+AST declarations rise from 53 to 54 because the retained schema is now an explicit
+protected handler. No test function was removed. The schema test retains the
+successful authorized response and adds 401/403 and removed-UI checks.
+The route-authorization fitness test is byte-identical to the Phase 4 input.
+
+### Core invariants
+
+| Check | Verdict | Evidence |
+|---|---|---|
+| Thin SDK uses only the standard library | PASS | Isolated release-hygiene import probe; release-hygiene/protect probes: 49 passed. |
+| Protected tests preserve kept assertions | PASS with recorded approved edits | 52 files against archive/pre-cleanup: 37 byte-identical, 14 changed, 1 added. Every historical edit and its commit is listed under P4-007. Phase 4 strengthens optional-schema authentication coverage and supplies admin credentials to two schema inspectors, preserving every original transparency assertion (P4-013). |
+| Deterministic rules are the decision authority | PASS | Gate/execution authorization has no model call; four priority/model-authority/outage checks pass. Optional incident enrichment remains advisory and cannot choose authority. |
+| Every skip has an explicit reason | PASS | All 41 cases have exactly the same IDs and reasons as Phase 3, grouped under 19 reasons. All case IDs and reasons are listed under P4-007. Skips are not claimed as verified behavior. |
+
+### Archive-to-final measurements
+
+| Measurement | archive/pre-cleanup (`d63463c`) | Final Phase 4 tree |
+|---|---:|---:|
+| Tracked files | 989 | 594 |
+| Text LOC: sentinel/ | 82,226 | 57,885 |
+| Text LOC: tests_arch/ | 70,652 | 52,003 |
+| Text LOC: total | 326,506 | 219,055 |
+| Binary bytes | 5,379,130 | 0 |
+| Python modules under sentinel/ | 258 | 190 |
+| Test cases collected | 4,609 | 3,362 |
+| Routes: AST declarations | 78 | 54 |
+| Routes: constructed default | 76 | 52 |
+| Routes: union across optional flags | 82 | 54 |
+| Settings fields | 76 | 62 |
+| Documented concrete SENTINEL names | 155 | 137 |
+| Direct runtime dependencies | 12 | 11 |
+| CI jobs | 20 | 16 |
+| Docker image size | not measured | UNVERIFIED |
+
+Identical measurement implementation and interpreter for both refs:
+
+```bash
+.venv/bin/python scripts/dev/cleanup_metrics.py --ref archive/pre-cleanup --checkout /home/lenovo2/.cache/sentinel-cleanup-phase4/archive-42mt4hu7/sentinel --out baseline/phase4/archive-metrics.json
+.venv/bin/python scripts/dev/cleanup_metrics.py --ref HEAD --checkout /home/lenovo2/sentinel --out baseline/phase4/final-metrics.json
+```
+
+The helper reads tracked blobs with `git ls-tree -rz --full-tree REF` and
+`git cat-file --batch`. Text means UTF-8 without NUL bytes; physical LOC includes
+comments and blanks. Other blobs contribute binary bytes. Module counts include
+initializers. It parses literal interface route decorators and Settings annotated
+fields with Python AST, counts direct requirements.txt entries and YAML workflow
+jobs, and counts unique concrete documented names across README, example env,
+Helm, Compose and Markdown docs, excluding the three historical removal records.
+Wildcard family prefixes are separate: 4 before, 6 after. Each tree uses the same
+isolated SQLite migration/app construction and each boolean optional flag,
+including nested workflow flags. Route counts count route objects/method sets;
+the union is not one deployment. Collection uses the same interpreter and command
+in each checkout:
+
+```bash
+/home/lenovo2/sentinel/.venv/bin/python -m pytest tests_arch/ --collect-only -q -o addopts=
+```
+
+Archive counts are from the exact recovery tag, not the later Phase 0 baseline
+that included approved initial fixes. Final tracked counts include this result
+record and the measurement helper. Runtime/collection measurements are repeated
+on the clean committed final checkout before pushing.
+
+### Verification, Docker and remaining condition
+
+The final Phase 0 command ran uninterrupted in Linux/WSL, exiting 0:
+
+```bash
+pytest tests_arch/ -q --timeout=120 --timeout_method=thread --durations=30 -rA --junitxml=baseline/phase4/junit.xml 2>&1 | tee baseline/phase4/pytest.log
+```
+
+A shell pipefail guard preserved pytest's status. Final result: **3,321 passed,
+41 skipped, 0 failed, 0 errors, 0 timeouts**
+(3,362 cases; JUnit 1,554.076 seconds). Case count, passed total and skipped total are unchanged from Phase 3; no skip reason changed. The archive-to-final case reduction belongs to earlier cleanup phases.
+The first complete run had 3,317 passed / 41 skipped / 4 failed: two transparency
+schema inspectors were still anonymous, on both databases. P4-013 fixed only
+those test callers, retained every original assertion and added explicit 200
+checks (`a80efe7`). That failed run is preserved under
+baseline/phase4/attempt-1-failed and is superseded by the final complete run.
+Raw logs, JUnit, inventories and measurement JSON remain ignored under
+baseline/phase4; reports and raw logs are not committed.
+
+Ruff, 10 import-graph unit tests, 2 removed-name scanner tests, actionlint and the
+release secret scan all pass. The graph gate has zero unexplained orphans,
+zero unresolved internal imports and zero stale allowances; the 11 retained
+library/entry-point allowances remain explicitly recorded. The retired-name
+scan checks 66 names/prefixes with zero findings outside the exact three-file
+exemption list. Relative Markdown links: 89 checked, zero broken.
+The SQLite drill artifact remains absent, matching its initial state.
+
+The README's ten commands were run in a clean clone with a fresh venv/server
+install, migration and real ASGI startup. Liveness/readiness both returned 200;
+native startup including migration took 1.24 seconds, then the server stopped.
+The README describes existing behavior and marks Phase 5 work as not built.
+
+**Docker: UNVERIFIED (not installed in WSL)**. `docker version` exits 127; no
+server, image build, image size, container startup time, healthcheck or Compose
+verification is claimed. This is the remaining Checkpoint 2 blocker.
+
+Deviations/explicit exceptions: retain REGION without a runtime consumer as
+instructed; retain documented manual safety/operator APIs even without a literal
+first-party client call; preserve ignored benchmark limits' effective defaults.
+Remove only the unused UI routes and protect the retained schema. Historical
+negative spelling examples remain guarded. The review's sole minor record issue
+was corrected to distinguish the archive clone from the candidate checkout;
+there were no critical or important findings in the reviewed implementation.
+The later P4-013 fixture correction was checked against every original assertion,
+112 focused tests and the complete final suite. No Phase 5 code, merge or PR.
+
 
 ## Phase 3 results
 
