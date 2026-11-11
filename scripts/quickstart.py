@@ -397,7 +397,7 @@ def main() -> int:
             _say("")
             _say("Next:")
             _say(f"  console   {base}/console  (viewer key: {VIEW_KEY})")
-            _say(f"  openapi   {base}/openapi.json")
+            _say("  schema    opt-in OpenAPI requires an authenticated diagnostics reader")
             _say("  full stack: docker compose up -d")
             _say("")
             _say("This ran on SQLite in a temp directory, which is now deleted.")

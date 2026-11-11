@@ -94,19 +94,14 @@ def create_app(container: Container) -> FastAPI:
     """Build the ASGI application around an already-wired container."""
     settings = container.settings
 
-    # The interactive docs and the schema are DISABLED unless a deployment opts
-    # in. Proven against the running app before this change: `/docs`, `/redoc` and
-    # `/openapi.json` all answered 200 to an unauthenticated caller and disclosed
-    # all nine routes with their request shapes. That is free reconnaissance, and
-    # Swagger UI additionally loads script from a third-party CDN -- the one
-    # browser surface this service has, unauthenticated, with remote script.
-    expose_docs = settings.expose_api_docs
+    # Interactive documentation UIs are not part of the kept core. The optional
+    # schema route is registered below with the normal authentication boundary.
     app = FastAPI(
         title="Sentinel",
         version="3.0.0",
-        docs_url="/docs" if expose_docs else None,
-        redoc_url="/redoc" if expose_docs else None,
-        openapi_url="/openapi.json" if expose_docs else None,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
     )
 
     def _tenant_of_credential(digest: str, token: str) -> str | None:
@@ -347,6 +342,12 @@ def create_app(container: Container) -> FastAPI:
             return principal
 
         return dependency
+
+    if settings.expose_api_docs:
+        @app.get("/openapi.json", include_in_schema=False)
+        def openapi_schema(principal: Principal = Depends(require(Capability.READ_DIAGNOSTICS))):
+            """Authenticated schema for integration tooling; never enabled by default."""
+            return app.openapi()
 
     def _incident_id(raw: str) -> IncidentId:
         try:

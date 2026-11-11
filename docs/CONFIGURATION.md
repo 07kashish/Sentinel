@@ -19,7 +19,7 @@ Production requires PostgreSQL, API keys at least 32 characters long, explicit
 CORS origins, explicit limiter failure and execution-binding choices, and an
 explicit evidence-encryption decision. Multiple processes require a shared Redis
 limiter; topology checks refuse ambiguous deployments unless single-process
-operation is explicitly attested. Production refuses interactive API docs.
+operation is explicitly attested. Production refuses schema publication. Interactive documentation UIs are absent.
 
 Decisions default to advisory mode. Enforcement and execution binding are separate
 controls: binding defaults on, while protect enforcement defaults off. Keep
@@ -107,6 +107,10 @@ working directory; PostgreSQL defaults to a pool of 2–20 connections.
 | `root_sink` | {"bucket": "", "region": "", "access_key_id": "", "secret_access_key": "", "session_token": "", "container_credentials_uri": "", "container_authorization": "", "retention_days": 3650, "publish_tenants": [], "publish_interval_seconds": 86400} | `SENTINEL_ROOT_PUBLISH_INTERVAL_SECONDS`, `SENTINEL_ROOT_PUBLISH_TENANTS`, `SENTINEL_S3_ROOT_ACCESS_KEY_ID`, `SENTINEL_S3_ROOT_BUCKET`, `SENTINEL_S3_ROOT_REGION`, `SENTINEL_S3_ROOT_RETENTION_DAYS`, `SENTINEL_S3_ROOT_SECRET_ACCESS_KEY`, `SENTINEL_S3_ROOT_SESSION_TOKEN` |
 | `workflow` | {"require_workload_identity": false, "approval_quorum": 1, "approval_separation_of_duties": true, "reconcile_max_attempts": 5, "mcp_proxy_streaming": false, "evidence_keys": {}, "evidence_active_key": ""} | `SENTINEL_ACTIVE_KEY_ID`, `SENTINEL_APPROVAL_QUORUM`, `SENTINEL_APPROVAL_SEPARATION_OF_DUTIES`, `SENTINEL_DATA_KEY_`, `SENTINEL_ENV`, `SENTINEL_EVIDENCE_ENCRYPTION`, `SENTINEL_MCP_PROXY_STREAMING`, `SENTINEL_RECONCILE_MAX_ATTEMPTS`, `SENTINEL_REQUIRE_WORKLOAD_IDENTITY` |
 | `advisor` | {"endpoint": "", "model": "", "token": "", "cli_command": "", "cli_home": ""} | `SENTINEL_ADVISOR_CLI_COMMAND`, `SENTINEL_ADVISOR_CLI_HOME`, `SENTINEL_ADVISOR_ENDPOINT`, `SENTINEL_ADVISOR_MODEL`, `SENTINEL_ADVISOR_TOKEN` |
+
+`SENTINEL_EXPOSE_API_DOCS=true` enables only `/openapi.json`, requiring a bearer
+principal with `READ_DIAGNOSTICS`. It remains off by default and forbidden in
+production. The unused interactive UIs are not registered.
 
 ## Environment-name reference
 

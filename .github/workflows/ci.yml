@@ -1028,15 +1028,9 @@ jobs:
       SENTINEL_ENV: development
       SENTINEL_API_KEYS: ci:ci-dast-key-material-32characters:admin
       SENTINEL_DB_PATH: /tmp/sentinel-dast.db
-      # WITHOUT THIS, THIS JOB HAS NEVER ONCE FUZZED ANYTHING.
-      # `expose_api_docs` defaults to FALSE -- `/docs`, `/redoc` and
-      # `/openapi.json` are off unless an operator asks for them, deliberately,
-      # because they were previously always on and unauthenticated. So
-      # `/openapi.json` answered 404, `--wait-for-schema 30` waited its full
-      # thirty seconds for a schema that was never going to appear, and the job
-      # failed at ~30s having tested zero operations. Measured: 404 without this
-      # variable, 200 and 18,124 bytes with it. CI is an operator and has to ask
-      # out loud, exactly as it does for the Helm archiving acknowledgement.
+      # The schema is opt-in and requires READ_DIAGNOSTICS. The admin bearer
+      # header below authenticates both schema retrieval and generated requests.
+      # Interactive documentation UIs are not mounted.
       SENTINEL_EXPOSE_API_DOCS: "true"
       # `/metrics/prometheus` answers 503 "metrics token is not configured" when
       # no token is set, and `not_a_server_error` counts every 5xx as a server

@@ -133,13 +133,8 @@ class Settings:
     tenant_siem_credentials: Mapping[str, str]
     siem_webhook_token: str
     replay_window_seconds: int
-    #: Serve `/docs`, `/redoc` and `/openapi.json`. OFF unless asked for.
-    #:
-    #: These were previously always on and always unauthenticated: a probe of the
-    #: running app returned 200 for all three and disclosed every route with its
-    #: request shape. Swagger UI also loads script from a third-party CDN, which
-    #: makes it the only browser surface this service has -- unauthenticated, with
-    #: remote script. Refused outright in production.
+    #: Serve the authenticated `/openapi.json` schema for integration tooling.
+    #: OFF unless asked for; refused in production. Interactive docs UIs are absent.
     expose_api_docs: bool
     #: When the rate limiter is unreachable: allow (losing the limit) or deny
     #: (losing availability)?
@@ -367,12 +362,9 @@ class Settings:
         if production and expose_docs:
             raise ConfigurationError(
                 "SENTINEL_EXPOSE_API_DOCS cannot be enabled with "
-                "SENTINEL_ENV=production. The docs routes are unauthenticated by "
-                "construction -- FastAPI serves them before any dependency runs -- "
-                "so enabling them publishes every route and request shape to "
-                "anyone who can reach the port, and Swagger UI additionally loads "
-                "script from a third-party CDN. Read the schema from a "
-                "non-production deployment or generate it offline."
+                "SENTINEL_ENV=production. Schema publication is a non-production "
+                "integration-tooling capability. Use an authenticated development "
+                "deployment or generate the schema offline."
             )
 
         redis_url = source.get("SENTINEL_REDIS_URL", "").strip()

@@ -3155,8 +3155,9 @@ Phase 0 command uninterrupted, with pipefail, saving output under
 ### Phase 4 execution ledger
 
 - Preflight complete: clean local/remote starting commit confirmed; Docker absent.
-- Settings: inventory in progress; no removal decision made yet.
-- Routes, invariants, README, measurements and final suite: pending.
+- Settings complete: `aecd2a3`; 66 passed, 1 skipped; unchanged retained defaults.
+- Routes complete: optional UIs removed, schema authenticated; 125 focused tests passed.
+- Invariants, README, measurements and final suite: pending.
 
 
 ### P4-005 — settings removal and documentation decision
@@ -3418,3 +3419,142 @@ staging and production scenarios; the removed field is the only structural
 difference. Ruff and the settings/deployment/preflight/native-remediation tests
 pass. The retired-name scan moved from seven findings before removal to zero
 after removal. No test function or assertion was changed.
+
+
+### P4-006 — route scope and authentication decision
+
+Ruling before implementation: retain the 52 default routes and the optional MCP
+proxy. A missing literal client URL is not sufficient evidence to remove a kept
+safety capability: emergency authorization revocation, manual outcome
+reconciliation, coverage reporting, MCP evaluation, and connected-application
+registration/read/delete are documented operator or gateway APIs. Their kept
+execution, approval, operation-store and MCP assertions remain unchanged.
+Connected-app registration is the provisioning path for the retained `app_call`
+controlled-execution adapter. Manual reconciliation is explicitly returned by
+execution refusals and the worker's unknown-outcome diagnostic.
+
+Remove the three optional framework-owned interactive UI routes `/docs`,
+`/docs/oauth2-redirect` and `/redoc` (GET/HEAD). No kept console, SDK, CLI or worker
+uses them. Keep `/openapi.json` because the schema-fuzzing CI job consumes it;
+replace its unauthenticated framework handler with a normal route requiring
+`READ_DIAGNOSTICS`. The existing opt-in flag and its false default stay unchanged,
+and production still refuses the flag. CI already sends an admin bearer token.
+This tightens the requested authentication boundary without adding a capability
+or changing a default. Update only the mixed docs-exposure test to retain the
+valid schema response assertion with an authenticated caller and additionally
+prove anonymous/ingest refusal and absence of the three unused UI routes.
+Keep the route-authorization fitness test byte-for-byte unchanged.
+
+Explicit public allowlist: GET `/health/live`, `/health/ready`, `/console`,
+`/console/app.js`, `/console/app.css`. Probes must work when authentication is
+unavailable; the console shell/assets contain no tenant data or credentials and
+must load before a user supplies a token. `/metrics/prometheus` is not public:
+it requires its separate scrape bearer token and refuses when no token is set.
+Every remaining API route, including optional schema and MCP proxy, requires an
+authenticated principal and a declared capability. Preserve default headers,
+rate limits and all kept authorization assertions.
+
+#### Constructed app configurations before route cleanup
+
+Each boolean Settings field and boolean workflow field was flipped individually
+against an isolated migrated SQLite database; no background workers or external
+connectors were started. Flags that do not add routes still exercise constructed
+app registration. The default, docs+proxy combination and all individual
+configurations constructed successfully. Counts below are route objects, with
+GET/HEAD pairs represented as one framework route, not two declarations.
+
+| Configuration | Constructed routes before |
+|---|---:|
+| `default` | 52 |
+| `expose_api_docs=true` | 56 |
+| `rate_limit_fail_open=false` | 52 |
+| `protect_enforcement=true` | 52 |
+| `protect_kill_switch=true` | 52 |
+| `require_execution_binding=false` | 52 |
+| `remediation_dry_run=true` | 52 |
+| `mcp_require_pin=false` | 52 |
+| `mcp_proxy_enabled=true` | 53 |
+| `mcp_proxy_allow_private=true` | 52 |
+| `mcp_proxy_require_token_audience=false` | 52 |
+| `agent_require_grant=true` | 52 |
+| `ready_exposes_detection_mode=true` | 52 |
+| `workflow.require_workload_identity=true` | 52 |
+| `workflow.approval_separation_of_duties=false` | 52 |
+| `workflow.mcp_proxy_streaming=true` | 52 |
+| `docs+proxy` | 57 |
+
+#### Route decisions (constructed union)
+
+Default: **52** routes; MCP proxy: **53**; authenticated schema: **53**; both: **54**.
+All other boolean variants remain at 52. Static declarations are **54**, up from
+53 because the retained framework schema is now an explicit guarded declaration.
+Three optional framework UI routes were removed; no core route was deleted.
+
+| Method | Path | Handler (file:line) | Authentication | Kept capability / consumer | Decision |
+|---|---|---|---|---|---|
+| GET | `/openapi.json` | `openapi_schema` (sentinel/interface/http.py:347) | bearer + READ_DIAGNOSTICS | CI / SDK integration schema: .github/workflows/ci.yml:1057; authenticated schema fuzzer | KEEP |
+| POST | `/v1/events` | `ingest` (sentinel/interface/http.py:376) | bearer + INGEST_EVENT | SDK / MCP gateway: sentinel/sdk/remote.py:431 | KEEP |
+| GET | `/v1/incidents` | `list_incidents` (sentinel/interface/http.py:402) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:530 | KEEP |
+| GET | `/v1/incidents/{incident_id}` | `get_incident` (sentinel/interface/http.py:415) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:530 | KEEP |
+| GET | `/v1/incidents/{incident_id}/history` | `get_history` (sentinel/interface/http.py:444) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:549 | KEEP |
+| GET | `/v1/incidents/{incident_id}/report` | `get_report` (sentinel/interface/http.py:458) | bearer + READ_REPORT | console: sentinel/interface/console/app.js:568 | KEEP |
+| GET | `/v1/dashboard` | `dashboard` (sentinel/interface/http.py:467) | bearer + READ_DASHBOARD | console: sentinel/interface/console/app.js:588 | KEEP |
+| POST | `/v1/approvals/{approval_id}` | `decide` (sentinel/interface/http.py:473) | bearer + DECIDE_APPROVAL | console: sentinel/interface/console/app.js:803 | KEEP |
+| POST | `/v1/protect/evaluate` | `protect_evaluate` (sentinel/interface/http.py:514) | bearer + EVALUATE_PROTECT | SDK / MCP gateway: sentinel/sdk/remote.py:138 | KEEP |
+| POST | `/v1/mcp/evaluate` | `mcp_evaluate` (sentinel/interface/http.py:614) | bearer + EVALUATE_PROTECT | MCP gateway: sentinel/application/mcp_gateway.py; docs/INTEGRATIONS.md evaluation contract | KEEP |
+| GET | `/health/live` | `liveness` (sentinel/interface/health_routes.py:47) | public allowlist | health/metrics: .github/workflows/ci.yml:254 | KEEP |
+| GET | `/health/ready` | `readiness` (sentinel/interface/health_routes.py:111) | public allowlist | health/metrics: .github/workflows/ci.yml:485 | KEEP |
+| GET | `/health/diagnostics` | `diagnostics` (sentinel/interface/health_routes.py:135) | bearer + READ_DIAGNOSTICS | console: sentinel/interface/console/app.js:2034 | KEEP |
+| GET | `/metrics/prometheus` | `prometheus_metrics` (sentinel/interface/http.py:700) | scrape bearer token | health/metrics: .github/workflows/ci.yml:1041 | KEEP |
+| POST | `/v1/policy/validate` | `policy_validate` (sentinel/interface/policy_routes.py:142) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1728 | KEEP |
+| POST | `/v1/policy/versions` | `policy_deploy` (sentinel/interface/policy_routes.py:151) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1569 | KEEP |
+| POST | `/v1/policy/versions/{version}/activate` | `policy_activate` (sentinel/interface/policy_routes.py:176) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1700 | KEEP |
+| GET | `/v1/policy/versions` | `policy_history` (sentinel/interface/policy_routes.py:204) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1569 | KEEP |
+| GET | `/v1/policy/diff` | `policy_diff` (sentinel/interface/policy_routes.py:225) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1609 | KEEP |
+| POST | `/v1/policy/versions/{version}/simulate` | `policy_simulate` (sentinel/interface/policy_routes.py:243) | bearer + MANAGE_POLICY | console: sentinel/interface/console/app.js:1635 | KEEP |
+| POST | `/v1/mcp/proxy/{server_id}` | `mcp_proxy` (sentinel/interface/mcp_proxy_routes.py:139) | bearer + EXECUTE_TOOL | SDK / MCP gateway: sentinel/sdk/mcp_stdio.py:7 | KEEP |
+| GET | `/v1/transparency/root` | `current_root` (sentinel/interface/transparency_routes.py:112) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1789 | KEEP |
+| GET | `/v1/transparency/inclusion/{index}` | `inclusion` (sentinel/interface/transparency_routes.py:140) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1827 | KEEP |
+| GET | `/v1/transparency/consistency` | `consistency` (sentinel/interface/transparency_routes.py:191) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1844 | KEEP |
+| GET | `/v1/transparency/published` | `published` (sentinel/interface/transparency_routes.py:262) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1792 | KEEP |
+| GET | `/v1/executions/binding/coverage` | `binding_coverage` (sentinel/interface/binding_routes.py:93) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1329 | KEEP |
+| GET | `/v1/executions/binding/diff` | `binding_diff` (sentinel/interface/binding_routes.py:120) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1361 | KEEP |
+| GET | `/v1/executions/binding/{receipt_id}` | `binding_detail` (sentinel/interface/binding_routes.py:187) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1329 | KEEP |
+| GET | `/v1/executions/operations` | `list_operations` (sentinel/interface/operations_routes.py:60) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:688 | KEEP |
+| GET | `/v1/executions/operations/{operation_id}` | `get_operation` (sentinel/interface/operations_routes.py:95) | bearer + READ_INCIDENT | operator/console operation inspection: sentinel/interface/console/app.js:34; retained operation-store API | KEEP |
+| POST | `/v1/executions/operations/{operation_id}/reconcile` | `reconcile_operation` (sentinel/interface/operations_routes.py:108) | bearer + DECIDE_APPROVAL | worker/operator recovery: sentinel/interface/worker.py:453; sentinel/interface/extra_routes.py:183 | KEEP |
+| GET | `/v1/evidence/export` | `export_evidence` (sentinel/interface/operations_routes.py:168) | bearer + READ_INCIDENT | CLI / operational tooling: scripts/run_deployed_journey.py:420 | KEEP |
+| GET | `/v1/workflow/metrics` | `workflow_metrics` (sentinel/interface/operations_routes.py:209) | bearer + READ_INCIDENT | CLI / operational tooling: scripts/run_deployed_journey.py:435 | KEEP |
+| GET | `/v1/coverage` | `coverage` (sentinel/interface/operations_routes.py:226) | bearer + READ_INCIDENT | operator workflow coverage: docs/current/FIRST_WORKFLOW.md:20; retained coverage reader | KEEP |
+| GET | `/v1/authorizations` | `list_authorizations` (sentinel/interface/authorizations.py:372) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:680 | KEEP |
+| GET | `/v1/authorizations/{authorization_id}` | `get_authorization` (sentinel/interface/authorizations.py:414) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:842 | KEEP |
+| POST | `/v1/authorizations/{authorization_id}/revoke` | `revoke_authorization` (sentinel/interface/authorizations.py:434) | bearer + MANAGE_POLICY | operator emergency authorization denial: docs/current/FIRST_WORKFLOW.md:15; retained authorization store | KEEP |
+| POST | `/v1/authorizations/{authorization_id}/decide` | `decide_authorization` (sentinel/interface/authorizations.py:476) | bearer + DECIDE_APPROVAL | console: sentinel/interface/console/app.js:842 | KEEP |
+| POST | `/v1/tools/execute` | `tools_execute` (sentinel/interface/extra_routes.py:84) | bearer + EXECUTE_TOOL | SDK / MCP gateway: sentinel/sdk/__init__.py:25 | KEEP |
+| GET | `/v1/protect/bypass-signals` | `protect_bypass_signals` (sentinel/interface/extra_routes.py:187) | bearer + READ_DIAGNOSTICS | console: sentinel/interface/console/app.js:634 | KEEP |
+| GET | `/v1/inventory/agents` | `inventory_agents` (sentinel/interface/extra_routes.py:213) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:650 | KEEP |
+| GET | `/v1/inventory/agents/{agent_id}` | `inventory_agent` (sentinel/interface/extra_routes.py:256) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1944 | KEEP |
+| GET | `/v1/inventory/reach` | `inventory_reach` (sentinel/interface/extra_routes.py:276) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:2007 | KEEP |
+| GET | `/v1/graph/sessions/{session_id}` | `graph_session` (sentinel/interface/extra_routes.py:317) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1256 | KEEP |
+| GET | `/v1/graph/coverage` | `graph_coverage` (sentinel/interface/extra_routes.py:345) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:618 | KEEP |
+| GET | `/v1/agents/{agent_id}/baseline` | `agent_baseline` (sentinel/interface/extra_routes.py:364) | bearer + READ_INCIDENT | console: sentinel/interface/console/app.js:1975 | KEEP |
+| GET | `/console` | `console_index` (sentinel/interface/extra_routes.py:401) | public allowlist | console: sentinel/interface/console/index.html | KEEP |
+| GET | `/console/app.js` | `console_js` (sentinel/interface/extra_routes.py:417) | public allowlist | console: sentinel/interface/console/index.html | KEEP |
+| GET | `/console/app.css` | `console_css` (sentinel/interface/extra_routes.py:426) | public allowlist | console: sentinel/interface/console/index.html | KEEP |
+| POST | `/v1/containments` | `contain` (sentinel/interface/extra_routes.py:437) | bearer + MANAGE_CONTAINMENT | console: sentinel/interface/console/app.js:1503 | KEEP |
+| DELETE | `/v1/containments/{containment_id}` | `lift` (sentinel/interface/extra_routes.py:482) | bearer + MANAGE_CONTAINMENT | console: sentinel/interface/console/app.js:1531 | KEEP |
+| GET | `/v1/apps` | `list_apps` (sentinel/interface/app_routes.py:22) | bearer + READ_DASHBOARD | operator / controlled-execution adapter: sentinel/infrastructure/app_call.py; docs/INTEGRATIONS.md connected apps | KEEP |
+| PUT | `/v1/apps/{app_id}` | `register` (sentinel/interface/app_routes.py:31) | bearer + MANAGE_USERS | operator / controlled-execution adapter: sentinel/infrastructure/app_call.py; docs/INTEGRATIONS.md connected apps | KEEP |
+| DELETE | `/v1/apps/{app_id}` | `remove` (sentinel/interface/app_routes.py:56) | bearer + MANAGE_USERS | operator / controlled-execution adapter: sentinel/infrastructure/app_call.py; docs/INTEGRATIONS.md connected apps | KEEP |
+| GET, HEAD | `/docs` | `swagger_ui_html` (FastAPI-generated) | previously unauthenticated | none: none | REMOVE |
+| GET, HEAD | `/docs/oauth2-redirect` | `swagger_ui_redirect` (FastAPI-generated) | previously unauthenticated | none: none | REMOVE |
+| GET, HEAD | `/redoc` | `redoc_html` (FastAPI-generated) | previously unauthenticated | none: none | REMOVE |
+
+
+Route verification: the tightened schema test first failed because anonymous
+access returned 200, then passed after the guarded route replaced the framework
+handler. Focused security, unchanged attack-surface fitness and MCP verification:
+**125 passed**. All 17 constructed-app scenarios pass; every non-allowlisted API
+has an authentication dependency and capability. No route test was deleted and
+no core assertion was weakened. Three UI routes were removed; the schema response
+200 assertion remains for the authorized caller, with added 401/403 checks.

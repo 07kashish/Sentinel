@@ -319,8 +319,7 @@ def test_the_referrer_is_never_sent(client):
 def test_the_docs_routes_are_absent_by_default(client, path):
     """All three answered 200 unauthenticated before this change.
 
-    They cannot be protected by a dependency -- FastAPI serves them before any
-    dependency runs -- so the only real control is not mounting them.
+    The schema remains opt-in and authenticated; interactive UIs stay absent.
     """
     assert client.get(path).status_code == 404, (
         f"{path} is still served; it discloses every route and request shape"
@@ -336,7 +335,13 @@ def test_docs_can_be_enabled_deliberately_outside_production(tmp_path):
     container = build_container(settings)
     try:
         probe = TestClient(create_app(container), raise_server_exceptions=False)
-        assert probe.get("/openapi.json").status_code == 200
+        assert probe.get("/openapi.json").status_code == 401
+        assert probe.get("/openapi.json", headers=_auth("ingest")).status_code == 403
+        schema = probe.get("/openapi.json", headers=_auth("admin"))
+        assert schema.status_code == 200
+        assert "/v1/protect/evaluate" in schema.json()["paths"]
+        for path in ("/docs", "/docs/oauth2-redirect", "/redoc"):
+            assert probe.get(path, headers=_auth("admin")).status_code == 404
     finally:
         container.close()
 
