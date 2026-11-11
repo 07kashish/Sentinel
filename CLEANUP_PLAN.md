@@ -1634,6 +1634,13 @@ Fresh continuation checks passed all seven graph regression tests and Ruff over 
 
 Requested phase commit messages remain as specified in the user brief. Latest requested Phase 0 commit: `chore(phase0): establish Linux test baseline`. No Phase 1 deletion is authorized by writing this file.
 
+## Phase 5 — deferred follow-up (not started)
+
+Phase 5 must restore answers to demo questions 1–4 (actor, authenticated identity, delegator, granted permissions) through the agent registry and retained identity/authorization paths; oversight_demo.py (5.6) must answer them.
+
+This records the approved future obligation only. Phase 5 implementation is not
+part of Phase 3; Phase 4 also remains unauthorized.
+
 ## Open decisions
 
 - **Passport integer range** — service/JS/schema bound to ±(2^53−1); standard
@@ -2675,6 +2682,21 @@ Final reference audit found old README/first-workflow A2A and skill-scanner clai
 and an unqualified pilot release note. Replace current claims with parked status
 and label release notes historical. No behavior or test contract changes.
 
+### P3-020: remaining migration-test fixtures
+
+The first uninterrupted run after the approved demo fix completed with 3,318
+passed, 41 skipped and three failures, all in `tests_arch/test_migrations.py`.
+Two cases still queried the parked `a2a_agent_cards` table. The PostgreSQL resume
+case built migration 40's dropped schema, then rewound only its ledger to 37,
+so historical RLS replay tried to protect an already-dropped `users` table.
+
+Correct the resume fixture by genuinely building version 39 before rewinding
+its ledger; it then replays the historical DDL and advances through migration 40.
+Remove only `a2a_agent_cards` from the spot-check table list. Preserve every
+kept table check, original assertion and all production migration/DDL code.
+This is the same historical-fixture correction already authorized in P3-015.
+Re-run both engines' migration tests and the entire uninterrupted suite.
+
 ## Phase 3 results
 
 **Ready for Phase 4: no. Phase 3 is blocked on P3-019; Phase 4 has not started.**
@@ -2796,7 +2818,31 @@ There is no CASCADE; existing migrations and DEVICE_STATEMENTS remain unchanged.
 
 ### Open question P3-019: execution-trust demo contract
 
-**STOP: user decision required under the instruction to stop when a cut is not obvious.**
+#### User decision — approved with conditions, 2026-11-11
+
+The user approved this scope change before implementation:
+
+1. Narrow `scripts/demo_execution_trust.py` to **12/18 answered, exactly six out
+   of scope**: questions **1, 2, 3, 4, 14 and 18**. Questions 1–4 must plainly say
+   they are NOT answered yet and explain: "the delegation chain verifier was parked with
+   A2A; this will be answered from the agent registry and identity records in Phase 5
+   (items 5.1 and 5.6)". Do not fabricate answers from declared fields.
+2. Update the count test to expect exactly six and explicitly identify those six
+   question numbers. Remove only
+   `test_the_delegation_step_carries_its_own_negative_control`. Every other demo
+   assertion stays unchanged. The demo must exit 0 and print its limitations.
+3. Record in PARKED.md and the Phase 5 section: "Phase 5 must restore answers to demo questions 1–4 (actor, authenticated identity, delegator, granted permissions) through the agent registry and retained identity/authorization paths; oversight_demo.py (5.6) must answer them."
+4. Run the entire Linux suite with the original Phase 0 verification command,
+   uninterrupted to completion, saving logs/JUnit under `baseline/phase3/`.
+   Require zero failed, errors and timeouts; report passed/skipped totals and
+   skip changes against Phase 2. Update Phase 3 results and the readiness verdict,
+   commit, push, confirm the remote SHA and stop. Do not start Phase 4.
+
+The decision resolves the scope question. Implementation and the full-suite gate
+remain to be verified. The original blocker and question below are historical.
+
+
+**Original blocker (resolved by the approved decision above):**
 A2A commit `557b217` removed `_step_delegation()` from
 `scripts/demo_execution_trust.py`. That step supplied answers 1–4 in the
 18-question report: actor, authenticated identity, delegator and granted scope.

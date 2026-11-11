@@ -112,14 +112,21 @@ def test_question_twelve_is_answered(run):
 # ── the honesty properties ────────────────────────────────────────────────
 
 
-def test_exactly_two_questions_are_out_of_scope(run):
-    """Pinned so the count cannot drift upward quietly. A demo that answers
-    fewer questions each release while still exiting zero is the failure this
-    guards.
-    """
+def test_exactly_six_questions_are_out_of_scope(run):
+    """Pin the approved scope and the four Phase 5 follow-up obligations."""
     _code, output = run
 
-    assert "16/18 answered by this run, 2 out of scope" in output
+    assert "12/18 answered by this run, 6 out of scope" in output
+    assert [
+        int(number)
+        for number in re.findall(r"^OUT OF SCOPE\s+(\d+)\.", output, re.MULTILINE)
+    ] == [1, 2, 3, 4, 14, 18]
+    reason = (
+        "NOT answered yet: the delegation chain verifier was parked with A2A; "
+        "this will be answered from the agent registry and identity records "
+        "in Phase 5 (items 5.1 and 5.6)"
+    )
+    assert output.count(reason) == 4
 
 
 def test_no_question_is_left_unanswered_without_a_reason(run):
@@ -141,16 +148,6 @@ def test_the_demo_states_what_it_does_not_show(run):
     assert "CALLER DECLARED" in output
     assert "nonce ledger is in-process" in output
     assert "not published to S3 in this run" in output
-
-
-def test_the_delegation_step_carries_its_own_negative_control(run):
-    """Every tick in the delegation step would also appear against an
-    `evaluate` that returned no findings for anything.
-    """
-    _code, output = run
-
-    assert "control: a staging grant presented in production is refused" in output
-    assert "environment_escalation" in output
 
 
 def test_tampered_evidence_fails_the_same_inclusion_proof(run):

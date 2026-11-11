@@ -2,13 +2,13 @@
 
 WHAT THIS DEMONSTRATES
 ----------------------
-The eighteen questions Sentinel sets out to answer, in one run, against the
+Twelve of the eighteen questions Sentinel sets out to answer, against the
 REAL code paths -- no stubs and no fixtures, because a demo that mocks the thing
 being demonstrated proves nothing.
 
     developer
       -> coding agent
-        -> infrastructure agent          (delegated authority)
+        -> infrastructure agent          (declared chain context)
           -> MCP cloud server            (identity pinned)
             -> AWS IAM / S3 tool         (parameters approved)
               -> the object              (executed and bound)
@@ -26,10 +26,12 @@ the evidence, and UNANSWERED otherwise, with the reason. A demo that prints
 eighteen ticks because it reached the end is a demo that would print eighteen
 ticks against a broken build.
 
-TWO are reported OUT OF SCOPE: 14 needs a second agent process and 18 needs a
-real containment store. Claiming either from a single-process script would be
-the specific dishonesty this whole codebase is arranged to avoid, and the
-count is asserted by a test so it cannot drift up quietly.
+SIX are reported OUT OF SCOPE: 1-4 are NOT answered yet because the delegation
+chain verifier was parked with A2A. Phase 5 (items 5.1 and 5.6) must answer them
+from the agent registry and retained identity/authorization records. Question 14
+needs a second agent process and 18 needs a real containment store. The exact
+six question numbers are asserted by a test so the scope cannot drift quietly.
+Declared identity and chain fields are evidence context, not verified answers.
 
 EXIT CODE
 ---------
@@ -96,11 +98,30 @@ class Question:
         return self.answer is not None
 
 
+DELEGATION_OUT_OF_SCOPE = (
+    "NOT answered yet: the delegation chain verifier was parked with A2A; "
+    "this will be answered from the agent registry and identity records "
+    "in Phase 5 (items 5.1 and 5.6)"
+)
+
+
 QUESTIONS: tuple[Question, ...] = (
-    Question(1, "Which human/workload/agent acted?"),
-    Question(2, "Which identity authenticated?"),
-    Question(3, "Who delegated authority to that agent?"),
-    Question(4, "Which permissions/capabilities were granted?"),
+    Question(
+        1, "Which human/workload/agent acted?",
+        out_of_scope=DELEGATION_OUT_OF_SCOPE,
+    ),
+    Question(
+        2, "Which identity authenticated?",
+        out_of_scope=DELEGATION_OUT_OF_SCOPE,
+    ),
+    Question(
+        3, "Who delegated authority to that agent?",
+        out_of_scope=DELEGATION_OUT_OF_SCOPE,
+    ),
+    Question(
+        4, "Which permissions/capabilities were granted?",
+        out_of_scope=DELEGATION_OUT_OF_SCOPE,
+    ),
     Question(5, "What action was requested?"),
     Question(6, "Through which MCP server/tool was it requested?"),
     Question(7, "Which policy evaluated the action?"),
@@ -114,7 +135,7 @@ QUESTIONS: tuple[Question, ...] = (
         14, "Which downstream agents were invoked?",
         out_of_scope=(
             "no downstream agent is invoked in this scenario. The A2A call "
-            "graph answers it and exercising it needs a second agent process"
+            "graph was parked; exercising it needs a second agent process"
         ),
     ),
     Question(15, "What evidence proves the chain?"),

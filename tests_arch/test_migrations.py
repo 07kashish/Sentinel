@@ -104,16 +104,24 @@ def test_migrate_is_idempotent(pool):
     assert _version(pool) == before
 
 
-def test_a_partially_migrated_database_resumes_rather_than_restarting(pool):
+def test_a_partially_migrated_database_resumes_rather_than_restarting(pool, monkeypatch):
     """Each migration commits its own version row, so an interrupted run
     resumes from the last COMPLETE one.
 
-    Modelled by rewinding the ledger: the tables exist, but the recorded
-    version says they do not. That is exactly the state a crash between
-    `apply()` and the `INSERT` leaves behind, and re-running must converge
-    rather than fail on an object that is already there.
+    Build the historical pre-cleanup schema before rewinding the ledger:
+    its tables exist, but their versions are unrecorded, like a crash between
+    `apply()` and the `INSERT`. Replaying must converge on the current schema.
+    Rewinding only a post-cleanup ledger would invent a state where historical
+    tables were already dropped before their creation migrations were recorded.
     """
-    migrate(pool)
+    import importlib
+
+    migration_module = importlib.import_module("sentinel.infrastructure.sql.migrate")
+    with monkeypatch.context() as patch:
+        patch.setattr(migration_module, "MIGRATIONS", tuple(
+            row for row in MIGRATIONS if row[0] <= 39
+        ))
+        assert migrate(pool) == 39
     with pool.acquire() as conn:
         conn.begin()
         conn.execute_rowcount(
@@ -200,7 +208,6 @@ def test_the_tables_the_application_needs_exist_after_migrating(pool):
         "incidents",
         "agents",
         "schema_migrations",
-        "a2a_agent_cards",
         "mcp_servers",
     )
     with pool.acquire() as conn:

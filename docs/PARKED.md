@@ -176,6 +176,8 @@ Tests recover from `tests_arch/`; exact retired paths and case deltas are in the
 
 These archived modules are reference material. Phase 5 implements cursor-based audit-log connectors; it does not reinstate the old discovery contract.
 
+Phase 5 must restore answers to demo questions 1–4 (actor, authenticated identity, delegator, granted permissions) through the agent registry and retained identity/authorization paths; oversight_demo.py (5.6) must answer them.
+
 ## Estate analysis and shared console demo
 
 Purpose: AI bill of materials, adoption/value reports, exposure and blast-radius scoring, MCP estate analytics and pre-seeded shared demonstrations. Removed 19 whole files (6,394 physical lines) plus their console panels and wiring.
