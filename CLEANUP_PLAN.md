@@ -1,6 +1,6 @@
-# Sentinel cleanup plan — Phase 2 results
+# Sentinel cleanup plan — Phase 3 verification blocked
 
-Phase 2 is complete under the explicit schema decision below. Phase 3 has not started. Earlier inventories and checkpoint conditions are historical; the Phase 2 schema decision and results are current.
+Phase 2 is complete. Phase 3 feature parking and migration 40 are implemented, but final verification is blocked on the execution-trust demo contract (P3-019). Ready for Phase 4: no. Earlier inventories and checkpoint conditions are historical; the Phase 3 results and open question below are current.
 
 **Product constraint:** independent, cross-vendor company oversight through Observe → Decide → Act → Prove. Deterministic rules remain the decision authority. Preserve the semantics and existing assertions for protect_gate, authorizations, tool_runner, execution_binding, operation storage/reconciliation, transparency and Execution Passport. Keep AWS, GitHub and Kubernetes controlled execution.
 
@@ -2311,6 +2311,40 @@ removal or inventory rewrite has been performed while the answer is pending.
 
 ## Phase 3 decisions
 
+### Confirmed audit scope — 2026-11-11
+
+The user accepted `868bbf8` as the continuation point. The five existing commits
+were backed up first; origin was confirmed at
+`868bbf8fa135a34be4b0cfe3466a42a93a019ac1` before this audit changed anything.
+
+1. Remediation webhooks remain Act: keep `SENTINEL_REMEDIATION_ENDPOINTS`, its
+   parser, `composition/remediation_wiring.py`, `HttpRemediationIntegration`,
+   `build_remediation_executor`, and explicit endpoint precedence over native
+   integration. Keep native-remediation tests unchanged.
+2. Park SOAR playbooks, notification composition and automation outside the
+   approval plus execution-binding path. Shared remediation executors,
+   deterministic planning, integration metadata and supplied event subscribers
+   remain; P3-012 lists the retained shared contracts.
+3. Retire `metadata.a2a` policy inputs. Preserve the extracted MCP reply inspector
+   and every pre-existing MCP proxy assertion; restore any shared helper coverage
+   accidentally removed with A2A-only files.
+4. Full retired `SENTINEL_*` names appear only in `CHANGES.md`, this plan and
+   `docs/PARKED.md`. `scripts/dev/scan_removed_settings.py` owns exactly those
+   three executable exemptions and includes `_FILE` variants and dynamic prefixes.
+5. Leave unchanged: `platforms/remediation.py`, guarded domain/infrastructure
+   remediation, domain/infrastructure inventory, domain residency,
+   infrastructure enterprise and attestation, agent identity providers/wiring,
+   workload identity, OIDC tenant provisioning, operation/receipt stores,
+   evidence, execution graph, controlled-execution adapters, and
+   `persistence/backup.py` / `persistence/objectstore.py`.
+6. Preserve historical `DEVICE_STATEMENTS` in `sql/device_discovery.py` for
+   migration 38. Preserve migrations 1–39; only migration 40 removes parked tables.
+
+Phase 4 is not authorized. The old file `tests_arch/test_phase4_wiring.py` is
+pre-existing retained-remediation coverage; running it does not begin cleanup
+Phase 4. No merge, PR, production migration or infrastructure apply is authorized.
+
+
 ### User decision — 2026-10-31: remediation webhooks are Act
 
 Keep SENTINEL_REMEDIATION_ENDPOINTS, its settings parser, composition/remediation_wiring.py,
@@ -2640,3 +2674,350 @@ The generated Docker allowlist requires canonical ordering; regenerated it with 
 Final reference audit found old README/first-workflow A2A and skill-scanner claims
 and an unqualified pilot release note. Replace current claims with parked status
 and label release notes historical. No behavior or test contract changes.
+
+## Phase 3 results
+
+**Ready for Phase 4: no. Phase 3 is blocked on P3-019; Phase 4 has not started.**
+
+All planned feature parking and migration 40 are committed. PARKED.md now includes
+the eight requested feature entries, retained Act webhooks, the metadata.a2a
+behavior change and Phase 5 reference candidates. The initial five commits were
+backed up and origin confirmed at `868bbf8fa135a34be4b0cfe3466a42a93a019ac1`.
+The original four documentation changes were reviewed and committed separately as
+`e6fc483`. Two small coverage restorations are listed below.
+
+### Six-check audit
+
+| Audit | Result | Evidence |
+|---|---|---|
+| a. Act remediation webhooks | PASS | Native remediation test diff `c3c8eb1..868bbf8` is empty. Endpoint setting/parser, wiring, HTTP integration, executor builder and explicit-endpoint precedence remain; native tests pass. |
+| b. MCP | PASS | Every `tests_arch/*mcp*` diff in the five-commit range is empty. Independent reply-inspection tests pass; no proxy assertion was removed. |
+| c. Migration history | PASS | All original migration function ASTs and entries 1–39 are identical. Historical DDL is unchanged. Only migration 40 is appended (plus its helper import; a nonfunctional trailing blank-line difference remains). All four SQLite/PostgreSQL fresh/v39-upgrade cases pass, including unchanged kept catalog/index/RLS/role snapshots. |
+| d. Kept modules | PASS | Required remediation, inventory, residency, enterprise, attestation, backup/objectstore, DEVICE_STATEMENTS and OIDC principal modules are present and have empty diffs in the five-commit range. |
+| e. Kept test assertions | PASS after fix | Initial audit FAIL: three shared text-extraction tests were deleted with A2A. `036c392` restores them with original assertions. The exhaustive 154-function inventory below attributes the other 151 to parked features. An expanded review also restored two private-credential throttle cases from the earlier analysis cut in `767bee6`. No kept assertion was weakened. |
+| f. Removed settings | PASS | Executable scanner checks 62 names/prefixes plus `_FILE` forms; zero findings. Exactly CHANGES.md, CLEANUP_PLAN.md and docs/PARKED.md are exempted in scanner code. |
+
+### Per-group accounting
+
+Counts are from each commit's Git diff, including source, tests, deployment and
+documentation. Files changed includes additions/deletions; LOC counts physical
+text lines added/deleted, not just whole-file removals. Settings means annotated
+Settings fields, not individual environment names or dynamic prefix expansions.
+MCP's three added cases are attributed to extraction, even though the first
+historical case-delta file also carried them under detonation.
+
+| Group | Files changed / deleted | LOC added / deleted | Routes removed | Settings fields removed | Tables dropped | Tests removed / adapted | Commit |
+|---|---:|---:|---:|---:|---:|---|---|
+| MCP extraction | 9 / 0 | +403 / -45 | 0 | 0 | 0 | +3 cases; 1 new test file | `0c57dd3` |
+| Detonation | 46 / 19 | +183 / -6,520 | 1 | 2 | 0 | -183 cases; 3 mixed files adapted | `b7292c1` |
+| Endpoint | 22 / 8 | +91 / -2,849 | 5 | 0 | 0 | -62 cases; 1 mixed file adapted | `d75b1bd` |
+| Discovery | 35 / 21 | +127 / -7,704 | 0 | 1 | 0 | -112 cases; 1 mixed file adapted | `c15703c` |
+| Analysis | 43 / 19 | +80 / -7,078 | 8 | 0 | 0 | -259/+2 case IDs (2 SLO renames); 5 mixed files adapted | `c3c8eb1` |
+| SOAR | 16 / 2 | +97 / -1,138 | 0 | 3 | 0 | -20 cases; 4 mixed files adapted | `2e8a36d` |
+| Orgs/SCIM | 14 / 1 | +55 / -415 | 8 | 0 | 0 | -4 cases; 2 mixed files adapted | `34332da` |
+| A2A | 32 / 18 | +58 / -6,994 | 3 | 4 | 0 | -154 cases; 6 feature test files deleted | `557b217` |
+| Migration 40 | 11 / 0 | +207 / -96 | 0 | 0 | 8 | +4 cases; 4 existing files adapted | `16227fd` |
+| Discovery/schema follow-up | 12 / 1 | +92 / -291 | 0 | 0 | 0 | 0 cases; 4 test imports adapted | `868bbf8` |
+| Shared reply test repair | 1 / 0 | +31 / -0 | 0 | 0 | 0 | +3 restored cases | `036c392` |
+| Reference documentation | 4 / 0 | +23 / -16 | 0 | 0 | 0 | 0 cases | `e6fc483` |
+| Private credential test repair | 1 / 0 | +37 / -0 | 0 | 0 | 0 | +2 restored database cases | `767bee6` |
+
+### Counts and verification limits
+
+- Static route declarations: **78 before Phase 3 -> 53 now**; Settings fields:
+  **73 -> 63**. Before means `ff627fa`, counted with the same AST method including
+  conditional route declarations. This is not a claim that all routes are enabled
+  simultaneously.
+- Collected cases: **4,143 -> 3,363**, a net reduction of 780. The original
+  parking groups remove 794 case IDs and add 9 (including two SLO renames);
+  audit fixes restore 5 cases (three shared text tests and two database variants
+  of the private-credential test). The earlier 3,358 count omitted those fixes.
+- The requested full command was started, then interrupted so the final run could
+  include the newly recovered throttle cases. Partial JUnit: **704 passed,
+  5 failed, 5 skipped, 714 reported cases**, with no recorded test errors. This is
+  **not a completed full-suite result**. Interrupted teardown also produced a
+  pytest stash KeyError; it is not reported as a green gate. Five actual demo
+  failures were independently reproduced afterward (7 passed, 5 failed).
+- Full-suite output remains under `baseline/phase3/pytest.log` and `junit.xml`;
+  isolated blocker evidence is under `baseline/phase3/audit/demo-blocker.*`.
+  Reports and raw baseline logs are not committed.
+- The Phase 2 full baseline was 4,101 passed / 42 skipped. Exactly one previously
+  skipped case was removed: the live detonation container test. No other group
+  removed a baseline skipped case. A final skip total is pending the complete
+  rerun; it must not be inferred from this partial run.
+- Fresh targeted audit: **27 passed** (independent MCP, native remediation, four
+  real database migration cases); shared reply restoration: **6 passed**;
+  throttle restoration plus existing security-throttle coverage: **24 passed**.
+- Ruff passes. Import-graph regressions: **10 passed**; removed-name scanner
+  regressions: **2 passed**. The graph gate passes with the same 11 documented
+  external measurement/SDK/persistence exceptions, zero unexplained orphans,
+  zero unresolved imports and zero stale allowances.
+- actionlint **1.7.12** passes; its official release binary checksum was verified.
+  Release secret scan passes with zero findings. Relative Markdown link check
+  passes; removed-setting scan passes with its exact three exemptions.
+- **Docker build and container healthcheck remain unverified:** no Docker CLI is
+  installed or on PATH in WSL. No production database or infrastructure changed.
+- `docs/dr_sqlite_drill.json` was absent at entry and remains absent. Its initial
+  state is preserved; no generated drill report is staged.
+
+### Dropped tables
+
+Migration 40 drops exactly, in order: `user_credentials`, `user_sessions`,
+`enrolment_tickets`, `webauthn_challenges`, `users`, `organizations`,
+`a2a_agent_cards`, `device_discovery`. Identity/directory tables belong to retired
+human-auth/SCIM/org functionality; the card table belongs to A2A, and device
+inventory to endpoint discovery. No kept tenant, workload/agent identity,
+remediation, policy, inventory/observation, operation, receipt, evidence,
+execution-graph or transparency table is dropped. Shared `replay_nonces` remains.
+There is no CASCADE; existing migrations and DEVICE_STATEMENTS remain unchanged.
+
+### Deviations and review findings
+
+- Directory removal landed in A2A after its last shared reader disappeared,
+  rather than in the orgs commit. OIDC tenant provisioning is unchanged.
+- `domain/assets.py` became a discovery orphan and was removed in `868bbf8`.
+  That commit also moved the new live-schema inventory and migration callback to
+  `schema_cleanup.py`, restoring historical `schema.py` unchanged and preserving
+  the existing module-size guard.
+- `036c392` restores three shared text-extraction tests accidentally removed with
+  A2A. `767bee6` restores the rotated-address private-credential assertion from
+  the earlier demo removal (two database cases); only the retired demo dependency
+  is omitted. Neither repair changes production behavior.
+- The existing partitioning entry was carried from the Phase 2 plan into
+  PARKED.md; no live partitioning work was performed. Discovery LOC and the
+  omitted exposure-reach route were corrected in that document.
+- A documentation-edit shell-quoting error was corrected before review; the final
+  documentation was rebuilt from its committed source using literal encoded input.
+- One independent read-only review found the additional credential-test omission;
+  it is fixed. No minor findings were deferred. The reviewer left full-suite and
+  Docker results to the executor; the executor records both limits above.
+- Full verification exposed the unresolved demo boundary below. No test count,
+  safety assertion or product behavior was weakened to make it pass.
+
+### Open question P3-019: execution-trust demo contract
+
+**STOP: user decision required under the instruction to stop when a cut is not obvious.**
+A2A commit `557b217` removed `_step_delegation()` from
+`scripts/demo_execution_trust.py`. That step supplied answers 1–4 in the
+18-question report: actor, authenticated identity, delegator and granted scope.
+The report still requires 16 answers, so it emits four UNANSWERED entries,
+exits 1 and never prints its final limitations. The A2A-specific negative-control
+test also still expects the removed staging-to-production delegation refusal.
+
+An isolated, uninterrupted reproduction of
+`pytest tests_arch/test_demo_execution_trust.py -q -o addopts=` gives
+**7 passed, 5 failed, 0 errors, 0 skipped**. The five failures are:
+
+- `test_the_demo_exits_zero`
+- `test_exactly_two_questions_are_out_of_scope`
+- `test_no_question_is_left_unanswered_without_a_reason`
+- `test_the_demo_states_what_it_does_not_show`
+- `test_the_delegation_step_carries_its_own_negative_control`
+
+The ordinary execution, parameter-substitution refusal, tamper detection and
+independent-verifier checks still pass. No assertion or demo implementation was
+changed to hide these failures. Fabricating answers from declared chain fields
+would misrepresent verification; restoring the parked A2A verifier is outside
+scope. Reducing the pinned answer count is an explicit demo-contract decision,
+not a mechanical reference edit.
+
+**Question:** approve narrowing this demo to 12/18 answers with six explicitly
+out-of-scope questions (the four retired step answers plus the existing two),
+and remove only its A2A-specific negative-control test while preserving every
+kept execution/binding/evidence assertion? Alternatively, require a replacement
+demonstration through retained identity/authorization paths before changing the
+promised coverage. No such redesign is performed without the user's decision.
+
+After the decision and focused verification, rerun the entire Linux suite with
+the original command and update the result record. Phase 4 remains unauthorized.
+
+### Five-commit audit: deleted test-function inventory
+
+AST comparison of `c3c8eb1..868bbf8` found 154 deleted test functions. The list below is exhaustive. Of these, 151 cover parked features; three shared reply-text functions were recovered in `036c392`, with their original assertions and the retained helper import. No kept assertion was weakened. Parametrized case counts are separate from function counts.
+
+#### tests_arch/test_a2a_delegation.py — A2A
+
+- `test_a_card_that_changed_after_approval_is_drift` — A2A
+- `test_a_chain_deeper_than_the_limit_is_reported` — A2A
+- `test_a_clean_delegation_is_allowed` — A2A
+- `test_a_correctly_narrowing_chain_produces_no_amplification` — A2A
+- `test_a_critical_structural_finding_refuses_regardless_of_policy` — A2A
+- `test_a_grant_the_target_never_advertised_is_reported_even_when_authorised` — A2A
+- `test_a_hop_cannot_grant_what_its_delegator_does_not_hold` — A2A
+- `test_a_refused_delegation_does_not_burn_its_task_id` — A2A
+- `test_a_replay_is_scoped_to_one_tenant` — A2A
+- `test_a_scope_dropped_at_one_hop_cannot_be_regained_later` — A2A
+- `test_a_scope_that_is_not_a_scope_is_refused_at_construction` — A2A
+- `test_a_task_id_cannot_be_replayed` — A2A
+- `test_a_wildcard_covers_one_segment_and_not_a_deeper_one` — A2A
+- `test_amplification_is_projected_as_its_own_flag` — A2A
+- `test_an_agent_appearing_twice_is_a_loop` — A2A
+- `test_an_agent_with_no_pin_is_not_reported_as_drift` — A2A
+- `test_an_unattributable_principal_is_critical` — A2A
+- `test_delegating_to_an_agent_nobody_enrolled_is_critical` — A2A
+- `test_effective_scopes_narrow_monotonically` — A2A
+- `test_enrolment_pins_the_fingerprint` — A2A
+- `test_narrowing_is_an_intersection_not_a_union` — A2A
+- `test_self_delegation_is_reported_separately_and_rated_lower` — A2A
+- `test_the_fingerprint_covers_capabilities_and_ignores_prose` — A2A
+- `test_the_fingerprint_does_not_depend_on_key_order` — A2A
+- `test_the_instruction_reaches_the_injection_detector` — A2A
+- `test_the_projection_names_both_the_terminal_agent_and_the_principal` — A2A
+
+#### tests_arch/test_a2a_malformed_hops.py — A2A
+
+- `test_a_signed_hop_with_a_wrongly_typed_field_is_a_400` — A2A
+- `test_a_signed_hop_with_an_empty_document_is_a_400_not_a_500` — A2A
+
+#### tests_arch/test_a2a_proxy.py — A2A
+
+- `test_a_batch_reply_is_refused` — A2A
+- `test_a_benign_reply_is_returned_verbatim` — A2A
+- `test_a_card_document_maps_skills_to_capabilities` — A2A
+- `test_a_deeply_nested_message_does_not_recurse_forever` — shared MCP reply-text behavior; restored in `tests_arch/test_reply_text.py` (not retired)
+- `test_a_moved_endpoint_is_drift` — A2A
+- `test_a_refusal_travels_in_band_as_json_rpc` — A2A
+- `test_a_refused_reply_is_not_returned_even_sanitised` — A2A
+- `test_a_widened_card_is_caught_at_call_time` — A2A
+- `test_an_injection_in_the_reply_is_refused` — A2A
+- `test_an_unconfigured_deployment_has_no_route_at_all` — A2A
+- `test_an_unenrolled_agent_is_refused_before_any_network_activity` — A2A
+- `test_an_unenrolled_caller_holds_nothing_so_any_grant_is_amplification` — A2A
+- `test_an_unfetchable_card_refuses_rather_than_skipping_the_check` — A2A
+- `test_an_unknown_method_is_refused_rather_than_passed_through` — A2A
+- `test_privilege_amplification_is_refused_upstream_of_the_network` — A2A
+- `test_streaming_is_refused_by_name_with_a_reason` — A2A
+- `test_text_extraction_is_bounded` — shared MCP reply-text behavior; restored in `tests_arch/test_reply_text.py` (not retired)
+- `test_text_parts_extracts_prose_and_ignores_binary` — shared MCP reply-text behavior; restored in `tests_arch/test_reply_text.py` (not retired)
+- `test_the_caller_cannot_widen_its_own_authority_with_a_header` — A2A
+- `test_the_card_fingerprint_ignores_the_description` — A2A
+- `test_the_forwardable_set_is_small_and_explicit` — A2A
+- `test_the_message_goes_to_the_enrolled_endpoint_and_nowhere_else` — A2A
+- `test_there_is_no_url_parameter_to_aim_this_process_with` — A2A
+
+#### tests_arch/test_a2a_registry.py — A2A
+
+- `test_a_card_enrolled_on_one_replica_is_visible_to_another` — A2A
+- `test_a_card_survives_a_round_trip_with_its_capabilities_intact` — A2A
+- `test_a_replayed_task_is_caught_by_a_different_replica` — A2A
+- `test_a_task_id_is_namespaced_so_it_cannot_collide_with_an_event_digest` — A2A
+- `test_cards_do_not_cross_a_tenant_boundary` — A2A
+- `test_drift_is_detectable_because_the_pin_outlives_the_process` — A2A
+- `test_enrolment_pins_the_fingerprint_in_the_same_write` — A2A
+- `test_one_unparseable_row_does_not_blind_the_rest` — A2A
+- `test_re_enrolment_re_pins_and_that_is_the_point` — A2A
+- `test_recording_nothing_touches_no_connection` — A2A
+- `test_recording_the_same_task_twice_is_not_an_error` — A2A
+- `test_task_ids_do_not_cross_a_tenant_boundary` — A2A
+
+#### tests_arch/test_console_bundle.py — orgs/SCIM
+
+- `test_a_404_on_the_organisation_is_shown_as_a_state_not_a_failure` — orgs/SCIM
+
+#### tests_arch/test_delegation_constraints.py — A2A
+
+- `test_a_chain_from_another_tenant_is_critical` — A2A
+- `test_a_constraint_without_a_clock_is_refused_rather_than_guessed` — A2A
+- `test_a_cross_tenant_chain_is_refused_structurally_whatever_policy_says` — A2A
+- `test_a_delegation_issued_in_the_future_is_refused` — A2A
+- `test_a_delegation_that_expires_before_it_is_issued_cannot_be_constructed` — A2A
+- `test_a_delegation_with_no_expiry_is_reported_but_not_treated_as_worst` — A2A
+- `test_a_dev_delegation_presented_against_production_is_escalation` — A2A
+- `test_a_fully_constrained_valid_delegation_reports_nothing` — A2A
+- `test_a_missing_purpose_is_reported_at_the_lowest_severity` — A2A
+- `test_a_normal_lifetime_is_not_reported` — A2A
+- `test_a_permitted_resource_passes` — A2A
+- `test_a_production_delegation_used_in_dev_is_not_escalation` — A2A
+- `test_a_resource_outside_the_permitted_pattern_is_reported` — A2A
+- `test_a_very_long_lifetime_is_reported_as_a_standing_credential` — A2A
+- `test_an_environment_escalation_is_refused_structurally` — A2A
+- `test_an_expired_delegation_is_reported` — A2A
+- `test_an_expired_delegation_is_reported_but_left_to_policy` — A2A
+- `test_an_unknown_environment_ranks_above_production` — A2A
+- `test_constraints_reach_policy_under_their_own_key` — A2A
+- `test_environment_names_are_matched_case_and_space_insensitively` — A2A
+- `test_every_kind_has_a_severity` — A2A
+- `test_every_violation_is_reported_not_only_the_first` — A2A
+- `test_findings_serialise_for_evidence` — A2A
+- `test_matching_is_by_pattern_not_by_string_prefix` — A2A
+- `test_no_constraint_means_the_old_behaviour_is_unchanged` — A2A
+- `test_no_declared_resources_means_the_check_does_not_apply` — A2A
+- `test_require_allowed_forwards_every_argument_it_accepts` — A2A
+- `test_the_clock_is_passed_in_and_never_read` — A2A
+
+#### tests_arch/test_delegation_passport.py — A2A
+
+- `test_a_chain_deeper_than_permitted_is_refused` — A2A
+- `test_a_chain_not_rooted_at_the_expected_principal_is_refused` — A2A
+- `test_a_cross_tenant_hop_is_refused` — A2A
+- `test_a_dropped_middle_hop_is_refused` — A2A
+- `test_a_hop_escalating_the_environment_is_refused` — A2A
+- `test_a_hop_granting_a_capability_its_issuer_lacked_is_refused` — A2A
+- `test_a_hop_outliving_its_issuer_is_refused` — A2A
+- `test_a_hop_signed_by_the_wrong_party_is_refused` — A2A
+- `test_a_hop_whose_issuer_was_not_the_previous_subject_is_refused` — A2A
+- `test_a_hop_widening_the_resource_scope_is_refused` — A2A
+- `test_a_key_id_is_namespaced_by_its_issuer` — A2A
+- `test_a_key_signing_outside_its_window_is_refused` — A2A
+- `test_a_key_whose_owner_merely_begins_with_the_issuer_is_refused` — A2A
+- `test_a_lookalike_scope_is_not_treated_as_narrower` — A2A
+- `test_a_loop_is_refused` — A2A
+- `test_a_prohibited_capability_cannot_be_granted_downstream` — A2A
+- `test_a_prohibition_survives_hops_that_held_the_capability` — A2A
+- `test_a_refused_chain_grants_no_capabilities` — A2A
+- `test_a_reordered_chain_is_refused` — A2A
+- `test_a_self_hop_is_refused_at_construction` — A2A
+- `test_a_single_hop_chain_is_sound` — A2A
+- `test_a_sound_chain_establishes_authority` — A2A
+- `test_an_agent_presenting_somebody_elses_chain_is_refused` — A2A
+- `test_an_altered_hop_fails_its_signature` — A2A
+- `test_an_empty_chain_grants_nothing` — A2A
+- `test_an_empty_key_id_is_refused_as_nobodys` — A2A
+- `test_an_expired_hop_is_refused` — A2A
+- `test_an_issuer_name_containing_the_separator_is_refused` — A2A
+- `test_an_omitted_presenter_leaves_the_holder_unchecked` — A2A
+- `test_an_unknown_key_is_not_a_valid_key` — A2A
+- `test_clock_skew_within_tolerance_is_permitted` — A2A
+- `test_established_is_derived_and_cannot_be_set` — A2A
+- `test_every_defect_is_reported_not_just_the_first` — A2A
+- `test_key_owner_parses_issuer_hash_version_exactly` — A2A
+- `test_no_defect_member_is_falsy_and_all_explain_themselves` — A2A
+- `test_permitting_and_prohibiting_the_same_capability_is_refused` — A2A
+- `test_signing_a_hop_for_another_issuer_is_refused_at_source` — A2A
+- `test_the_chain_digest_covers_the_signatures` — A2A
+- `test_the_two_environment_tables_agree` — A2A
+- `test_two_different_chains_have_different_digests` — A2A
+
+#### tests_arch/test_gap_closures.py — orgs/SCIM
+
+- `test_org_create_and_members` — orgs/SCIM
+- `test_scim_pagination_bounds_do_not_overflow_the_database` — orgs/SCIM
+- `test_scim_user_lifecycle_tenant_bound` — orgs/SCIM
+
+#### tests_arch/test_outbound_chaos.py — SOAR
+
+- `test_a_hanging_soar_connector_does_not_raise_into_the_caller` — SOAR
+- `test_a_total_soar_outage_is_reported_rather_than_silent` — SOAR
+- `test_one_hanging_connector_does_not_stop_the_rest` — SOAR
+
+#### tests_arch/test_phase4_wiring.py — SOAR
+
+- `test_a_soar_connector_failure_cannot_fail_the_admission_that_produced_it` — SOAR
+- `test_configured_connectors_are_subscribed_to_incident_admission` — SOAR
+- `test_low_priority_incidents_are_not_dispatched` — SOAR
+- `test_without_endpoints_no_soar_dispatcher_is_built` — SOAR
+
+#### tests_arch/test_remediation_execution.py — SOAR
+
+- `test_a_broadcast_mention_in_incident_text_cannot_page_the_channel` — SOAR
+- `test_a_malformed_severity_does_not_raise_inside_the_notification_path` — SOAR
+- `test_a_newline_cannot_forge_a_ticket_field` — SOAR
+- `test_ampersand_is_escaped_before_the_angle_brackets` — SOAR
+- `test_an_approval_request_reaches_a_chat_channel_with_its_deadline` — SOAR
+- `test_an_approval_target_cannot_page_the_channel` — SOAR
+- `test_an_approval_with_no_expiry_says_so_rather_than_showing_a_blank` — SOAR
+- `test_an_oversized_field_is_clipped_rather_than_failing_the_notification` — SOAR
+- `test_low_severity_incidents_do_not_open_tickets_by_default` — SOAR
+- `test_markup_in_incident_text_cannot_reformat_the_message` — SOAR
+- `test_one_failing_connector_does_not_stop_the_others` — SOAR
+- `test_partial_delivery_is_logged_rather_than_silent` — SOAR

@@ -2,10 +2,11 @@
 
 Phase 3 removes the features listed here from the current product. Their original
 implementations remain recoverable from the immutable `archive/pre-cleanup` tag.
-An entry is marked complete only after its routes, configuration, runtime and
-feature-only tests are removed and the required checks pass.
+Whole-file LOC below includes source and feature-only tests where those files
+were removed. Shared-file edits and exact per-commit added/deleted lines are
+recorded in CLEANUP_PLAN.md; the orgs/A2A directory attribution is stated below.
 
-## MCP compatibility decision
+## Behaviour change
 
 MCP reply inspection retains the deterministic ProtectGate, unsigned trust,
 bounded text extraction, refusal handling, receipts and streaming. Its policy
@@ -122,7 +123,7 @@ Purpose: local presence scanning, endpoint inventory and consented device-report
 Removed 8 whole files (2,327 physical lines), the sentinel-discover entrypoint, and the pilot console screen.
 Removed routes: GET /v1/pilot/setup, GET /v1/pilot/discovery-script, GET and POST /v1/pilot/devices, DELETE /v1/pilot/devices/{device_id}.
 Removed setting: `SENTINEL_DISCOVERY_MCP_CONFIG_PATHS` and its `_FILE` variant.
-Table scheduled for the single final migration: `device_discovery`. Historical DEVICE_STATEMENTS and maintenance remain until that migration; the runtime store is removed.
+Migration 40 drops `device_discovery`. Historical `DEVICE_STATEMENTS` remains unchanged for migration 38 replay; the runtime store and parked-table maintenance are removed.
 Restore signal: a contracted customer requires consented endpoint-installed-tool inventory and can validate its incomplete, self-reported coverage.
 Remote MCP enrollment/discovery, inventory/observation, identity and execution controls remain supported.
 
@@ -141,13 +142,14 @@ Runtime store recovery: `sentinel/infrastructure/sql/device_discovery.py`. Tests
 ## Vendor inventory discovery
 
 Purpose: vendor asset enumeration and reconciliation, distinct from the retained event-observation inventory.
-Removed 21 whole files (7,261 physical lines), container discovery wiring, the agent-discover CLI, and the dedicated Terraform discovery identity. No HTTP routes or dedicated tables.
+Removed 22 whole files (7,511 physical lines), including the final 251-line discovery vocabulary, plus container discovery wiring, the agent-discover CLI, and the dedicated Terraform discovery identity. No HTTP routes or dedicated tables.
 Removed settings: all names in the retired `SENTINEL_DISCOVERY_` family, including dynamic credentials and `_FILE` forms; exact observed names are in the catalog above.
 Restore signal: a contracted customer needs continuous asset enumeration for a named platform and can validate coverage, permissions and pagination against a real tenant.
 
 Recovery paths at `archive/pre-cleanup`:
 
 - `scripts/run_discovery.py`
+- `sentinel/domain/assets.py`
 - `sentinel/composition/discovery_wiring.py`
 - `sentinel/infrastructure/platforms/ai_connectors.py`
 - `sentinel/infrastructure/platforms/ai_discovery.py`
@@ -177,7 +179,7 @@ These archived modules are reference material. Phase 5 implements cursor-based a
 ## Estate analysis and shared console demo
 
 Purpose: AI bill of materials, adoption/value reports, exposure and blast-radius scoring, MCP estate analytics and pre-seeded shared demonstrations. Removed 19 whole files (6,394 physical lines) plus their console panels and wiring.
-Removed routes: `/v1/analysis/mcp-estate`, `/v1/analysis/blast-radius/{agent_id}`, `/v1/estate/ai-bom`, `/v1/estate/ai-bom/cyclonedx`, `/v1/estate/adoption`, `/v1/estate/exposure`, `/console/demo.json`. No dedicated tables. The workflow-metrics route retains counted activity and SLOs; only its commercial value report is retired.
+Removed routes: `/v1/analysis/mcp-estate`, `/v1/analysis/blast-radius/{agent_id}`, `/v1/estate/ai-bom`, `/v1/estate/ai-bom/cyclonedx`, `/v1/estate/adoption`, `/v1/estate/exposure`, `/v1/estate/exposure/reach/{node}`, `/console/demo.json`. No dedicated tables. The workflow-metrics route retains counted activity and SLOs; only its commercial value report is retired.
 Removed settings: `SENTINEL_CONSOLE_DEMO_TOKEN`, `SENTINEL_DEMO_INGEST_KEY`, `SENTINEL_DEMO_ANALYST_KEY`, `SENTINEL_DEMO_ADMIN_KEY`, the `SENTINEL_DEMO_` family and their `_FILE` forms.
 Restore signal: a paying customer needs a named inventory analysis with verifiable source coverage, or a maintained isolated demonstration tenant with an explicit owner.
 
@@ -196,7 +198,7 @@ Recovery paths at `archive/pre-cleanup`:
 
 Feature tests recover from `tests_arch/`; exact paths and case deltas are recorded in the cleanup inventory and evidence. Core workflow, SLO, transport and authorization assertions are retained.
 
-## Retained Act remediation webhooks — 2026-10-31
+## Retained on purpose
 
 Remediation webhooks were deliberately retained as Act execution adapters:
 SENTINEL_REMEDIATION_ENDPOINTS, its parser, remediation wiring,
@@ -207,6 +209,7 @@ remediation tests remain unchanged. Unclear shared executor helpers are kept.
 
 ## SOAR incident fan-out
 
+Purpose: incident-triggered connector delivery, notification formatting and approval-message construction.
 Removed 2 source files (680 lines): `sentinel/composition/notifications.py`
 and `sentinel/infrastructure/soar.py`, recoverable from `archive/pre-cleanup`.
 Retired settings: SENTINEL_SOAR_ENDPOINTS, SENTINEL_SOAR_MIN_PRIORITY, SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY (including their _FILE variants).
@@ -218,25 +221,34 @@ not this parked incident-triggered fan-out.
 
 ## Organization management and SCIM Users
 
+Purpose: multi-organization membership and SCIM human-user lifecycle provisioning.
 Parked the five `/scim/v2/Users` collection/item routes and three `/v1/orgs`
 create/current/members routes, with the console organization/member panels.
-Removed `sentinel/infrastructure/orgs.py` (127 lines), recoverable from
-`archive/pre-cleanup`. No feature-specific settings. Tables `organizations`
-and SCIM identity tables await the final migration. Directory storage remains
-temporarily for A2A; tenant provisioning and its tests remain core.
+Removed `sentinel/infrastructure/orgs.py` (127 lines) and
+`sentinel/infrastructure/directory.py` (234 lines): 361 physical lines across two
+whole source files, recoverable from `archive/pre-cleanup`. The directory cut
+landed with A2A after its last shared reader was removed. No feature-specific
+settings. Migration 40 drops `organizations`, `users`, `user_credentials`,
+`user_sessions`, `enrolment_tickets` and `webauthn_challenges`; the latter identity
+artifacts also supported security features retired in Phase 2. OIDC tenant
+provisioning in `interface/principals.py` and its tests remain core.
 Return signal: a customer needs managed human membership and lifecycle sync,
 with a defined tenant boundary and audit contract.
 
-## A2A delegation and the SCIM directory adapter
+## A2A delegation
 
-Removed 18 whole files (6711 lines), including the now-unshared
-directory adapter. Recover source paths from `archive/pre-cleanup`:
-`sentinel/application/a2a_gateway.py`, `sentinel/composition/delegation_wiring.py`, `sentinel/domain/a2a.py`, `sentinel/domain/delegation_constraints.py`, `sentinel/domain/delegation_passport.py`, `sentinel/infrastructure/a2a_registry.py`, `sentinel/infrastructure/a2a_wire.py`, `sentinel/infrastructure/delegation_signing.py`, `sentinel/interface/a2a_proxy_routes.py`, `sentinel/interface/a2a_routes.py`, `sentinel/interface/delegation_verification.py`, `sentinel/infrastructure/directory.py`.
+Purpose: agent-card enrollment, delegated authority and signed delegation-chain
+verification, plus a guarded agent-to-agent wire proxy.
+Removed 17 whole A2A files (6,477 physical lines). The original A2A commit also
+removed the 234-line directory adapter counted under orgs/SCIM above. Three
+shared text-extraction tests were recovered during audit, with original
+assertions, because MCP retains that helper. Recover source paths from `archive/pre-cleanup`:
+`sentinel/application/a2a_gateway.py`, `sentinel/composition/delegation_wiring.py`, `sentinel/domain/a2a.py`, `sentinel/domain/delegation_constraints.py`, `sentinel/domain/delegation_passport.py`, `sentinel/infrastructure/a2a_registry.py`, `sentinel/infrastructure/a2a_wire.py`, `sentinel/infrastructure/delegation_signing.py`, `sentinel/interface/a2a_proxy_routes.py`, `sentinel/interface/a2a_routes.py`, `sentinel/interface/delegation_verification.py`.
 Feature-only test recovery paths are in CLEANUP_PLAN.md and the archived
 tests_arch/ directory. Retired settings: SENTINEL_A2A_PROXY_ALLOWED_HOSTS, SENTINEL_A2A_PROXY_ALLOW_PRIVATE, SENTINEL_A2A_PROXY_ENABLED, SENTINEL_DELEGATION_KEYS and _FILE variants.
 Routes removed: POST `/v1/a2a/cards`, POST `/v1/a2a/evaluate`, conditional POST
 `/v1/a2a/proxy/{agent_id}`. Skills assessment was removed with detonation.
-Tables await the single cleanup migration. Stable execution-binding and Passport
+Migration 40 drops `a2a_agent_cards`; shared `replay_nonces` is retained. Stable execution-binding and Passport
 delegation evidence fields remain; they are not the removed A2A protocol.
 Return signal: a customer needs cross-agent delegation with a specified trust,
 identity and credential boundary, measured against real peers.
@@ -253,10 +265,23 @@ policies are covered by before/after local upgrade tests. This migration removes
 parked-feature data when an operator runs it; archive the old DB if that data
 must be recovered. No production database was changed in this cleanup.
 
-## Discovery vocabulary follow-up
+## Range partitioning (carried forward from Phase 2)
 
-`sentinel/domain/assets.py` (251 lines) became unused after discovery removal;
-fresh import and symbol searches found no retained consumer. It is parked and
-recoverable from `archive/pre-cleanup`. No settings/routes/tables changed.
-Return signal: a future connector needs a shared asset and scan-coverage contract;
-evaluate this archived vocabulary then, rather than shipping unused definitions.
+Purpose: monthly range partitions and partition-aware diagnostics for high-volume
+`domain_events`, `incident_transitions` and the legacy `audit_log` design.
+Partitioning was never wired into the live SQL migrations. Phase 2 removed 1,222
+physical lines across these three duplicate persistence modules, recoverable at
+`archive/pre-cleanup`:
+
+- `sentinel/infrastructure/persistence/schema.py`
+- `sentinel/infrastructure/persistence/migrations.py`
+- `sentinel/infrastructure/persistence/diagnostics.py`
+
+No live settings, HTTP routes or production tables were removed for partitioning.
+The live event/transition tables and `security_audit` remain; retention uses
+DELETE sweeps. Non-partition isolation, RLS, crypto/audit, backup and restore
+coverage is retained. Two partition-only test functions (four database cases)
+were retired in Phase 2, outside the Phase 3 test-count delta.
+Return signal: measured customer event volume makes DELETE retention sweeps too
+slow, justifying a new live migration and demonstrated partition lifecycle,
+query pruning, RLS and restore behavior.

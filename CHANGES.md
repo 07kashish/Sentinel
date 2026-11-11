@@ -1,27 +1,73 @@
 # Sentinel change record
 
-Updated: 2026-10-31 (Asia/Calcutta).
+Updated: 2026-11-11 (Asia/Calcutta).
 
 ## Current checkpoint
 
-Phases 0–2 are complete. Phase 3 is in progress in WSL `/home/lenovo2/sentinel`.
-Completed before this continuation: MCP extraction (`0c57dd3`), detonation
-(`b7292c1`), endpoint (`d75b1bd`), discovery (`c15703c`) and analysis (`c3c8eb1`).
-All five commits were pushed; GitHub branch SHA verified as
-`c3c8eb16db1da676c2d085803e1e67765c5619c3` before SOAR edits.
-Recorded targeted checks: endpoint 193 passed; discovery 322 passed, 1 skipped;
-analysis 162 passed, 6 skipped. Full Phase 3 verification remains pending.
+**Phase 3 verification is blocked; Ready for Phase 4: no.** Phase 4 has not started.
+SOAR, orgs/SCIM and A2A parking plus migration 40 are committed. The five existing
+commits were backed up first, and origin was verified at `868bbf8`. The four
+pending documentation changes were committed as `e6fc483`; shared reply-text and
+private-credential throttle coverage were restored in `036c392` and `767bee6`.
 
-The October 31 decision retains remediation webhooks as Act, including
-SENTINEL_REMEDIATION_ENDPOINTS, its parser, remediation_wiring.py,
-HttpRemediationIntegration, build_remediation_executor and explicit endpoint
-precedence. Native remediation tests remain unchanged. Park only SOAR fan-out,
-playbooks and automation outside approval plus execution binding; keep unclear
-shared helpers and record them in CLEANUP_PLAN.md. See docs/PARKED.md for why.
-Continue SOAR, orgs, A2A, one appended table-drop migration, full verification,
-records and push; STOP before Phase 4. Completed groups are appended below.
+The six requested audits pass after those restorations; the exact checks and
+exhaustive deleted-test inventory are in [CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-3-results).
+The subsequent full-suite attempt exposed five execution-trust demo failures.
+An uninterrupted reproduction gives **7 passed, 5 failed**: removing A2A's
+execution step left questions 1–4 unanswered, while the demo still promises
+16/18 answers and tests its removed delegation negative control. P3-019 records
+the required user decision; those assertions have not been weakened.
 
-The older phase sections below are historical results, not current stop points.
+## Phase 3 results
+
+| Group | Files changed / deleted | LOC added / deleted | Routes removed | Settings fields removed | Tables dropped | Tests removed / adapted | Commit |
+|---|---:|---:|---:|---:|---:|---|---|
+| MCP extraction | 9 / 0 | +403 / -45 | 0 | 0 | 0 | +3 cases; 1 new test file | `0c57dd3` |
+| Detonation | 46 / 19 | +183 / -6,520 | 1 | 2 | 0 | -183 cases; 3 mixed files adapted | `b7292c1` |
+| Endpoint | 22 / 8 | +91 / -2,849 | 5 | 0 | 0 | -62 cases; 1 mixed file adapted | `d75b1bd` |
+| Discovery | 35 / 21 | +127 / -7,704 | 0 | 1 | 0 | -112 cases; 1 mixed file adapted | `c15703c` |
+| Analysis | 43 / 19 | +80 / -7,078 | 8 | 0 | 0 | -259/+2 case IDs (2 SLO renames); 5 mixed files adapted | `c3c8eb1` |
+| SOAR | 16 / 2 | +97 / -1,138 | 0 | 3 | 0 | -20 cases; 4 mixed files adapted | `2e8a36d` |
+| Orgs/SCIM | 14 / 1 | +55 / -415 | 8 | 0 | 0 | -4 cases; 2 mixed files adapted | `34332da` |
+| A2A | 32 / 18 | +58 / -6,994 | 3 | 4 | 0 | -154 cases; 6 feature test files deleted | `557b217` |
+| Migration 40 | 11 / 0 | +207 / -96 | 0 | 0 | 8 | +4 cases; 4 existing files adapted | `16227fd` |
+| Discovery/schema follow-up | 12 / 1 | +92 / -291 | 0 | 0 | 0 | 0 cases; 4 test imports adapted | `868bbf8` |
+| Shared reply test repair | 1 / 0 | +31 / -0 | 0 | 0 | 0 | +3 restored cases | `036c392` |
+| Reference documentation | 4 / 0 | +23 / -16 | 0 | 0 | 0 | 0 cases | `e6fc483` |
+| Private credential test repair | 1 / 0 | +37 / -0 | 0 | 0 | 0 | +2 restored database cases | `767bee6` |
+
+Route declarations **78 -> 53**; annotated Settings fields **73 -> 63**; collected
+cases **4,143 -> 3,363**. The table counts all text diff lines and changed/deleted
+files per commit. The analysis +2 IDs rename retained SLO checks. Five cases were
+restored during audit. Exactly one baseline skipped case was retired (live
+detonation); the other groups remove no prior skips. Final full-suite pass/skip
+counts remain pending. The interrupted full run reported **704 passed, 5 failed,
+5 skipped** before stopping; it is not completion evidence.
+
+Migration 40 drops `user_credentials`, `user_sessions`, `enrolment_tickets`,
+`webauthn_challenges`, `users`, `organizations`, `a2a_agent_cards` and
+`device_discovery`, without CASCADE. Fresh and previous-head upgrades pass on
+SQLite and PostgreSQL; kept tables/indexes/RLS policies/roles and migrations
+1–39 remain unchanged. `DEVICE_STATEMENTS` is retained for historical replay.
+
+Act webhooks remain: `SENTINEL_REMEDIATION_ENDPOINTS`, parser, wiring,
+`HttpRemediationIntegration`, `build_remediation_executor` and explicit endpoint
+precedence. MCP/native tests remain unchanged. Custom rules matching
+`metadata.a2a.*` no longer match anything; no shipped rule used those inputs.
+MCP retains its pre-existing event type and deterministic reply inspection.
+
+Ruff, 10 import-graph regressions, 2 scanner regressions, graph gate with 11
+documented exceptions, actionlint, release-secret scan, relative Markdown links
+and the 62-name/prefix removed-setting scan pass. Docker is unavailable in WSL;
+image build and healthcheck remain unverified. PARKED.md contains all eight
+feature entries, retained-webhook rationale and Phase 5 reference candidates.
+
+Deviations: shared directory removal waited for A2A; the final discovery orphan
+was removed separately; the new schema inventory moved to its own module to keep
+the historical schema and size guard unchanged; four shared test functions were
+recovered (five cases). The execution-trust demo scope remains an open question.
+No merge, PR, deployment, production migration or Phase 4 work was performed.
+Reports and baseline logs stay uncommitted. Older sections below are historical.
 
 ## Phase 2 results — 2026-10-24
 
