@@ -1,189 +1,121 @@
-# Sentinel — Runtime Trust and Verifiable Execution for Autonomous AI Agents
+# Sentinel
 
-Sentinel is an **early-stage** runtime trust layer for autonomous agents. It
-ingests signed agent runtime events, evaluates them against a deterministic
-policy, correlates them into a causal execution graph, escalates proposed
-remediations to a human, and can optionally anchor incident evidence via an
-attestation gateway.
+Sentinel provides independent, cross-vendor oversight of the AI agents a company runs.
 
-The capability it is being built around is **verifiable agent execution**: which
-actor performed an action, under whose authority, through which tool or MCP
-path, against which resource, under which policy, and with what evidence.
+It records activity sent through its integrations, evaluates deterministic policy,
+requires approval where policy demands it, executes configured tools through
+bound authorizations, and preserves evidence of the result. It does not discover
+every agent in a company or observe activity that never reaches an integration.
 
-**Status: pre-production.** Not a SOC replacement. Not "production-ready".
-Durable storage, fail-closed auth, execution fencing, and honest attestation
-dispositions are in place. Detection uses a configurable deterministic policy
-engine. Optional LLM advice carries no decision authority.
+## Observe → Decide → Act → Prove
 
-## Five-minute quickstart
+- **Observe:** accept tenant-scoped events, record agent activity, maintain observed
+  inventory and execution graphs, and inspect calls through enrolled MCP servers.
+  The operator console shows the records Sentinel actually received.
+- **Decide:** deterministic rules and tenant policy evaluate actions. Identity,
+  capability grants, containment and execution controls constrain the result.
+  Human approval is required when policy calls for it. Optional model advice is
+  recorded as advisory text and cannot authorize an action or set its priority.
+- **Act:** configured tools run through the approval and execution-binding path.
+  Retained adapters include AWS, GitHub, Kubernetes, a constrained PostgreSQL
+  target, scoped file/HTTP tools and registered business applications. Remediation
+  webhooks remain available through the guarded executor. Unconfigured adapters
+  are absent; a decision alone is not evidence that an action ran.
+- **Prove:** operation records, execution receipts, evidence commitments,
+  transparency proofs and Execution Passports support later verification.
+  Declared identity and intent remain distinguishable from verified identity and
+  observed effects. Unknown outcomes remain unknown until reconciled.
 
-No Docker, no accounts, no `.env`:
+Protection defaults to advisory mode. Execution binding defaults on, but those
+are separate controls: advisory decisions do not promise enforcement. Explicit
+configuration, valid credentials and the applicable approval are still required
+for consequential execution.
 
-```bash
-pip install -r requirements.txt   # from this checkout. This project is NOT on PyPI: see the note below
-PYTHONPATH=. python scripts/quickstart.py
-```
+## Local quickstart
 
-> **Do not `pip install sentinel-agent-trust`.** This project has never been published to PyPI or
-> any other registry. A package with that exact name exists on PyPI, uploaded in July 2026 by a
-> different publisher; installing by name fetches THEIR code, not this repository. Install only
-> from a checkout (`pip install -e ".[server]"`) or from a wheel you built yourself.
+Use Python 3.12 or later and a clean checkout of this branch. These commands were
+run in a fresh Linux/WSL clone with a new virtual environment and SQLite database
+during Phase 4. The token is generated locally; do not reuse local development
+configuration as a production deployment.
 
-It starts the real ASGI app on SQLite in a temp directory, submits a staged
-exfiltration -- `read_file` then `zip` then `http_post` to an external host --
-and shows the incident that comes back. Measured at **2.3s** end to end on the
-development machine; the script prints its own elapsed time, so the number you
-see is yours rather than this README's.
+From the repository directory:
 
-Everything it exercises is the shipped code path. There are no stubs and no
-fixtures, because a demo that mocks the thing being demonstrated proves
-nothing. The attack is the tracked red-team case `staged_exfiltration`, not an
-invented one, so a newcomer's first impression is a case the release gate
-asserts on every build.
-
-**It exits non-zero if no incident is raised.** A quickstart that congratulates
-you on a broken build is worse than no quickstart, so the verdict is computed
-from whether an incident actually came back -- not from having reached the end
-of the script. It also cross-checks two independent reports of the same fact
-(the submission response and the incident list) and fails if they disagree.
-
-You will notice that **nothing is blocked**. That is deliberate and is
-explained in [docs/SECURITY.md](docs/SECURITY.md#security_assurance):
-correlation is self-reported, so blocking on it would let an attacker halt
-someone else's agent by forging a chain. Sentinel detects far more than it
-prevents, on purpose.
-
-For the full stack -- PostgreSQL, Prometheus, Grafana, Keycloak, Jaeger --
-`docker compose up -d`.
-
-## What runs today
-
-Hexagonal package `sentinel/` (domain / application / infrastructure /
-composition / interface), with architecture fitness tests in `tests_arch/`.
-
-```text
-sentinel/
-  domain/           # Incident lifecycle, Fence, errors, protect decisions
-  application/      # Commands, queries, saga engine, ports
-  infrastructure/   # SQL, detection policy, attestation HTTP, evidence
-  composition/      # Container + Settings (sole wiring site)
-  interface/        # FastAPI HTTP, ASGI factory, worker, CLI
-tests_arch/         # Architecture, chaos, concurrency, security, mutation
-evaluation/         # Honest detection metrics gate
-config/             # default_policy.json
-docs/               # Architecture baseline, remediation matrix, threat model
-```
-
-The legacy `api/`, `app/`, `agents/`, and `dashboard/` trees are **gone**.
-
-## HTTP API (actual)
-
-| Method | Path | Notes |
-|---|---|---|
-| POST | `/v1/events` | Ingest. Capability `ingest_event`. No client-asserted severity. |
-| POST | `/v1/protect/evaluate` | Pre-action policy gate. Capability `evaluate_protect`. |
-| POST | `/v1/mcp/evaluate` | MCP tool call: server trust + tool-definition drift, then the same policy. Capability `evaluate_protect`. Enrolment is CLI-only. |
-| POST | `/v1/mcp/proxy/{server_id}` | MCP wire proxy (JSON-RPC/Streamable HTTP). Forwards to ENROLLED servers only; `tools/call` evaluated against the live definition; drifted listings, duplicate tool names, changed server identity and foreign OAuth issuers all refused. Registered only when `SENTINEL_MCP_PROXY_ENABLED` is set. Capability `execute_tool`. |
-| POST | `/v1/tools/execute` | Inline tool proxy. Effects register only where configured: `read_file`, `write_file`, `http_request`, plus `aws_api`, `github_api`, `kubernetes_api`, `sql_query` where platform credentials are supplied. Every platform effect carries a tier ceiling checked **after** the gate allows. |
-| GET | `/v1/incidents`, `/v1/incidents/{id}`, history, report | Read capabilities |
-| GET | `/v1/dashboard` | Tenant summary JSON (not an HTML UI) |
-| POST | `/v1/approvals/{id}` | Approve/reject remediation |
-| GET | `/health/live` | Process up. Opaque. |
-| GET | `/health/ready` | DB + keys configured. Opaque. |
-| GET | `/health/diagnostics` | Detail behind `read_diagnostics` |
-
-Serve with:
-
-```bash
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install ".[server]"
+export SENTINEL_ENV=development
+export SENTINEL_DB_PATH="$PWD/data/sentinel.db"
+export SENTINEL_API_KEYS="local:$(python -c 'import secrets; print(secrets.token_urlsafe(32))'):admin"
 python -m sentinel.interface.cli migrate
-gunicorn "sentinel.interface.asgi:create_application()" --worker-class uvicorn.workers.UvicornWorker
+python -m uvicorn sentinel.interface.asgi:create_application --factory --host 127.0.0.1 --port 8000
 ```
 
-## Protect mode (honest)
+Keep the server running and use another terminal:
 
-`POST /v1/protect/evaluate` runs the **deterministic policy** only (no LLM, no
-classifier in the gate). Decisions: `allow`, `warn`, `require_approval`, `block`.
-
-- Default: advisory. Every response has `enforced: false`.
-- With `SENTINEL_PROTECT_ENFORCE=true`, stopping decisions set `enforced: true`.
-  Callers are under contract to abort. Sentinel is **not** an inline network
-  interceptor; without integration honouring the response, nothing is blocked
-  on the wire.
-
-## Detection (honest)
-
-Measured performance against labeled corpora is published by the evaluation gate,
-not asserted as marketing. Detection uses deterministic rules; corpus results
-do not establish real-world precision or recall. The optional LLM advisor
-provides narrative advice without authority over severity or decisions.
-
-```bash
-PYTHONPATH=. py evaluation/metrics.py --json evaluation/metrics.json
+```sh
+curl --fail http://127.0.0.1:8000/health/live
+curl --fail http://127.0.0.1:8000/health/ready
 ```
 
-Methodology: `evaluation/BENCHMARK.md`. Do not treat current numbers as
-production SOC evidence.
+The verified responses were `{"status":"ok"}` and `{"ready":true}`. Stop the
+server with Ctrl+C. Migration is an explicit deployment step; startup verifies
+the schema version and does not migrate automatically.
 
-## Observe vs protect
+The console is at <http://127.0.0.1:8000/console>. It loads a public static shell;
+its data requests require a bearer token. Use the token portion of the configured
+API-key entry for local operator access. Event submission uses a separate ingest
+role: an admin token cannot fabricate telemetry.
 
-- **Observe (default ingest):** agents emit events after actions; Sentinel records,
-  detects, investigates, proposes approvals. Nothing executes automatically
-  without a human decision and a configured integration.
-- **Protect (evaluate):** agents ask before high-risk tool calls. Enforcement is
-  optional configuration + caller honouring `enforced`.
+**Docker: UNVERIFIED (not installed in WSL).** Neither the image nor the Compose
+path was tested in Phase 4. Checkpoint 2 remains blocked on Docker verification.
+The native quickstart above is the verified path.
 
-## Setup
+## Configuration and interfaces
 
-1. Python 3.12+
-2. `pip install -r requirements.txt` (dev: `requirements-dev.txt`)
-3. Copy `.env.example` → `.env` and set `SENTINEL_API_KEYS=tenant:key:role`
-4. `python -m sentinel.interface.cli migrate`
-5. Run ASGI entry above
+The minimum local inputs are an API-key binding and a writable database path.
+The defaults select development mode and SQLite. Production requires PostgreSQL,
+strong credentials and explicit security choices; it is not obtained by exposing
+the local server to a network.
 
-Optional: attestation gateway via `SENTINEL_ATTESTATION_ENDPOINT` + token (https only).
-Without a gateway, incidents complete as `completed_unattested` — never as fake success.
+See the [full configuration reference](docs/CONFIGURATION.md) for every retained
+field, default, environment input and operational control. The
+[example environment](.env.example) contains examples, including optional groups
+that must be fully configured or left unset.
 
-## Tests and quality
+The Python SDK has no third-party runtime dependencies. MCP calls can use the
+opt-in HTTP proxy or the stdio bridge. The proxy evaluates enrolled server trust,
+tool-definition drift and deterministic policy, then inspects replies. Real
+platform execution is available only where the corresponding adapter is
+configured. See [integrations](docs/INTEGRATIONS.md) and
+[architecture](docs/ARCHITECTURE.md) for those boundaries.
 
-```bash
-pytest -q tests_arch/
-ruff check sentinel tests_arch
-```
+API routes require an authenticated principal and a capability. The explicit
+public exceptions are liveness, readiness and the three static console resources.
+Prometheus metrics require a separate scrape token. The optional OpenAPI schema
+requires diagnostics permission and is unavailable in production; interactive
+Swagger/ReDoc UIs are not shipped as routes.
 
-CI also runs detection metrics, mutation suites, bandit, and container smoke tests.
-See `.github/workflows/ci.yml`.
+## Parked and planned
 
-## Docs
+Detonation, endpoint collection, vendor inventory discovery, estate analysis,
+SOAR notifications/playbooks, orgs/SCIM, A2A and legacy partitioning are parked.
+[The parked-feature record](docs/PARKED.md) explains what was removed, where to
+recover it and what customer evidence would justify reconsidering it.
 
-- `docs/ARCHITECTURE.md` — current vs target, API surface, risks
-- `docs/STATUS.md` — Eighth Review F-1..F-12 status
-- `sentinel/ARCHITECTURE.md` — enforced dependency rules
-- `docs/SECURITY.md` — edge findings (**different** F-numbering)
-- `docs/INTEGRATIONS.md` — MCP server trust, tool pinning, description poisoning
-- `docs/INTEGRATIONS.md` — OpenAPI ingestion, tool adapters, SIEM export
+**Phase 5 is planned, not built, and has not started.** The recorded next work
+includes agent-registry and audit-log connector work (5.1/5.2), using the archived
+GitHub/Slack/identity helpers only as references. It must restore verified answers
+about actor, authenticated identity, delegator and granted permissions through the
+registry and retained identity/authorization paths; the planned
+`oversight_demo.py` (5.6) must demonstrate those answers. The current execution
+trust demo explicitly leaves questions 1–4 unanswered, along with 14 and 18.
 
-## What this README does not claim
+See [CLEANUP_PLAN.md](CLEANUP_PLAN.md) and [CHANGES.md](CHANGES.md) for measured
+cleanup results, verification limits and decisions. See
+[testing](docs/TESTING.md), [operations](docs/OPERATIONS.md) and
+[security](docs/SECURITY.md) for their respective procedures and constraints.
 
-- Production readiness
-- Live HTML dashboard / MONITORING LIVE
-- Inline kill-switch without integration
-- Improved AUC beyond measured evaluation output
-- **A2A, skill scanning, detonation or local/vendor discovery.** These surfaces
-  are parked; see `docs/PARKED.md` for scope and recovery paths.
-- **Interception of traffic that bypasses the proxy.** Retained tool/MCP proxies
-  enforce only calls routed through them; a framework that never points at
-  Sentinel remains outside enforcement.
-- **S3, Kafka, or `kubectl exec`.** Each is absent by decision rather than
-  half-implemented, and each says so where an operator will hit it.
+## License
 
-## Licence
-
-Proprietary — all rights reserved. See [LICENSE](LICENSE). Reading the source
-is not a licence to use it; production use requires a written agreement.
-
-## Status documentation
-
-- Branch protection status: [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) — **currently unenforced**, and the document explains why
-- Pre-production readiness: [docs/STATUS.md](docs/STATUS.md#production_readiness_report)
-- Eighth Review F-1..F-12: [docs/STATUS.md](docs/STATUS.md#remediation_matrix)
-- Historical artifacts (**not current truth**): [docs/history/](docs/history)
+See [LICENSE](LICENSE).

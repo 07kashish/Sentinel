@@ -1,6 +1,6 @@
-# Sentinel cleanup plan — Phase 3 complete
+# Sentinel cleanup plan — Phase 4 in progress
 
-Phase 3 is complete and verified. Ready for Phase 4: yes. Phase 4 has not started. The user-approved P3-019 demo scope and P3-020 migration fixtures are resolved; the entire Linux suite passed uninterrupted. Earlier inventories and checkpoint conditions are historical; the Phase 3 results below are current as of 2026-11-12 (Asia/Calcutta).
+Phase 3 is complete. Phase 4 is authorized and in progress on cleanup/oversight-core; the Phase 4 decisions and execution ledger below are current. Settings, routes, core invariants and the native README quickstart are verified. Checkpoint 2 remains blocked on Docker availability, with final measurements and full-suite verification pending. Earlier inventories and checkpoint conditions are historical. No Phase 5 work is authorized.
 
 **Product constraint:** independent, cross-vendor company oversight through Observe → Decide → Act → Prove. Deterministic rules remain the decision authority. Preserve the semantics and existing assertions for protect_gate, authorizations, tool_runner, execution_binding, operation storage/reconciliation, transparency and Execution Passport. Keep AWS, GitHub and Kubernetes controlled execution.
 
@@ -1638,8 +1638,8 @@ Requested phase commit messages remain as specified in the user brief. Latest re
 
 Phase 5 must restore answers to demo questions 1–4 (actor, authenticated identity, delegator, granted permissions) through the agent registry and retained identity/authorization paths; oversight_demo.py (5.6) must answer them.
 
-This records the approved future obligation only. Phase 5 implementation is not
-part of Phase 3; Phase 4 also remains unauthorized.
+This records the approved future obligation only. Phase 5 implementation remains
+outside the authorized Phase 4 cleanup; it has not started.
 
 ## Open decisions
 
@@ -3157,7 +3157,9 @@ Phase 0 command uninterrupted, with pipefail, saving output under
 - Preflight complete: clean local/remote starting commit confirmed; Docker absent.
 - Settings complete: `aecd2a3`; 66 passed, 1 skipped; unchanged retained defaults.
 - Routes complete: optional UIs removed, schema authenticated; 125 focused tests passed.
-- Invariants, README, measurements and final suite: pending.
+- Invariants complete: SDK/decision probes pass; historical test edits and all skip reasons recorded.
+- README complete: clean-clone install/migrate/start/health verified; 4 citation tests pass.
+- Docker unavailable; measurements and final suite pending.
 
 
 ### P4-005 — settings removal and documentation decision
@@ -3558,3 +3560,179 @@ handler. Focused security, unchanged attack-surface fitness and MCP verification
 has an authentication dependency and capability. No route test was deleted and
 no core assertion was weakened. Three UI routes were removed; the schema response
 200 assertion remains for the authorized caller, with added 401/403 checks.
+
+
+### P4-007 — core invariant audit scope
+
+Before the audit: inspect the SDK release-hygiene probe and execute it without
+changing code. Compare archived and current tests covering protect, authorization,
+execution binding/operations/reconciliation, transparency and Passport, including
+mixed files and SDK conformance. Attribute every changed/deleted function to an
+already recorded cleanup decision; do not infer approval from a green test alone.
+Inspect the gate and execution pipeline to establish whether any model result
+can choose a decision or authorize an effect. Group every Phase 3 skip by its
+explicit JUnit reason, then compare those same cases with the final Phase 4 run.
+Only a failed invariant permits a production correction in this step.
+
+
+#### Core invariant results
+
+| Invariant | Result | Evidence |
+|---|---|---|
+| Thin SDK imports only the standard library | PASS | Existing release-hygiene probe executes all SDK imports under an isolated interpreter and finds no non-stdlib dependency; release-hygiene/protect probes: 49 passed. |
+| Protected test preservation | PASS with recorded approved edits | 52 relevant test files audited against archive/pre-cleanup: 37 byte-identical, 14 changed as listed below, 1 added (independent MCP reply coverage). No unapproved loss of kept assertions found. |
+| Deterministic decision authority | PASS | ProtectGate.evaluate calls the deterministic policy at protect_gate.py:81; tenant rules may only strengthen the outcome. The pipeline computes actionable severity before advisory enrichment and records model outputs only under advisory fields (pipeline.py:246–288). Four direct priority/model-authority/outage checks pass. No model call exists in the gate's decision or execution-authorization path. A model call may still run as non-authoritative incident enrichment; this is not claimed absent. |
+| Explicit skip reasons | PASS | All 41 Phase 3 skipped cases have nonempty explicit reasons, grouped below. Final Phase 4 skip counts must be verified against these IDs; no skip is counted as tested behavior. |
+
+#### Approved protected-test edits since archive/pre-cleanup
+
+The full changed/deleted function inventory for earlier feature parking remains
+in the Phase 3 results. This table enumerates every changed file in the core
+invariant audit, including fixture-only and documentation-only changes.
+
+| Test file | Edits and approval basis | Commits |
+|---|---|---|
+| `tests_arch/test_binding_routes.py` | Phase 1 architecture consolidation: update the residual documentation path; the DECLARED assertion remains. | `1840538` |
+| `tests_arch/test_demo_execution_trust.py` | User-approved P3-019: rename/adapt the count test to six specified out-of-scope questions; remove only the A2A delegation negative-control function; all other assertions unchanged. | `73af863` |
+| `tests_arch/test_execution_concurrency.py` | Phase 0 d45b220: add terminal-redelivery atomic-inbox-winner regression; no original test function changed. | `d45b220` |
+| `tests_arch/test_execution_contract.py` | Phase 1 classifier removal: delete only its fixture toggle; every test function is unchanged. | `935ddfc` |
+| `tests_arch/test_gap_closures.py` | Approved SAML and orgs/SCIM parking removes five feature-only functions; all kept functions are unchanged. | `34332da`, `1414eb3` |
+| `tests_arch/test_mcp_gateway.py` | Phase 1 classifier removal: replace the deleted prompt extractor assertion with a real deterministic-policy detection assertion; retain exact prompt projection. | `935ddfc` |
+| `tests_arch/test_passport_conformance.py` | Phase 1 Passport consolidation: canonical vectors and verifier/spec paths move to standard/execution-passport-v1; equality, malicious-vector, integer-bound and dependency assertions remain. | `363886d` |
+| `tests_arch/test_protect_decisions.py` | Phase 1 classifier removal: replace classifier-specific severity inspection with composed deterministic-policy equivalence; rename advisory case while retaining its REQUIRE_APPROVAL/non-block assertions. | `935ddfc` |
+| `tests_arch/test_remediation_execution.py` | Phase 3 SOAR parking removes twelve notification-only functions; all kept executor functions and assertions remain. | `2e8a36d` |
+| `tests_arch/test_root_publication.py` | Phase 1 classifier removal: delete only its fixture toggle; every test function is unchanged. | `935ddfc` |
+| `tests_arch/test_security_edge.py` | P4-006: preserve default 404 checks, require authenticated opt-in schema success, add anonymous/ingest refusal and unused-UI absence; no permission assertion is weakened. | `3756559` |
+| `tests_arch/test_sql_infrastructure.py` | Phase 3 migration 40: historical upgrade fixture and current schema-inventory import; parked tables excluded, all kept schema assertions remain. | `868bbf8`, `16227fd` |
+| `tests_arch/test_tenant_isolation_rls.py` | Phase 1 security-doc relocation and Phase 3 migration 40: use current protected-table inventory, retaining every kept table and RLS/isolation assertion. | `868bbf8`, `16227fd`, `327297b` |
+| `tests_arch/test_transparency_routes.py` | Phase 1 classifier removal: delete only its fixture toggle; every test function is unchanged. | `935ddfc` |
+
+The added `test_mcp_reply_independent.py` is the approved Phase 3 extraction
+regression (`0c57dd3`), not replacement or removal of a kept assertion.
+
+#### Phase 3 skips grouped by reason (41 cases)
+
+Reason: Helm binary unavailable; chart rendering is unverified (1 case).
+
+- `tests_arch.test_config_alignment::test_rendered_helm_controls_activate_real_settings`
+
+Reason: drill has not been run in this tree (1 case).
+
+- `tests_arch.test_dr_postgres_wal_pitr_drill::test_recorded_result_is_internally_consistent`
+
+Reason: both drills have not been run in this tree (1 case).
+
+- `tests_arch.test_dr_postgres_wal_pitr_drill::test_the_dump_drill_result_is_not_overwritten_by_this_one`
+
+Reason: quiet drill has not been run in this tree (2 cases).
+
+- `tests_arch.test_dr_postgres_wal_pitr_drill::test_quiet_record_attributes_its_rpo_to_archive_timeout`
+- `tests_arch.test_dr_postgres_wal_pitr_drill::test_the_quiet_value_matches_the_value_the_deployment_sets`
+
+Reason: dedicated local kind cluster not configured; real Kubernetes effects UNVERIFIED (10 cases).
+
+- `tests_arch.test_kubernetes_live_contract::test_approved_update_reaches_real_target_and_replay_cannot_change_it[sqlite]`
+- `tests_arch.test_kubernetes_live_contract::test_approved_update_reaches_real_target_and_replay_cannot_change_it[postgres]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[sqlite-update-update]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[sqlite-update-delete]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[sqlite-replace-update]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[sqlite-replace-delete]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[postgres-update-update]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[postgres-update-delete]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[postgres-replace-update]`
+- `tests_arch.test_kubernetes_live_contract::test_concurrent_change_invalidates_approved_target_version[postgres-replace-delete]`
+
+Reason: SQLite has no row-level security to interrogate (6 cases).
+
+- `tests_arch.test_migrations::test_row_level_security_is_on_after_a_fresh_migration[sqlite]`
+- `tests_arch.test_sql_infrastructure::test_a_tenant_scoped_table_added_late_is_still_protected[sqlite]`
+- `tests_arch.test_tenant_isolation_rls::test_every_protected_table_actually_carries_a_forced_policy[sqlite]`
+- `tests_arch.test_tenant_isolation_rls::test_an_unscoped_connection_still_sees_no_queue_rows[sqlite]`
+- `tests_arch.test_tenant_isolation_rls::test_the_worker_scope_sees_every_tenants_queue_rows_and_nothing_else[sqlite]`
+- `tests_arch.test_tenant_isolation_rls::test_the_worker_scope_does_not_outlive_its_transaction[sqlite]`
+
+Reason: SQLite has one isolation level (1 case).
+
+- `tests_arch.test_persistence_benchmarks::test_isolation_levels_are_actually_applied[sqlite]`
+
+Reason: SQLite serialises writers with a busy timeout instead (1 case).
+
+- `tests_arch.test_persistence_benchmarks::test_a_blocked_writer_fails_fast_rather_than_queueing[sqlite]`
+
+Reason: SQLite has no row-level security (1 case).
+
+- `tests_arch.test_persistence_benchmarks::test_row_level_security_does_not_degrade_into_a_scan[sqlite]`
+
+Reason: SENTINEL_TEST_REDIS_URL unset — real Redis unexercised in this run (fakeredis covers unit logic) (2 cases).
+
+- `tests_arch.test_persistence_storage_cache::test_live_redis_adapter_round_trips_without_fakeredis`
+- `tests_arch.test_persistence_storage_cache::test_live_redis_token_bucket_is_atomic`
+
+Reason: SENTINEL_TEST_S3_ENDPOINT/ACCESS_KEY/SECRET_KEY unset — live S3/MinIO round-trip UNVERIFIED in this run (1 case).
+
+- `tests_arch.test_persistence_storage_cache::test_live_minio_object_store_round_trips`
+
+Reason: dedicated local kind cluster not configured; the deployed journey is UNVERIFIED (2 cases).
+
+- `tests_arch.test_protected_change_journey::test_one_protected_change_end_to_end[sqlite]`
+- `tests_arch.test_protected_change_journey::test_one_protected_change_end_to_end[postgres]`
+
+Reason: gitleaks not installed; reported rather than passed silently (2 cases).
+
+- `tests_arch.test_release_packaging::test_the_real_scanner_reports_a_planted_secret`
+- `tests_arch.test_release_packaging::test_the_scan_failure_does_not_echo_the_secret`
+
+Reason: no .env in this checkout, so there is nothing to leak (1 case).
+
+- `tests_arch.test_release_packaging::test_no_allowlisted_file_contains_the_live_aws_credentials`
+
+Reason: isolated real Redis URL required (1 case).
+
+- `tests_arch.test_shared_process_controls::test_real_redis_limits_are_shared_and_tenant_scoped_across_processes`
+
+Reason: soak artifact not present in this checkout (5 cases).
+
+- `tests_arch.test_slo_evaluation::test_the_mapper_reads_the_real_soak_artifact`
+- `tests_arch.test_slo_evaluation::test_the_real_artifact_yields_a_met_ingest_and_an_unmeasurable_availability`
+- `tests_arch.test_slo_evaluation::test_the_cli_exits_one_when_a_target_is_unmeasurable`
+- `tests_arch.test_slo_evaluation::test_the_cli_prints_the_artifacts_own_claim_beside_the_computed_verdict`
+- `tests_arch.test_slo_evaluation::test_the_cli_states_that_the_soak_gate_stays_open`
+
+Reason: SQLite has no WITH CHECK; the application predicate is all there is (1 case).
+
+- `tests_arch.test_tenant_isolation_rls::test_a_write_cannot_be_attributed_to_another_tenant[sqlite]`
+
+Reason: no roles on SQLite (1 case).
+
+- `tests_arch.test_tenant_isolation_rls::test_the_application_role_is_not_a_superuser[sqlite]`
+
+Reason: catalogue query is PostgreSQL-specific (1 case).
+
+- `tests_arch.test_tenant_isolation_rls::test_no_tenant_owned_table_was_left_out_of_the_protected_set[sqlite]`
+
+Invariant audit complete. No production code was changed in this step.
+
+
+### P4-008 — README and clean-checkout quickstart decision
+
+Rewrite README for the existing Observe → Decide → Act → Prove core, explicitly
+separating observed telemetry, deterministic decisions, guarded execution and
+recorded proof from future discovery/connectors. Describe Phase 5 items only as
+not built; implement none. Link the full configuration reference and PARKED.md.
+
+Before writing command claims, create a clean local clone of the current branch
+in a unique temporary directory, install the server extra into a new venv, use
+an isolated SQLite database and a generated local API token, migrate, start the
+actual ASGI app on loopback, and check liveness/readiness. Stop the test process
+and preserve command/result logs under baseline/phase4. README will show only
+commands executed in this phase. Do not present an unverified Docker command as
+a tested quickstart; record the unavailable runtime explicitly instead.
+
+
+README quickstart verification: clean clone of `3756559`, fresh venv,
+server-extra install, SQLite migration and actual ASGI start all succeeded.
+Liveness and readiness returned HTTP 200 with the documented bodies. Startup
+including migration took **1.24 seconds**; the server was stopped.
+All README command lines are recorded in baseline/phase4/quickstart-result.json
+and were executed in this phase. Docker/Compose commands are not presented as
+verified. No Phase 5 implementation was performed.
