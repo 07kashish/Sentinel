@@ -1,6 +1,6 @@
-# Sentinel cleanup plan — Phase 3 verification blocked
+# Sentinel cleanup plan — Phase 3 complete
 
-Phase 2 is complete. Phase 3 feature parking and migration 40 are implemented, but final verification is blocked on the execution-trust demo contract (P3-019). Ready for Phase 4: no. Earlier inventories and checkpoint conditions are historical; the Phase 3 results and open question below are current.
+Phase 3 is complete and verified. Ready for Phase 4: yes. Phase 4 has not started. The user-approved P3-019 demo scope and P3-020 migration fixtures are resolved; the entire Linux suite passed uninterrupted. Earlier inventories and checkpoint conditions are historical; the Phase 3 results below are current as of 2026-11-12 (Asia/Calcutta).
 
 **Product constraint:** independent, cross-vendor company oversight through Observe → Decide → Act → Prove. Deterministic rules remain the decision authority. Preserve the semantics and existing assertions for protect_gate, authorizations, tool_runner, execution_binding, operation storage/reconciliation, transparency and Execution Passport. Keep AWS, GitHub and Kubernetes controlled execution.
 
@@ -2690,23 +2690,27 @@ Two cases still queried the parked `a2a_agent_cards` table. The PostgreSQL resum
 case built migration 40's dropped schema, then rewound only its ledger to 37,
 so historical RLS replay tried to protect an already-dropped `users` table.
 
-Correct the resume fixture by genuinely building version 39 before rewinding
-its ledger; it then replays the historical DDL and advances through migration 40.
-Remove only `a2a_agent_cards` from the spot-check table list. Preserve every
-kept table check, original assertion and all production migration/DDL code.
-This is the same historical-fixture correction already authorized in P3-015.
-Re-run both engines' migration tests and the entire uninterrupted suite.
+Resolved in `73af863`: the resume fixture genuinely builds version 39 before
+rewinding its ledger, then replays historical DDL and advances through migration
+40. Only `a2a_agent_cards` was removed from the spot-check table list. Every kept
+table check, original assertion and all production migration/DDL code remain
+unchanged. This is the historical-fixture correction already authorized in
+P3-015. Focused migration/demo verification passed (35 passed, 1 SQLite RLS
+skip), followed by the complete green Linux suite recorded below.
 
 ## Phase 3 results
 
-**Ready for Phase 4: no. Phase 3 is blocked on P3-019; Phase 4 has not started.**
+**Ready for Phase 4: yes. Phase 3 is complete; Phase 4 has not started.**
 
 All planned feature parking and migration 40 are committed. PARKED.md now includes
 the eight requested feature entries, retained Act webhooks, the metadata.a2a
 behavior change and Phase 5 reference candidates. The initial five commits were
 backed up and origin confirmed at `868bbf8fa135a34be4b0cfe3466a42a93a019ac1`.
 The original four documentation changes were reviewed and committed separately as
-`e6fc483`. Two small coverage restorations are listed below.
+`e6fc483`. Two small coverage restorations are listed below. The approved demo
+scope and remaining historical migration fixtures were corrected in `73af863`.
+The final Linux suite ran uninterrupted to completion with zero failures, errors
+or timeouts. P3-019 and P3-020 are resolved; there are no open Phase 3 questions.
 
 ### Six-check audit
 
@@ -2743,44 +2747,63 @@ historical case-delta file also carried them under detonation.
 | Shared reply test repair | 1 / 0 | +31 / -0 | 0 | 0 | 0 | +3 restored cases | `036c392` |
 | Reference documentation | 4 / 0 | +23 / -16 | 0 | 0 | 0 | 0 cases | `e6fc483` |
 | Private credential test repair | 1 / 0 | +37 / -0 | 0 | 0 | 0 | +2 restored database cases | `767bee6` |
+| Approved demo scope / migration fixtures | 5 / 0 | +108 / -35 | 0 | 0 | 0 | -1 A2A-only case; count test renamed/adapted; 2 migration functions adapted | `73af863` |
 
 ### Counts and verification limits
 
-- Static route declarations: **78 before Phase 3 -> 53 now**; Settings fields:
+- Static route declarations: **78 before Phase 3 -> 53 after**; Settings fields:
   **73 -> 63**. Before means `ff627fa`, counted with the same AST method including
   conditional route declarations. This is not a claim that all routes are enabled
   simultaneously.
-- Collected cases: **4,143 -> 3,363**, a net reduction of 780. The original
-  parking groups remove 794 case IDs and add 9 (including two SLO renames);
-  audit fixes restore 5 cases (three shared text tests and two database variants
-  of the private-credential test). The earlier 3,358 count omitted those fixes.
-- The requested full command was started, then interrupted so the final run could
-  include the newly recovered throttle cases. Partial JUnit: **704 passed,
-  5 failed, 5 skipped, 714 reported cases**, with no recorded test errors. This is
-  **not a completed full-suite result**. Interrupted teardown also produced a
-  pytest stash KeyError; it is not reported as a green gate. Five actual demo
-  failures were independently reproduced afterward (7 passed, 5 failed).
-- Full-suite output remains under `baseline/phase3/pytest.log` and `junit.xml`;
-  isolated blocker evidence is under `baseline/phase3/audit/demo-blocker.*`.
-  Reports and raw baseline logs are not committed.
-- The Phase 2 full baseline was 4,101 passed / 42 skipped. Exactly one previously
-  skipped case was removed: the live detonation container test. No other group
-  removed a baseline skipped case. A final skip total is pending the complete
-  rerun; it must not be inferred from this partial run.
-- Fresh targeted audit: **27 passed** (independent MCP, native remediation, four
-  real database migration cases); shared reply restoration: **6 passed**;
-  throttle restoration plus existing security-throttle coverage: **24 passed**.
+- Full Linux suite: **3,321 passed, 41 skipped, 0 failed, 0 errors, 0 timeouts**,
+  **3,362 total**, exit **0**. It ran uninterrupted to completion with the Phase 0
+  command below. JUnit time: **1,592.684 seconds**; command wall time:
+  **1,600.443 seconds**. Results are saved under `baseline/phase3/pytest.log` and
+  `baseline/phase3/junit.xml`; machine-readable verification and skip comparison
+  are saved alongside them. Reports and raw baseline logs are not committed.
+- Phase 2 was **4,101 passed / 42 skipped / 4,143 total**. Collected cases fell by
+  **781**: original parking groups removed 794 case IDs and added 9 (including
+  two retained SLO renames), audit fixes restored 5 cases, and approved P3-019
+  removed one A2A-only negative-control case. Renaming the demo count test has no
+  net effect. P3-020 changes fixtures without removing a test or kept assertion.
+- Skips changed **42 -> 41**. Only the parked live detonation case,
+  `tests_arch.test_detonation_tracing::test_a_live_traced_detonation_observes_a_real_payload`,
+  disappeared. **No new skips and no changed reasons** among retained skips.
+  All other Phase 3 groups changed the skip count by zero.
+- Approved demo: **12/18 answered**, questions **1, 2, 3, 4, 14 and 18** explicitly
+  out of scope, exit **0**, limitations printed. Questions 1–4 explain the parked
+  delegation verifier and Phase 5 obligation. Its **11 tests pass**. Apart from
+  the approved count assertion and deletion, every existing demo assertion is
+  unchanged; AST comparison verifies the other ten test functions and fixture.
+- Historical runs are not completion evidence: the earlier interrupted run is
+  archived under `baseline/phase3/interrupted-before-p3019-approval/`; the first
+  complete run after P3-019 (3,318 passed, 41 skipped, three migration-fixture
+  failures) is archived under `baseline/phase3/before-migration-test-update/`.
+  The final green run supersedes both; it was not interrupted.
+- Focused migration/demo verification: **35 passed, 1 skipped** (SQLite does not
+  implement PostgreSQL RLS). The complete suite includes real SQLite/PostgreSQL
+  fresh installs and previous-head upgrades, plus unchanged kept schema/index/
+  RLS/role snapshots. Independent MCP, native remediation, restored shared reply
+  and credential-throttle checks also pass in the complete suite.
 - Ruff passes. Import-graph regressions: **10 passed**; removed-name scanner
   regressions: **2 passed**. The graph gate passes with the same 11 documented
   external measurement/SDK/persistence exceptions, zero unexplained orphans,
   zero unresolved imports and zero stale allowances.
 - actionlint **1.7.12** passes; its official release binary checksum was verified.
   Release secret scan passes with zero findings. Relative Markdown link check
-  passes; removed-setting scan passes with its exact three exemptions.
+  passes; removed-setting scan checks **62 names/prefixes**, including `_FILE`
+  variants, with zero findings and exactly the three documented exemptions.
 - **Docker build and container healthcheck remain unverified:** no Docker CLI is
   installed or on PATH in WSL. No production database or infrastructure changed.
 - `docs/dr_sqlite_drill.json` was absent at entry and remains absent. Its initial
   state is preserved; no generated drill report is staged.
+
+```sh
+pytest tests_arch/ -q --timeout=120 --timeout_method=thread --durations=30 -rA --junitxml=baseline/phase3/junit.xml 2>&1 | tee baseline/phase3/pytest.log
+```
+
+The command ran in Linux/WSL with the repository virtual environment and shell
+`pipefail`, so the successful tee process cannot mask a pytest failure.
 
 ### Dropped tables
 
@@ -2813,10 +2836,14 @@ There is no CASCADE; existing migrations and DEVICE_STATEMENTS remain unchanged.
 - One independent read-only review found the additional credential-test omission;
   it is fixed. No minor findings were deferred. The reviewer left full-suite and
   Docker results to the executor; the executor records both limits above.
-- Full verification exposed the unresolved demo boundary below. No test count,
-  safety assertion or product behavior was weakened to make it pass.
+- Full verification exposed the demo boundary in P3-019. The user explicitly
+  approved the narrower demonstration before implementation: questions 1–4 are
+  unverified and deferred, without fabricated answers or changes to retained
+  execution/binding/evidence assertions. Phase 5 must restore those answers.
+- P3-020 corrected two remaining migration-test fixtures after a complete failing
+  run. No production DDL or kept assertion changed; the next complete run passed.
 
-### Open question P3-019: execution-trust demo contract
+### Resolved P3-019: execution-trust demo contract
 
 #### User decision — approved with conditions, 2026-11-11
 
@@ -2838,8 +2865,11 @@ The user approved this scope change before implementation:
    skip changes against Phase 2. Update Phase 3 results and the readiness verdict,
    commit, push, confirm the remote SHA and stop. Do not start Phase 4.
 
-The decision resolves the scope question. Implementation and the full-suite gate
-remain to be verified. The original blocker and question below are historical.
+Implemented and verified in `73af863`. The demo exits 0, prints its limitations
+and labels exactly questions 1, 2, 3, 4, 14 and 18 out of scope. All 11 remaining
+demo tests pass, and the complete Linux suite passes as recorded above. The
+Phase 5 restoration obligation is recorded in both this plan and PARKED.md.
+The original blocker and question below are historical; no decision is pending.
 
 
 **Original blocker (resolved by the approved decision above):**
@@ -2867,15 +2897,15 @@ would misrepresent verification; restoring the parked A2A verifier is outside
 scope. Reducing the pinned answer count is an explicit demo-contract decision,
 not a mechanical reference edit.
 
-**Question:** approve narrowing this demo to 12/18 answers with six explicitly
+**Original question (answered by the approval above):** approve narrowing this demo to 12/18 answers with six explicitly
 out-of-scope questions (the four retired step answers plus the existing two),
 and remove only its A2A-specific negative-control test while preserving every
 kept execution/binding/evidence assertion? Alternatively, require a replacement
 demonstration through retained identity/authorization paths before changing the
 promised coverage. No such redesign is performed without the user's decision.
 
-After the decision and focused verification, rerun the entire Linux suite with
-the original command and update the result record. Phase 4 remains unauthorized.
+The requested focused verification and uninterrupted full-suite rerun are now
+complete. Phase 4 remains outside this task and has not started.
 
 ### Five-commit audit: deleted test-function inventory
 

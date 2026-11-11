@@ -1,22 +1,20 @@
 # Sentinel change record
 
-Updated: 2026-11-11 (Asia/Calcutta).
+Updated: 2026-11-12 (Asia/Calcutta).
 
 ## Current checkpoint
 
-**Phase 3 verification is blocked; Ready for Phase 4: no.** Phase 4 has not started.
+**Phase 3 is complete; Ready for Phase 4: yes.** Phase 4 has not started.
 SOAR, orgs/SCIM and A2A parking plus migration 40 are committed. The five existing
 commits were backed up first, and origin was verified at `868bbf8`. The four
 pending documentation changes were committed as `e6fc483`; shared reply-text and
 private-credential throttle coverage were restored in `036c392` and `767bee6`.
 
-The six requested audits pass after those restorations; the exact checks and
+All six requested audits pass after those restorations. The exact checks and
 exhaustive deleted-test inventory are in [CLEANUP_PLAN.md](CLEANUP_PLAN.md#phase-3-results).
-The subsequent full-suite attempt exposed five execution-trust demo failures.
-An uninterrupted reproduction gives **7 passed, 5 failed**: removing A2A's
-execution step left questions 1–4 unanswered, while the demo still promises
-16/18 answers and tests its removed delegation negative control. P3-019 records
-the required user decision; those assertions have not been weakened.
+User-approved P3-019 and the remaining migration fixtures (P3-020) are resolved
+in `73af863`. The final complete Linux suite passed uninterrupted: **3,321 passed,
+41 skipped, 0 failed, 0 errors, 0 timeouts**. No Phase 3 question remains open.
 
 ## Phase 3 results
 
@@ -35,14 +33,21 @@ the required user decision; those assertions have not been weakened.
 | Shared reply test repair | 1 / 0 | +31 / -0 | 0 | 0 | 0 | +3 restored cases | `036c392` |
 | Reference documentation | 4 / 0 | +23 / -16 | 0 | 0 | 0 | 0 cases | `e6fc483` |
 | Private credential test repair | 1 / 0 | +37 / -0 | 0 | 0 | 0 | +2 restored database cases | `767bee6` |
+| Approved demo scope / migration fixtures | 5 / 0 | +108 / -35 | 0 | 0 | 0 | -1 A2A-only case; count test renamed/adapted; 2 migration functions adapted | `73af863` |
 
 Route declarations **78 -> 53**; annotated Settings fields **73 -> 63**; collected
-cases **4,143 -> 3,363**. The table counts all text diff lines and changed/deleted
-files per commit. The analysis +2 IDs rename retained SLO checks. Five cases were
-restored during audit. Exactly one baseline skipped case was retired (live
-detonation); the other groups remove no prior skips. Final full-suite pass/skip
-counts remain pending. The interrupted full run reported **704 passed, 5 failed,
-5 skipped** before stopping; it is not completion evidence.
+cases **4,143 -> 3,362**, a net reduction of **781**. The table counts all text diff
+lines and changed/deleted files per commit. The analysis +2 IDs rename retained
+SLO checks. Five cases were restored during audit; the user-approved demo scope
+removed one A2A-only case. Two migration functions had fixtures adapted without
+removing any original assertion or changing production DDL.
+
+Phase 2 was **4,101 passed / 42 skipped**; final Phase 3 is **3,321 passed /
+41 skipped**. Only the live detonation skip was removed; no other group changed
+the skip total. No new skips or changed reasons exist among retained cases.
+The full Phase 0 command ran uninterrupted on Linux/WSL, exited 0, and saved
+`baseline/phase3/pytest.log` and `junit.xml` (JUnit: **1,592.684 seconds**).
+Earlier interrupted and failing runs are archived separately and superseded.
 
 Migration 40 drops `user_credentials`, `user_sessions`, `enrolment_tickets`,
 `webauthn_challenges`, `users`, `organizations`, `a2a_agent_cards` and
@@ -56,16 +61,27 @@ precedence. MCP/native tests remain unchanged. Custom rules matching
 `metadata.a2a.*` no longer match anything; no shipped rule used those inputs.
 MCP retains its pre-existing event type and deterministic reply inspection.
 
+The execution-trust demo now answers **12/18 questions** and explicitly marks
+**1, 2, 3, 4, 14 and 18** out of scope. Questions 1–4 are NOT answered yet because
+the delegation verifier was parked with A2A; no answers are fabricated from
+declared fields. The demo exits 0 and prints its limitations. Only the approved
+count assertion and A2A-only negative-control test changed; every other demo
+assertion remains unchanged. Phase 5 must restore those answers through the
+agent registry and retained identity/authorization paths, including
+`oversight_demo.py` (5.6); this obligation is recorded in the plan and PARKED.md.
+
 Ruff, 10 import-graph regressions, 2 scanner regressions, graph gate with 11
 documented exceptions, actionlint, release-secret scan, relative Markdown links
 and the 62-name/prefix removed-setting scan pass. Docker is unavailable in WSL;
 image build and healthcheck remain unverified. PARKED.md contains all eight
 feature entries, retained-webhook rationale and Phase 5 reference candidates.
+The SQLite drill artifact's original absent state is restored.
 
 Deviations: shared directory removal waited for A2A; the final discovery orphan
 was removed separately; the new schema inventory moved to its own module to keep
 the historical schema and size guard unchanged; four shared test functions were
-recovered (five cases). The execution-trust demo scope remains an open question.
+recovered (five cases). P3-019 records the approved narrower demo, and P3-020
+records historical migration-fixture corrections. No open Phase 3 question remains.
 No merge, PR, deployment, production migration or Phase 4 work was performed.
 Reports and baseline logs stay uncommitted. Older sections below are historical.
 
