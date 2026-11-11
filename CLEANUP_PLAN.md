@@ -3097,3 +3097,324 @@ AST comparison of `c3c8eb1..868bbf8` found 154 deleted test functions. The list 
 - `test_markup_in_incident_text_cannot_reformat_the_message` — SOAR
 - `test_one_failing_connector_does_not_stop_the_others` — SOAR
 - `test_partial_delivery_is_logged_rather_than_silent` — SOAR
+
+
+## Phase 4 decisions
+
+Phase 4 is the last cleanup phase. The user's 2026-11-12 instructions are the
+binding execution specification: tighten the existing core, add no features,
+perform no Phase 5 work, never commit to main, and stop at Checkpoint 2.
+
+### P4-001 — starting state, workspace and execution order
+
+Ruling: work in the existing `/home/lenovo2/sentinel` checkout on
+`cleanup/oversight-core`, as explicitly requested. Before any change, the worktree
+was clean and both HEAD and the remote branch were
+`142025ca106f808c303de5283ecfecb2ac3349cf`. No AGENTS.md applies. Preserve the
+completed Phase 3 results as history. Execute settings, routes, invariant audit,
+README/clean-install verification, Docker check, measurements, full suite and
+final records in that order. Record every further decision here before acting.
+The current user specification supersedes historical "Phase 4 unauthorized"
+checkpoint text elsewhere in this plan. No Phase 5 implementation is authorized.
+
+### P4-002 — Docker gate
+
+`docker version` failed in WSL because the executable is absent. Record
+**Docker: UNVERIFIED (not installed in WSL)**. Continue all other authorized work;
+**Ready for Checkpoint 2: no** while Docker remains unverified. Do not install a
+container runtime or claim a container build/healthcheck was performed.
+
+### P4-003 — audit and preservation boundaries
+
+Ruling: a settings reader must be executable kept code or an operational script,
+not a declaration, parser, test, or historical comment. Trace nested settings and
+raw-environment consumers as well as Settings fields, including `_FILE` forms.
+Keep all specified security, residency, retention, remediation, attestation,
+database and backup/WAL controls. Document read-but-undocumented settings without
+changing defaults. Only proven unused settings/routes may be removed; a default
+change that alters kept behavior requires the user's decision first.
+
+Keep the route-authorization fitness test unchanged. Invariant checks do not
+modify production code unless a check fails. Preserve all kept assertions and
+record any historical approved test edits. Keep raw evidence only under ignored
+`baseline/phase4/`; do not commit reports or baseline logs. The main working
+checkout remains the explicit branch above; clean-checkout verification uses a
+separate temporary local clone and must not touch production resources.
+
+### P4-004 — measurement and verification contract
+
+Use one reproducible measurement implementation on `archive/pre-cleanup`
+(`d63463c`) and the final tracked tree. Count physical text lines, binary bytes,
+AST declarations and real constructed routes separately; do not treat static
+route counts as enabled routes. Record explicit app configurations and collection
+commands, and count real pytest cases. Full verification uses the user's original
+Phase 0 command uninterrupted, with pipefail, saving output under
+`baseline/phase4/`. Preserve the initial absent state of
+`docs/dr_sqlite_drill.json`. No merge, PR, deployment or Phase 5 work is performed.
+
+### Phase 4 execution ledger
+
+- Preflight complete: clean local/remote starting commit confirmed; Docker absent.
+- Settings: inventory in progress; no removal decision made yet.
+- Routes, invariants, README, measurements and final suite: pending.
+
+
+### P4-005 — settings removal and documentation decision
+
+Ruling before implementation: remove the unused `log_level` field and
+`SENTINEL_LOG_LEVEL` parser/compose entry. No logger, ASGI entrypoint, script or
+security control consumes the field; StructuredLogger construction ignores it.
+Its parsed INFO value never selected runtime behavior. No kept default changes.
+There is no field-specific validation or supported `_FILE` parser to remove.
+
+Also remove two ignored benchmark environment entries,
+`SENTINEL_ADDRESS_LIMIT_PER_MINUTE` and
+`SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE`, and their misleading bypass comment.
+They never affected Settings, so the benchmark's effective limiter defaults stay
+unchanged. Remove the unsupported `SENTINEL_REQUIRE_LIVE` claim from SECURITY.md;
+no kept harness reads it. Record all four names in PARKED.md's removal catalog.
+Do not replace the misspelled benchmark names with working controls: that would
+change behavior beyond this cleanup decision.
+
+Retain `region` / `SENTINEL_REGION` exactly as instructed, despite no runtime
+consumer of Settings.region. Record this limitation; do not invent residency
+wiring. Keep historical invalid spelling examples and their regression guards
+(they are not supported settings), shell variables used in documented commands,
+and live infrastructure selectors. A family that refuses unsupported SIEM
+transports is a kept validation control, not an unused integration.
+
+Add a full configuration reference covering every kept field and every active
+name, including dynamic secret families and operational inputs. Correct stale
+configuration comments without changing assignments or defaults. Existing tests
+are preserved; the source of truth for the inventories is the Phase 4 start
+commit, and line references below refer to that audited tree. Historical parked
+names in PARKED.md describe previous removals, not active configuration.
+
+#### Settings field decisions (Phase 4 input: 63 fields)
+
+| Field | Kept reader (file:line) | Decision |
+|---|---|---|
+| `environment` | sentinel/interface/asgi.py:123 | KEEP: active reader |
+| `engine` | sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143 | KEEP: active reader |
+| `api_keys` | sentinel/interface/health_routes.py:120; sentinel/interface/health_routes.py:148 | KEEP: active reader |
+| `cors_origins` | sentinel/interface/http.py:185; sentinel/interface/http.py:188 | KEEP: active reader |
+| `worker_shard` | sentinel/interface/asgi.py:125; sentinel/interface/http.py:166 | KEEP: active reader |
+| `worker_shard_count` | sentinel/composition/container.py:343; sentinel/interface/asgi.py:126 | KEEP: active reader |
+| `worker_poll_seconds` | sentinel/interface/worker.py:76 | KEEP: active reader |
+| `queue_max_attempts` | sentinel/composition/container.py:344 | KEEP: active reader |
+| `queue_lease_seconds` | sentinel/composition/container.py:345; sentinel/interface/worker.py:376 | KEEP: active reader |
+| `outbox_batch_size` | sentinel/composition/container.py:635 | KEEP: active reader |
+| `outbox_lease_seconds` | sentinel/composition/container.py:636 | KEEP: active reader |
+| `retention_days` | sentinel/interface/worker.py:512 | KEEP: active reader |
+| `retention_interval_seconds` | sentinel/interface/worker.py:504 | KEEP: active reader |
+| `incident_retention_days` | sentinel/interface/worker.py:542 | KEEP: active reader |
+| `attestation_endpoint` | sentinel/composition/adapters.py:116; sentinel/composition/adapters.py:118 | KEEP: active reader |
+| `attestation_token` | sentinel/composition/adapters.py:118 | KEEP: active reader |
+| `tenant_siem_sinks` | sentinel/composition/siem_wiring.py:68; sentinel/composition/siem_wiring.py:76 | KEEP: active reader |
+| `tenant_siem_credentials` | sentinel/composition/siem_wiring.py:96; sentinel/composition/siem_wiring.py:114 | KEEP: active reader |
+| `siem_webhook_url` | sentinel/composition/siem_wiring.py:128; sentinel/composition/siem_wiring.py:131 | KEEP: active reader |
+| `siem_webhook_token` | sentinel/composition/siem_wiring.py:132 | KEEP: active reader |
+| `replay_window_seconds` | sentinel/composition/container.py:350 | KEEP: active reader |
+| `log_level` | none | REMOVE: no kept reader |
+| `expose_api_docs` | sentinel/interface/http.py:103 | KEEP: active reader |
+| `rate_limit_fail_open` | sentinel/composition/adapters.py:88 | KEEP: active reader |
+| `require_execution_binding` | sentinel/composition/container.py:415; sentinel/interface/extra_routes.py:129 | KEEP: active reader |
+| `trusted_proxy_hops` | sentinel/interface/http.py:133 | KEEP: active reader |
+| `auth_failure_limit_per_minute` | sentinel/composition/adapters.py:70; sentinel/interface/http.py:134 | KEEP: active reader |
+| `credential_limit_per_minute` | sentinel/composition/adapters.py:71; sentinel/interface/http.py:135 | KEEP: active reader |
+| `address_limit_per_minute` | sentinel/composition/adapters.py:72; sentinel/interface/http.py:136 | KEEP: active reader |
+| `redis_url` | sentinel/composition/adapters.py:74; sentinel/composition/adapters.py:75 | KEEP: active reader |
+| `protection_mode` | sentinel/interface/health_routes.py:165; sentinel/interface/health_routes.py:166 | KEEP: active reader |
+| `region` | none | KEEP: explicitly protected residency setting; parsed/validated only |
+| `protect_enforcement` | sentinel/composition/container.py:376; sentinel/composition/container.py:467 | KEEP: active reader |
+| `protect_kill_switch` | sentinel/composition/container.py:386; sentinel/interface/authorizations.py:231 | KEEP: active reader |
+| `remediation_endpoints` | sentinel/composition/container.py:508; sentinel/composition/container.py:511 | KEEP: active reader |
+| `remediation_dry_run` | sentinel/composition/container.py:512; sentinel/composition/remediation_wiring.py:91 | KEEP: active reader |
+| `mcp_require_pin` | sentinel/composition/container.py:518 | KEEP: active reader |
+| `mcp_proxy_enabled` | sentinel/composition/proxy_wiring.py:25 | KEEP: active reader |
+| `mcp_proxy_allowed_hosts` | sentinel/composition/proxy_wiring.py:30; sentinel/interface/mcp_proxy_routes.py:266 | KEEP: active reader |
+| `mcp_proxy_allow_private` | sentinel/composition/proxy_wiring.py:31 | KEEP: active reader |
+| `mcp_proxy_require_token_audience` | sentinel/interface/mcp_proxy_routes.py:276 | KEEP: active reader |
+| `mcp_proxy_definition_cache_seconds` | sentinel/interface/mcp_proxy_routes.py:399; scripts/run_mcp_proxy_bench.py:192 | KEEP: active reader |
+| `agent_require_grant` | sentinel/composition/container.py:468; sentinel/composition/container.py:473 | KEEP: active reader |
+| `tool_file_root` | sentinel/composition/container.py:436 | KEEP: active reader |
+| `tool_http_allowed_hosts` | sentinel/composition/container.py:437 | KEEP: active reader |
+| `platform_adapters` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: active reader |
+| `siem_transports` | sentinel/composition/siem_wiring.py:135 | KEEP: active reader |
+| `tool_budget_per_minute` | sentinel/composition/container.py:387 | KEEP: active reader |
+| `protect_circuit_threshold` | sentinel/composition/container.py:388 | KEEP: active reader |
+| `operation_pending_deadline_seconds` | sentinel/interface/worker.py:432 | KEEP: active reader |
+| `bypass_idle_seconds` | sentinel/interface/extra_routes.py:200; sentinel/interface/extra_routes.py:203 | KEEP: active reader |
+| `ready_exposes_detection_mode` | sentinel/interface/health_routes.py:123 | KEEP: active reader |
+| `oidc_issuer` | sentinel/composition/container.py:539 | KEEP: active reader |
+| `oidc_audience` | sentinel/composition/container.py:540 | KEEP: active reader |
+| `oidc_jwks_json` | sentinel/composition/container.py:541 | KEEP: active reader |
+| `oidc_tenant_claim` | sentinel/composition/container.py:542 | KEEP: active reader |
+| `oidc_role_claim` | sentinel/composition/container.py:543 | KEEP: active reader |
+| `metrics_token` | sentinel/interface/http.py:704 | KEEP: active reader |
+| `otlp_endpoint` | sentinel/composition/container.py:534 | KEEP: active reader |
+| `agent_idp_json` | sentinel/composition/container.py:550; sentinel/composition/container.py:552 | KEEP: active reader |
+| `root_sink` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: active reader |
+| `workflow` | sentinel/composition/container.py:699; sentinel/composition/evidence_wiring.py:17 | KEEP: active reader |
+| `advisor` | sentinel/composition/advisor_wiring.py:14 | KEEP: active reader |
+
+#### Environment-name decisions
+
+Includes the union of names in .env.example, Helm, compose and active docs, plus
+service/parser and operational names needed to make the full reference complete.
+A parser-to-aggregate-to-consumer chain counts only when the consumer is kept.
+
+| Name | Kept reader (file:line) or none | Decision |
+|---|---|---|
+| `SENTINEL_ACTIVE_KEY_ID` | sentinel/composition/evidence_wiring.py:17 | KEEP: workflow |
+| `SENTINEL_ADDRESS_LIMIT` | sentinel/composition/adapters.py:72; sentinel/interface/http.py:136 | KEEP: address_limit_per_minute |
+| `SENTINEL_ADDRESS_LIMIT_PER_MINUTE` | none | REMOVE: ignored benchmark inputs; preserve current effective defaults |
+| `SENTINEL_ADVISOR_CLI_COMMAND` | sentinel/composition/advisor_wiring.py:14 | KEEP: advisor |
+| `SENTINEL_ADVISOR_CLI_HOME` | sentinel/composition/advisor_wiring.py:14 | KEEP: advisor |
+| `SENTINEL_ADVISOR_ENDPOINT` | sentinel/composition/advisor_wiring.py:14 | KEEP: advisor |
+| `SENTINEL_ADVISOR_MODEL` | sentinel/composition/advisor_wiring.py:14 | KEEP: advisor |
+| `SENTINEL_ADVISOR_TOKEN` | sentinel/composition/advisor_wiring.py:14 | KEEP: advisor |
+| `SENTINEL_AGENT_ID` | sentinel/sdk/mcp_stdio.py:288; sentinel/sdk/mcp_stdio.py:330 | KEEP: CLI/operational input |
+| `SENTINEL_AGENT_IDP_JSON` | sentinel/composition/container.py:550; sentinel/composition/container.py:552 | KEEP: agent_idp_json |
+| `SENTINEL_AGENT_REQUIRE_GRANT` | sentinel/composition/container.py:468; sentinel/composition/container.py:473 | KEEP: agent_require_grant |
+| `SENTINEL_API_KEY` | sentinel/sdk/mcp_stdio.py:292 | KEEP: CLI/operational input |
+| `SENTINEL_API_KEYS` | sentinel/interface/health_routes.py:120; sentinel/interface/health_routes.py:148 | KEEP: api_keys |
+| `SENTINEL_APPROVAL_QUORUM` | sentinel/interface/authorizations.py:395 | KEEP: workflow |
+| `SENTINEL_APPROVAL_SEPARATION_OF_DUTIES` | sentinel/interface/authorizations.py:294 | KEEP: workflow |
+| `SENTINEL_ATTESTATION_ENDPOINT` | sentinel/composition/adapters.py:116; sentinel/composition/adapters.py:118 | KEEP: attestation_endpoint |
+| `SENTINEL_ATTESTATION_TOKEN` | sentinel/composition/adapters.py:118 | KEEP: attestation_token |
+| `SENTINEL_AUTH_FAILURE_LIMIT` | sentinel/composition/adapters.py:70; sentinel/interface/http.py:134 | KEEP: auth_failure_limit_per_minute |
+| `SENTINEL_AWS_ACCESS_KEY_ID` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_CEILING` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_EXECUTOR_ROLE_ARN` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_REGION` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_SECRET_ACCESS_KEY` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_SECRET_ACCESS_KEY_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_SESSION_TOKEN` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_AWS_SESSION_TOKEN_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_BOOTSTRAP_TENANT` | scripts/quickstart.py:225 | KEEP: CLI/operational input |
+| `SENTINEL_BYPASS_IDLE_SECONDS` | sentinel/interface/extra_routes.py:200; sentinel/interface/extra_routes.py:203 | KEEP: bypass_idle_seconds |
+| `SENTINEL_CORS_ORIGINS` | sentinel/interface/http.py:185; sentinel/interface/http.py:188 | KEEP: cors_origins |
+| `SENTINEL_CREDENTIAL_LIMIT` | sentinel/composition/adapters.py:71; sentinel/interface/http.py:135 | KEEP: credential_limit_per_minute |
+| `SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE` | none | REMOVE: ignored benchmark inputs; preserve current effective defaults |
+| `SENTINEL_DATABASE_URL` | sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143 | KEEP: engine |
+| `SENTINEL_DATA_KEY_` | sentinel/composition/evidence_wiring.py:17 | KEEP: workflow |
+| `SENTINEL_DATA_KEY_K1` | sentinel/composition/evidence_wiring.py:17 | KEEP: evidence key family |
+| `SENTINEL_DB_PATH` | sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143 | KEEP: engine |
+| `SENTINEL_DB_POOL_MAX` | sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143 | KEEP: engine |
+| `SENTINEL_DB_POOL_MIN` | sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143 | KEEP: engine |
+| `SENTINEL_ENV` | sentinel/interface/asgi.py:123; sentinel/composition/container.py:317; sentinel/composition/platform_wiring.py:143; sentinel/interface/health_routes.py:120; sentinel/interface/health_routes.py:148; sentinel/composition/container.py:699; sentinel/composition/evidence_wiring.py:17 | KEEP: environment, engine, api_keys, workflow |
+| `SENTINEL_EVIDENCE_ENCRYPTION` | sentinel/composition/evidence_wiring.py:17 | KEEP: workflow |
+| `SENTINEL_EXPOSE_API_DOCS` | sentinel/interface/http.py:103 | KEEP: expose_api_docs |
+| `SENTINEL_GITHUB_API_HOST` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_APP_ID` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_APP_PRIVATE_KEY` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_APP_PRIVATE_KEY_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_CEILING` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_INSTALLATION_ID` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_TOKEN` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_GITHUB_TOKEN_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_HELM_VALUES` | docs/OPERATIONS.md:126 | KEEP: shell variable passed to Helm, not a service setting |
+| `SENTINEL_INCIDENT_RETENTION_DAYS` | sentinel/interface/worker.py:542 | KEEP: incident_retention_days |
+| `SENTINEL_INGEST_KEY` | docs/INTEGRATIONS.md:876 | KEEP: curl token placeholder, not a service setting |
+| `SENTINEL_KUBERNETES_API_SERVER` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_CA_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_CEILING` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_EXECUTOR_NAMESPACE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_EXECUTOR_SERVICE_ACCOUNT` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_TOKEN` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_TOKEN_AUDIENCE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_TOKEN_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_KUBERNETES_TOKEN_TTL_SECONDS` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_LOG_LEVEL` | none | REMOVE: no kept reader |
+| `SENTINEL_MCP_PROXY_ALLOWED_HOSTS` | sentinel/composition/proxy_wiring.py:30; sentinel/interface/mcp_proxy_routes.py:266 | KEEP: mcp_proxy_allowed_hosts |
+| `SENTINEL_MCP_PROXY_ALLOW_PRIVATE` | sentinel/composition/proxy_wiring.py:31 | KEEP: mcp_proxy_allow_private |
+| `SENTINEL_MCP_PROXY_DEFINITION_CACHE_SECONDS` | sentinel/interface/mcp_proxy_routes.py:399; scripts/run_mcp_proxy_bench.py:192 | KEEP: mcp_proxy_definition_cache_seconds |
+| `SENTINEL_MCP_PROXY_ENABLED` | sentinel/composition/proxy_wiring.py:25 | KEEP: mcp_proxy_enabled |
+| `SENTINEL_MCP_PROXY_REQUIRE_TOKEN_AUDIENCE` | sentinel/interface/mcp_proxy_routes.py:276 | KEEP: mcp_proxy_require_token_audience |
+| `SENTINEL_MCP_PROXY_STREAMING` | sentinel/interface/mcp_proxy_routes.py:159 | KEEP: workflow |
+| `SENTINEL_MCP_REQUIRE_PIN` | sentinel/composition/container.py:518 | KEEP: mcp_require_pin |
+| `SENTINEL_METRICS_TOKEN` | sentinel/interface/http.py:704 | KEEP: metrics_token |
+| `SENTINEL_METRICS_TOKEN_FILE` | sentinel/interface/http.py:704 | KEEP: metrics_token |
+| `SENTINEL_MODE` | none | KEEP: historical rejected spelling and regression guard; no setting |
+| `SENTINEL_OIDC_AUDIENCE` | sentinel/composition/container.py:540 | KEEP: oidc_audience |
+| `SENTINEL_OIDC_ISSUER` | sentinel/composition/container.py:539 | KEEP: oidc_issuer |
+| `SENTINEL_OIDC_JWKS_JSON` | sentinel/composition/container.py:541 | KEEP: oidc_jwks_json |
+| `SENTINEL_OIDC_ROLE_CLAIM` | sentinel/composition/container.py:543 | KEEP: oidc_role_claim |
+| `SENTINEL_OIDC_TENANT_CLAIM` | sentinel/composition/container.py:542 | KEEP: oidc_tenant_claim |
+| `SENTINEL_OPERATION_PENDING_DEADLINE_SECONDS` | sentinel/interface/worker.py:432 | KEEP: operation_pending_deadline_seconds |
+| `SENTINEL_OTLP_ENDPOINT` | sentinel/composition/container.py:534 | KEEP: otlp_endpoint |
+| `SENTINEL_OUTBOX_BATCH` | sentinel/composition/container.py:635 | KEEP: outbox_batch_size |
+| `SENTINEL_OUTBOX_LEASE_SECONDS` | sentinel/composition/container.py:636 | KEEP: outbox_lease_seconds |
+| `SENTINEL_PIPELINE_WORKERS` | sentinel/interface/asgi.py:57 | KEEP: process topology/worker control |
+| `SENTINEL_POSTGRES_CEILING` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_POSTGRES_DSN` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_POSTGRES_DSN_FILE` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_POSTGRES_STATEMENT_TIMEOUT_MS` | sentinel/composition/platform_wiring.py:103; sentinel/composition/platform_wiring.py:213 | KEEP: platform_adapters |
+| `SENTINEL_PROTECTION_MODE` | sentinel/interface/health_routes.py:165; sentinel/interface/health_routes.py:166 | KEEP: protection_mode |
+| `SENTINEL_PROTECT_CIRCUIT_THRESHOLD` | sentinel/composition/container.py:388 | KEEP: protect_circuit_threshold |
+| `SENTINEL_PROTECT_ENFORCE` | sentinel/interface/health_routes.py:165; sentinel/interface/health_routes.py:166; sentinel/composition/container.py:376; sentinel/composition/container.py:467 | KEEP: protection_mode, protect_enforcement |
+| `SENTINEL_PROTECT_KILL_SWITCH` | sentinel/composition/container.py:386; sentinel/interface/authorizations.py:231 | KEEP: protect_kill_switch |
+| `SENTINEL_PUBLISH_TENANTS` | scripts/publish_transparency_root.py:151; scripts/publish_transparency_root.py:146 | KEEP: CLI/operational input |
+| `SENTINEL_QUEUE_LEASE_SECONDS` | sentinel/composition/container.py:345; sentinel/interface/worker.py:376 | KEEP: queue_lease_seconds |
+| `SENTINEL_QUEUE_MAX_ATTEMPTS` | sentinel/composition/container.py:344 | KEEP: queue_max_attempts |
+| `SENTINEL_RATE_LIMIT_FAIL_OPEN` | sentinel/composition/adapters.py:88 | KEEP: rate_limit_fail_open |
+| `SENTINEL_READY_EXPOSE_DETECTION_MODE` | sentinel/interface/health_routes.py:123 | KEEP: ready_exposes_detection_mode |
+| `SENTINEL_RECONCILE_MAX_ATTEMPTS` | sentinel/composition/container.py:699 | KEEP: workflow |
+| `SENTINEL_REDIS_URL` | sentinel/composition/adapters.py:74; sentinel/composition/adapters.py:75 | KEEP: redis_url |
+| `SENTINEL_REGION` | none | KEEP: explicit user preservation; parsed/validated, no runtime consumer |
+| `SENTINEL_REMEDIATION_DRY_RUN` | sentinel/composition/container.py:512; sentinel/composition/remediation_wiring.py:91 | KEEP: remediation_dry_run |
+| `SENTINEL_REMEDIATION_ENDPOINTS` | sentinel/composition/container.py:508; sentinel/composition/container.py:511 | KEEP: remediation_endpoints |
+| `SENTINEL_REPLAY_WINDOW` | sentinel/composition/container.py:350 | KEEP: replay_window_seconds |
+| `SENTINEL_REQUIRE_EXECUTION_BINDING` | sentinel/composition/container.py:415; sentinel/interface/extra_routes.py:129 | KEEP: require_execution_binding |
+| `SENTINEL_REQUIRE_LIVE` | none | REMOVE: unsupported documentation claim |
+| `SENTINEL_REQUIRE_WORKLOAD_IDENTITY` | sentinel/interface/principals.py:210 | KEEP: workflow |
+| `SENTINEL_RETENTION_DAYS` | sentinel/interface/worker.py:512 | KEEP: retention_days |
+| `SENTINEL_RETENTION_INTERVAL` | sentinel/interface/worker.py:504 | KEEP: retention_interval_seconds |
+| `SENTINEL_ROOT_PUBLISH_INTERVAL_SECONDS` | sentinel/interface/worker.py:330 | KEEP: root_sink |
+| `SENTINEL_ROOT_PUBLISH_TENANTS` | sentinel/interface/worker.py:327 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_` | sentinel/composition/root_sink_wiring.py:27 | KEEP: documented family prefix |
+| `SENTINEL_S3_ROOT_ACCESS_KEY_ID` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_BUCKET` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_REGION` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_RETENTION_DAYS` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_SECRET_ACCESS_KEY` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_S3_ROOT_SESSION_TOKEN` | sentinel/composition/root_sink_wiring.py:20; sentinel/composition/root_sink_wiring.py:27 | KEEP: root_sink |
+| `SENTINEL_SIEM_KAFKA_` | sentinel/composition/settings_parsers.py:272 | KEEP: security refusal for unsupported transport; no Kafka integration |
+| `SENTINEL_SIEM_OTLP_SERVICE_NAME` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_OTLP_TOKEN` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_OTLP_TOKEN_FILE` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_OTLP_URL` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_SYSLOG_APP_NAME` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_SYSLOG_HOST` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_SYSLOG_PORT` | sentinel/composition/siem_wiring.py:135 | KEEP: siem_transports |
+| `SENTINEL_SIEM_WEBHOOK_TOKEN` | sentinel/composition/siem_wiring.py:132 | KEEP: siem_webhook_token |
+| `SENTINEL_SIEM_WEBHOOK_URL` | sentinel/composition/siem_wiring.py:128; sentinel/composition/siem_wiring.py:131 | KEEP: siem_webhook_url |
+| `SENTINEL_SINGLE_PROCESS_ATTESTED` | sentinel/interface/asgi.py:99 | KEEP: process topology/worker control |
+| `SENTINEL_TENANT_SIEM_SECRET_` | sentinel/composition/siem_wiring.py:114 | KEEP: tenant SIEM credential family |
+| `SENTINEL_TENANT_SIEM_SINKS` | sentinel/composition/siem_wiring.py:68; sentinel/composition/siem_wiring.py:76 | KEEP: tenant_siem_sinks |
+| `SENTINEL_TEST_PG_BIN` | scripts/run_dr_postgres_wal_pitr_drill.py:94 | KEEP: live verification infrastructure selector |
+| `SENTINEL_TEST_POSTGRES_DSN` | scripts/run_dr_test.py:82; scripts/_embedded_postgres.py:128 | KEEP: live verification infrastructure selector |
+| `SENTINEL_TEST_REDIS_URL` | scripts/run_release_gates.py:219; scripts/run_release_gates.py:221 | KEEP: live verification infrastructure selector |
+| `SENTINEL_TOOL_BUDGET_PER_MINUTE` | sentinel/composition/container.py:387 | KEEP: tool_budget_per_minute |
+| `SENTINEL_TOOL_FILE_ROOT` | sentinel/composition/container.py:436 | KEEP: tool_file_root |
+| `SENTINEL_TOOL_HTTP_ALLOWED_HOSTS` | sentinel/composition/container.py:437 | KEEP: tool_http_allowed_hosts |
+| `SENTINEL_TRUSTED_PROXY_HOPS` | sentinel/interface/http.py:133 | KEEP: trusted_proxy_hops |
+| `SENTINEL_UPSTREAM_AUTHORIZATION` | sentinel/sdk/mcp_stdio.py:300 | KEEP: CLI/operational input |
+| `SENTINEL_WAL_S3_` | deploy/wal-archive/wal_s3.py:90 | KEEP: documented family prefix |
+| `SENTINEL_WAL_S3_ACCESS_KEY` | deploy/wal-archive/wal_s3.py:92 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_ALLOW_PRIVATE` | deploy/wal-archive/wal_s3.py:111 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_BUCKET` | deploy/wal-archive/wal_s3.py:91 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_CLUSTER` | deploy/wal-archive/wal_s3.py:135 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_ENDPOINT` | deploy/wal-archive/wal_s3.py:90 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_REGION` | deploy/wal-archive/wal_s3.py:125 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WAL_S3_SECRET_KEY` | deploy/wal-archive/wal_s3.py:93 | KEEP: protected WAL archiver configuration |
+| `SENTINEL_WORKER_POLL_SECONDS` | sentinel/interface/worker.py:76 | KEEP: worker_poll_seconds |
+| `SENTINEL_WORKER_SHARD` | sentinel/interface/asgi.py:125; sentinel/interface/http.py:166 | KEEP: worker_shard |
+| `SENTINEL_WORKER_SHARD_COUNT` | sentinel/composition/container.py:343; sentinel/interface/asgi.py:126 | KEEP: worker_shard_count |
+
+Settings verification: retained parsed values match `142025c` in development,
+staging and production scenarios; the removed field is the only structural
+difference. Ruff and the settings/deployment/preflight/native-remediation tests
+pass. The retired-name scan moved from seven findings before removal to zero
+after removal. No test function or assertion was changed.

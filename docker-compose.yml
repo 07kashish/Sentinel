@@ -1,7 +1,6 @@
-# NOTE: Redis was removed. Nothing in the codebase ever read SENTINEL_REDIS_URL;
-# it was provisioned infrastructure with no consumer. The work queue it would
-# have backed lives in PostgreSQL instead (app/queue/durable_queue.py), so that
-# queue state and incident state cannot diverge. See docs/ARCHITECTURE.md
+# The work queue lives in PostgreSQL. Redis is an optional shared rate limiter;
+# multi-process production deployments must configure it separately.
+# See docs/CONFIGURATION.md and docs/ARCHITECTURE.md.
 # Full self-hosted stack. Every component here is open-source and requires NO
 # vendor account. Only optional threat-intel keys come from outside (see .env).
 #
@@ -106,7 +105,6 @@ services:
       SENTINEL_DATABASE_URL: postgresql+psycopg://sentinel:${POSTGRES_PASSWORD}@postgres:5432/sentinel
       SENTINEL_CORS_ORIGINS: ${SENTINEL_CORS_ORIGINS:-http://localhost:8000}
       SENTINEL_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
-      SENTINEL_LOG_LEVEL: ${SENTINEL_LOG_LEVEL:-INFO}
       SENTINEL_OIDC_ISSUER: ${SENTINEL_OIDC_ISSUER:-}
       SENTINEL_METRICS_TOKEN_FILE: /run/secrets/sentinel_metrics_token
       # Optional. Absent => intel lookups report "unavailable", never "clean".

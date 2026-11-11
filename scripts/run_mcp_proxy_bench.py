@@ -153,10 +153,7 @@ def main() -> int:
             "SENTINEL_DB_PATH": db,
             "SENTINEL_PROTECT_ENFORCE": "true",
             "SENTINEL_RATE_LIMIT_FAIL_OPEN": "true",
-            # The limiter would otherwise shape the measurement into a study of
-            # the limiter. It is measured elsewhere; this run is about the gate.
-            "SENTINEL_ADDRESS_LIMIT_PER_MINUTE": "10000000",
-            "SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE": "10000000",
+            # Uses the configured limiter defaults; no limiter override is applied.
         }
     )
     pool = build_engine(settings.engine)

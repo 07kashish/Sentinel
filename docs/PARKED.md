@@ -32,7 +32,9 @@ the scan checks every other tracked or unignored product file.
   "SENTINEL_A2A_PROXY_ALLOWED_HOSTS",
   "SENTINEL_A2A_PROXY_ALLOW_PRIVATE",
   "SENTINEL_A2A_PROXY_ENABLED",
+  "SENTINEL_ADDRESS_LIMIT_PER_MINUTE",
   "SENTINEL_CONSOLE_DEMO_TOKEN",
+  "SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE",
   "SENTINEL_DELEGATION_KEYS",
   "SENTINEL_DEMO_",
   "SENTINEL_DEMO_ADMIN_KEY",
@@ -88,6 +90,8 @@ the scan checks every other tracked or unignored product file.
   "SENTINEL_DISCOVERY_VERTEX_LOCATION",
   "SENTINEL_DISCOVERY_VERTEX_PROJECT",
   "SENTINEL_DISCOVERY_VERTEX_TOKEN",
+  "SENTINEL_LOG_LEVEL",
+  "SENTINEL_REQUIRE_LIVE",
   "SENTINEL_SOAR_ENDPOINTS",
   "SENTINEL_SOAR_MIN_PRIORITY",
   "SENTINEL_SOAR_PAGERDUTY_ROUTING_KEY"
@@ -287,3 +291,13 @@ were retired in Phase 2, outside the Phase 3 test-count delta.
 Return signal: measured customer event volume makes DELETE retention sweeps too
 slow, justifying a new live migration and demonstrated partition lifecycle,
 query pruning, RLS and restore behavior.
+
+
+## Phase 4 configuration cleanup
+
+The unused log-level field and its parser/compose entry were removed. It never
+configured the logger. The unsupported live-test toggle claim and two ignored
+benchmark limiter inputs were removed too; effective runtime defaults did not
+change. Retired names: `SENTINEL_LOG_LEVEL`, `SENTINEL_REQUIRE_LIVE`,
+`SENTINEL_ADDRESS_LIMIT_PER_MINUTE`, `SENTINEL_CREDENTIAL_LIMIT_PER_MINUTE`.
+The full reader inventory and preservation decisions are in CLEANUP_PLAN.md.

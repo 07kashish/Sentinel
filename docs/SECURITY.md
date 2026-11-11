@@ -87,8 +87,10 @@ incident while its ledger entry, evidence row and audit trail all remain.
 into "23 skipped" with exit code 0 — green CI, nothing verified. That is the same
 shape as every silent failure this project has found.
 
-**Fixed.** `SENTINEL_REQUIRE_LIVE=1` converts unavailable infrastructure into a
-failure. CI must set it.
+**Current limitation.** There is no global live-infrastructure toggle in this
+tree. Live checks report explicit skip reasons when their infrastructure is
+unavailable; release evidence must distinguish those skips from tests that ran.
+The Phase 4 result record lists every skipped case and its reason.
 <a id="adversarial_review--enterprise-ciso--can-one-tenant-see-anothers-evidence"></a>
 #### Enterprise CISO — *"can one tenant see another's evidence?"*
 Every accessor is tenant-scoped — 27 distinct `tenant_id=?` predicates — and

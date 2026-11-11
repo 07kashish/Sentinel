@@ -133,7 +133,6 @@ class Settings:
     tenant_siem_credentials: Mapping[str, str]
     siem_webhook_token: str
     replay_window_seconds: int
-    log_level: str
     #: Serve `/docs`, `/redoc` and `/openapi.json`. OFF unless asked for.
     #:
     #: These were previously always on and always unauthenticated: a probe of the
@@ -455,7 +454,6 @@ class Settings:
                 source.get("SENTINEL_SIEM_WEBHOOK_TOKEN", "") or ""
             ).strip(),
             replay_window_seconds=_parsers.positive_int(source, "SENTINEL_REPLAY_WINDOW", 300),
-            log_level=source.get("SENTINEL_LOG_LEVEL", "INFO").strip().upper(),
             expose_api_docs=expose_docs,
             rate_limit_fail_open=fail_open,
             require_execution_binding=require_execution_binding,
