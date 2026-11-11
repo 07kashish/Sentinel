@@ -16,6 +16,8 @@ gunicorn "sentinel.interface.asgi:create_application()" \
 
 Importing modules starts nothing. Workers attach in ASGI lifespan.
 
+Release wheels are built from a clean checkout, as CI does.
+
 <a id="deployment--required-configuration"></a>
 ### Required configuration
 

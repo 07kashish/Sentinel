@@ -146,11 +146,21 @@ def test_the_real_wheel_contents_are_allowlisted(tmp_path):
     if result.returncode != 0:
         pytest.fail("wheel build failed; install the pinned build dependencies from requirements-dev.txt")
     wheel = next(tmp_path.glob("*.whl"))
-    findings, scanned = scanner.scan_artifact(wheel, {})
-    assert scanned > 200
-    assert findings == [], "\n".join(f.render() for f in findings)
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
+    findings, scanned = scanner.scan_artifact(wheel, {})
+    assert scanned == len(names)
+    assert scanned >= 150
+    assert findings == [], "\n".join(f.render() for f in findings)
+    tracked = subprocess.run(  # noqa: S603
+        ["git", "ls-files", "-z", "--", "sentinel"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    )
+    tracked_sources = set(tracked.stdout.split("\0"))
+    untracked_members = sorted(
+        name for name in names if name.startswith("sentinel/") and name not in tracked_sources
+    )
+    assert not untracked_members, "wheel members absent from tracked sources:\n" + "\n".join(untracked_members)
     assert "sentinel/infrastructure/default_policy.json" in names, "the shipped ruleset is not in the wheel"
 
 

@@ -4028,3 +4028,134 @@ was corrected to distinguish the archive clone from the candidate checkout;
 there were no critical or important findings in the reviewed implementation.
 The later P4-013 fixture correction was checked against every original assertion,
 112 focused tests and the complete final suite. No Phase 5 code, merge or PR.
+
+
+## Checkpoint 2 decisions
+
+### C2-001 — scope, preflight and evidence
+
+The user authorized CI evidence recording, a narrowly scoped wheel-test fix and
+a diagnostic-only full-history secret scan. No Phase 5 work, merge, PR, history
+rewrite, force-push, dependency/base-image change or allowlist edit is authorized.
+Step 0 passed: clean cleanup/oversight-core, local/tracking/live origin all at
+c5fb0b4d0c6bf1c9f8d192f29c285e76a5d18c09.
+
+Cleanup CI: https://github.com/07kashish/Sentinel/actions/runs/43107663818
+(manual workflow_dispatch at c5fb0b4; publish_image=false per the user's evidence).
+Baseline CI: https://github.com/07kashish/Sentinel/actions/runs/42609831971
+(main at d45b22031dd3280abd2072968162417b3870c2b3). The API confirms build and
+smoke success, Docker step 6 failure and security step 3 failure on both runs.
+Job metadata is preserved under ignored baseline/checkpoint2. The latest user
+verdict rule requires a green full suite and no possible real credential; the
+Trivy gate remains an open pre-existing deployment item, not a passing scan.
+
+### C2-002 — secret history diagnosis and original proposal
+
+Security CI uses the pinned gitleaks v8.30.1 container, running git --redact
+--no-banner with .gitleaks.toml and .gitleaksignore after fetch-depth: 0. Locally,
+the checksum-verified v8.30.1 Linux release binary ran the equivalent command
+with those exact unchanged policy files and additional JSON report flags.
+The checkout is not shallow; all 47 commits were scanned. Exit 1 reports two
+false positives, zero possible real credentials. All output/reporting is redacted;
+no matched value is recorded here. The release archive SHA-256 is
+551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb.
+
+| Rule | File | Commit | Date (UTC) | File at HEAD | Classification / evidence |
+|---|---|---|---|---|---|
+| generic-api-key | `CLEANUP_PLAN.md`:1326 | `d45b22031dd3280abd2072968162417b3870c2b3` | 2026-10-22T06:48:08Z | yes | documentation false positive: Documentation prose listing retained SQL tables, not a credential assignment; the generic rule matched text after a plural noun. |
+| generic-api-key | `tests_arch/test_detonation.py`:46 | `d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6` | 2026-10-19T12:22:02Z | no | synthetic test fixture: Explicit CANARIES test constant seeded into synthetic event assessments; contains a canary marker, is 28 characters rather than an AWS secret shape, and is never used for external authentication. |
+
+Original proposal (subsequently approved under C2-004): append these two exact finding fingerprints
+to .gitleaksignore. Each is limited to commit + path + rule + line, narrower than
+a whole-file or rule-wide exception. Future credentials at either path remain
+subject to the normal rule. The original instruction not to apply them is superseded
+by the explicit C2-004 approval; only these exact entries are now applied.
+
+```text
+d45b22031dd3280abd2072968162417b3870c2b3:CLEANUP_PLAN.md:generic-api-key:1326
+d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6:tests_arch/test_detonation.py:generic-api-key:46
+```
+
+### C2-003 — wheel-test correction and contamination stop condition
+
+The CI failure is the stale scanned > 200 assertion after cleanup reduced the
+clean wheel to 200 members. Before any scan, read the wheel member list; replace
+that count check with scanned == len(names), retaining scanned >= 150 as a
+non-vacuity floor. Preserve findings == [] and the default_policy.json assertion
+unchanged. The invariant is that every actual member was scanned, not a historic
+module-count estimate.
+
+First reproduce and compare wheels built from the current working checkout and
+a fresh clone of this branch in a unique temporary directory. Inventory all extra
+working-tree members and their tracked/untracked/ignored origins before modifying
+the test. If any extra file could ship in a release, STOP and report the concrete
+artifact contents as the user requires; do not clean caches or broaden packaging
+changes on this authority. Otherwise implement the exact test correction and run
+the complete release-hygiene module from the fresh clone, then the full requested
+Linux suite before final records and push.
+
+
+### C2-004 — approved stale-output cleanup, wheel invariant and exact exclusions
+
+The user explicitly approved continuing after the packaging stop. The prior
+comparison found 271 working-tree wheel members versus 200 from a fresh clone:
+all 71 extras matched ignored build/lib/sentinel files byte-for-byte. This explains
+why the old scanned > 200 assertion passed locally and failed in clean CI.
+
+Before any deletion, inventory ignored project build/ and generated *.egg-info
+paths and show git status --ignored for those exact paths. Verify resolved paths
+remain inside this checkout and contain no tracked files. Delete only those
+generated project artifacts; preserve virtual environments, installed dependency
+metadata, baseline evidence and every other ignored path. Show the same status
+afterwards. This is the user's explicit approval to remove the generated output,
+not authorization for a general ignored-file cleanup.
+
+In test_the_real_wheel_contents_are_allowlisted, read names before scanning,
+assert scanned == len(names) and scanned >= 150, and require every sentinel/
+member to occur in git ls-files sentinel, including packaged data. The failure
+must name every offending member. Keep findings == [] and the default_policy.json
+assertion unchanged. Seed one harmless stale Python file under build/lib/sentinel;
+the new check must fail and name it, then pass after deleting only build/. Preserve
+both logs and remove the seeded file with that generated directory. Add the
+requested operations guidance that release wheels are built from a clean checkout,
+as CI does. Commit as fix(release): wheel must contain only tracked sources.
+
+The user approved exactly the two C2-002 finding fingerprints. Append those two
+commit/path/rule/line entries to .gitleaksignore, which the CI command already
+loads; do not change .gitleaks.toml or add broader exclusions. Rerun the identical
+pinned gitleaks 8.30.1 history command with full redaction and require zero findings.
+The previous proposal-only restriction is superseded solely for those two entries.
+
+Finish the Checkpoint 2 records, including both CI runs and per-job comparison,
+the pre-existing Trivy open item for Phase 6 / Stage 4, and README commands verified
+by the CI build/smoke steps. Compose stays unverified; Docker image size stays
+not measured unless recorded in the run evidence. No base image or dependency
+changes. Run the full Linux Phase 0 suite into baseline/checkpoint2, Ruff and the
+relative Markdown link check. Ready for Checkpoint 2 is yes only after all requested
+checks pass; record the open Trivy deployment gate explicitly. No Phase 5 work,
+history rewrite, force-push, merge or PR is authorized.
+
+### C2-005 — exercise the installed scanner during final verification
+
+Expose the checksum-verified gitleaks 8.30.1 binary through a local alias in the
+ignored baseline tools directory and prepend that directory to the test PATH.
+This runs the two existing real-scanner tests that previously skipped because
+gitleaks was absent. No test assertions or skip conditions change; report the
+resulting two-skip reduction if they pass. No global installation is needed.
+
+### Checkpoint 2 wheel and scanner verification evidence
+
+The targeted ignored-path status showed build/ and sentinel_agent_trust.egg-info/
+before deletion and no entries afterwards. No other ignored directory was removed.
+The wheel regression control failed with exactly one failure naming
+`sentinel/_checkpoint2_stale_canary.py`; deleting only build/ removed the canary,
+and the same test passed (1 passed). The complete release-hygiene, release-packaging
+and security-verification modules passed together: 62 passed, 1 skipped (the
+existing optional SQLAlchemy check). Ruff passed. The original findings and
+default_policy.json assertions remain unchanged. No new test case was added.
+
+The two approved fingerprints produce exit 0 and zero findings over the full
+47-commit history using the pinned redacted command. .gitleaks.toml is unchanged.
+Evidence is saved under ignored baseline/checkpoint2/ (artifact-cleanup.json,
+wheel-comparison.json, wheel-stale-red.log/XML, wheel-clean-green.log/XML,
+touched.log/XML, and gitleaks-approved.redacted.json/log); raw logs are not committed.
