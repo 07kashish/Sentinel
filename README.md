@@ -67,9 +67,42 @@ its data requests require a bearer token. Use the token portion of the configure
 API-key entry for local operator access. Event submission uses a separate ingest
 role: an admin token cannot fabricate telemetry.
 
-**Docker: UNVERIFIED (not installed in WSL).** Neither the image nor the Compose
-path was tested in Phase 4. Checkpoint 2 remains blocked on Docker verification.
-The native quickstart above is the verified path.
+## Docker smoke test
+
+These build, migration and startup commands from the CI Docker job were verified
+by [run 43107663818](https://github.com/07kashish/Sentinel/actions/runs/43107663818)
+at `c5fb0b4`. The job migrated a fresh SQLite volume using the same image, then
+started the server through the shipped entrypoint and reached /health/live within
+60 seconds. The key below is a public CI fixture for this development smoke test;
+it must never be used for a deployed service.
+
+```sh
+docker build -t sentinel:ci .
+docker volume create sentinel-ci-data
+docker run --rm -v sentinel-ci-data:/app/data \
+  -e SENTINEL_ENV=development \
+  -e SENTINEL_DB_PATH=/app/data/ci.db \
+  -e SENTINEL_API_KEYS=ci:ci-smoke-key-material-32characters:admin \
+  sentinel:ci python -m sentinel.interface.cli migrate
+docker run -d --name sentinel-ci -p 8000:8000 \
+  -v sentinel-ci-data:/app/data \
+  -e SENTINEL_ENV=development \
+  -e SENTINEL_DB_PATH=/app/data/ci.db \
+  -e SENTINEL_API_KEYS=ci:ci-smoke-key-material-32characters:admin \
+  sentinel:ci
+```
+
+The CI loop retries this probe every 2 seconds, up to 30 attempts:
+
+```sh
+curl -fsS http://127.0.0.1:8000/health/live > /dev/null
+```
+
+The later Trivy image gate failed, as it also did on main. Those findings remain
+open and must be reviewed and fixed before the first pilot deployment; the complete
+Docker job did not pass. **Compose: UNVERIFIED.** Docker is unavailable locally in
+WSL, and image size was not measured. See the
+[Checkpoint 2 record](CLEANUP_PLAN.md#checkpoint-2-verification) for scope and evidence.
 
 ## Configuration and interfaces
 

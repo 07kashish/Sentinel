@@ -4,14 +4,139 @@ Updated: 2026-11-12 (Asia/Calcutta).
 
 ## Current checkpoint
 
-**Phase 4 cleanup and Linux verification are complete; Ready for Checkpoint 2: no.**
-Docker remains unavailable in WSL. The final uninterrupted suite passed with
-**3,321 passed, 41 skipped, 0 failed, 0 errors, 0 timeouts**; every skip ID/reason
-matches Phase 3. No Phase 5 work, merge or PR is performed.
+## Checkpoint 2 verification
+
+**Ready for Checkpoint 2: yes.** The approved cleanup-checkpoint checks pass.
+The pre-existing Trivy gate remains open before pilot deployment; Compose remains
+unverified. No Phase 5 work, merge or PR was performed.
+
+Evidence: [cleanup CI run 43107663818](https://github.com/07kashish/Sentinel/actions/runs/43107663818)
+ran manually at `c5fb0b4d0c6bf1c9f8d192f29c285e76a5d18c09` on
+cleanup/oversight-core (publish_image=false, as supplied by the operator).
+[Main baseline run 42609831971](https://github.com/07kashish/Sentinel/actions/runs/42609831971)
+ran at `d45b22031dd3280abd2072968162417b3870c2b3`. Public Actions run/job
+metadata was checked for every result below. Both complete workflows failed;
+only the build and smoke steps of the Docker job passed. No new CI rerun is claimed.
+
+| CI job | Cleanup c5fb0b4 | Main d45b220 | Evidence / disposition |
+|---|---|---|---|
+| deployment-validation | success | success | Passed in both runs. |
+| docker | failure | failure | Build and smoke steps pass in both; step 6 Trivy gate fails in both: pre-existing, not caused by the cleanup. |
+| dynamic-api-security | success | success | Passed in both runs. |
+| guard-mutation | success | success | Passed in both runs. |
+| kind-helm-smoke | success | success | Passed in both runs. |
+| license-scan | success | success | Passed in both runs. |
+| live-minio | success | success | Passed in both runs. |
+| live-postgres | success | success | Passed in both runs. |
+| live-postgres-service | success | success | Passed in both runs. |
+| live-redis | success | success | Passed in both runs. |
+| provenance | absent | success | Removed in earlier cleanup; absent from the cleanup workflow. |
+| release-evidence | absent | success | Removed in earlier cleanup; absent from the cleanup workflow. |
+| release-hygiene | skipped | success | Cleanup skipped because test failed; main passed. |
+| security | failure | failure | Step 3 secret history scan fails in both: pre-existing, not caused by the cleanup; local diagnosis and approved fix below. |
+| sign-image | skipped | skipped | Skipped in both; no image publication claimed (dispatch requested publish_image=false). |
+| test | failure | success | New stale wheel-count failure on cleanup; fixed and verified locally below. |
+| types | success | success | Passed in both runs. |
+| verification | success | success | Passed in both runs. |
+
+### Docker evidence and remaining deployment gate
+
+Docker job step 3 builds `sentinel:ci`. Step 4 creates a fresh SQLite volume,
+migrates using that same image, starts it through the shipped entrypoint, and
+requires an HTTP success from /health/live within 30 attempts at 2-second intervals
+(60 seconds). Both steps passed in both runs. Step 5 runs Trivy for vulnerabilities,
+secrets and misconfiguration, including unfixed findings; step 6 fails closed
+on the scan report. Step 6 failed in both runs at the same gate. This is not a
+passing complete Docker job or a claim that the image is ready for deployment.
+Docker was not run locally; Compose remains **UNVERIFIED**. Image size is
+**not measured**: no size measurement is present in the available CI evidence.
+No Dockerfile, entrypoint, base-image digest, dependency pin or healthcheck changed.
+
+Open pre-existing item for **Phase 6 / Stage 4**: Container image has HIGH/CRITICAL
+findings per the CI Trivy gate; fails identically on main; findings to be reviewed
+from the CI log and fixed before the first pilot deployment.
+
+### Wheel correction and clean-build proof
+
+Commit `0b25065` (`fix(release): wheel must contain only tracked sources`) reads
+the wheel member list before scanning, requires scanned == len(names) and
+scanned >= 150, and rejects every sentinel/ member missing from git ls-files
+sentinel. The existing findings == [] and default_policy.json assertions are
+unchanged. Operations now requires release builds from a clean checkout, as CI does.
+
+The original WSL wheel had 271 members versus 200 from a fresh c5fb0b4 clone.
+All 71 extra Python members came from ignored build/lib/sentinel output left by
+an earlier build; they were present in the actual wheel, not tracked sources.
+The approved cleanup removed only build/ and sentinel_agent_trust.egg-info/;
+targeted git status --ignored showed both before and neither afterwards.
+Other ignored files were preserved. The new guard failed and named the planted
+`sentinel/_checkpoint2_stale_canary.py`. After removing only build/, the same
+test passed and the planted file was gone. Both fixed working-tree and fresh-clone
+wheels now contain the same 200 members. All 36 release-hygiene tests pass from
+the fresh clone at b495ca2. The three affected release/security modules pass
+62 tests with 1 existing skip because this checkout has no .env to check.
+
+### Redacted full-history gitleaks diagnosis
+
+The CI command uses fetch-depth: 0 and the pinned gitleaks v8.30.1 image
+with `git --redact --no-banner --config /repo/.gitleaks.toml
+--gitleaks-ignore-path /repo/.gitleaksignore /repo`. The local equivalent uses the
+checksum-verified v8.30.1 Linux release binary with the same policy and ignore
+files, plus private JSON report flags. No Docker or history rewrite was needed.
+
+| Rule | File and line | Commit | Date (UTC) | File at HEAD | Classification |
+|---|---|---|---|---|---|
+| generic-api-key | CLEANUP_PLAN.md:1326 | d45b22031dd3280abd2072968162417b3870c2b3 | 2026-10-22T06:48:08Z | yes | Documentation false positive: prose listing retained SQL tables, not a credential assignment. |
+| generic-api-key | tests_arch/test_detonation.py:46 | d63463cd3bc49bcd3e420ff4a100cc52fe6f4ad6 | 2026-10-19T12:22:02Z | no | Synthetic CANARIES test fixture; never used for external authentication. |
+
+Zero possible real credentials were found. Commit `b495ca2` applies exactly the
+two user-approved commit + path + rule + line fingerprints in .gitleaksignore.
+No path-wide or rule-wide exclusion was added; .gitleaks.toml is unchanged.
+The redacted full-history scan passed with exit 0 and zero findings over the
+original 47 commits, and again over all 49 commits through b495ca2 after both fixes.
+The post-record-commit scan is also a mandatory push gate; its redacted report is
+retained as baseline/checkpoint2/gitleaks-final.redacted.json.
+No matched values appear in these records.
+
+### Final Linux verification
+
+One uninterrupted Phase 0 run completed with exit 0: **3,323 passed, 39 skipped,
+0 failed, 0 errors, 0 timeouts** across 3,362 cases. JUnit duration: 1,861.392 seconds.
+The process ran from 2026-11-11T22:59:54Z to 2026-11-11T23:37:50Z; a progress-tool
+connection timeout did not interrupt or restart pytest. The command was run with
+pipefail enabled, saving baseline/checkpoint2/junit.xml and pytest.log:
+
+```bash
+PATH="$PWD/baseline/checkpoint2/tools:$PWD/.venv/bin:$PATH" pytest tests_arch/ -q --timeout=120 --timeout_method=thread --durations=30 -rA --junitxml=baseline/checkpoint2/junit.xml 2>&1 | tee baseline/checkpoint2/pytest.log
+```
+
+The pinned scanner was exposed only through an ignored local tools alias. The
+case count stays at 3,362: no test was added or removed. Compared with Phase 4,
+passes increase from 3,321 to 3,323 and skips decrease from 41 to 39 because
+`test_the_real_scanner_reports_a_planted_secret` and
+`test_the_scan_failure_does_not_echo_the_secret` now run and pass. There are no
+new skips and no changed reasons among the remaining 39. Compared with Phase 2's
+42 skips, the third reduction is the previously removed parked detonation test;
+that removal happened in Phase 3, not this checkpoint.
+
+Ruff (`ruff check sentinel tests_arch scripts/dev`), git diff --check and the
+relative Markdown path check pass (90 links in 47 tracked Markdown files, zero
+missing targets). The final independent review found no critical or important
+issue. The tests regenerated only clean build/ and project egg-info output; both
+were removed again with the same tracked-file/path guards and before/after ignored
+status checks. The seeded stale file is absent. docs/dr_sqlite_drill.json remains
+absent, matching its pre-run state. Raw evidence remains ignored under baseline/;
+no reports or raw logs are committed.
+
+The wheel fix is 0b25065 and the two-fingerprint exclusion fix is b495ca2. The
+final record commit uses `chore(checkpoint2): record CI docker verification`.
+The authorized finish is a normal push to cleanup/oversight-core and comparison
+of the remote SHA with local HEAD. No history rewrite or force-push is needed.
 
 ## Phase 4 results
 
-**Ready for Checkpoint 2: no — blocked on Docker verification.**
+**Historical Phase 4 verdict: Ready for Checkpoint 2: no — blocked on Docker verification.**
+The later Checkpoint 2 verification above supersedes this checkpoint status.
 The cleanup implementation, native quickstart and complete Linux verification
 are finished. No Phase 5 work is started. The full per-reader/per-route evidence,
 protected-test edit inventory and all skipped case identities are retained in
@@ -93,7 +218,7 @@ The route-authorization fitness test is byte-identical to the Phase 4 input.
 | Documented concrete SENTINEL names | 155 | 137 |
 | Direct runtime dependencies | 12 | 11 |
 | CI jobs | 20 | 16 |
-| Docker image size | not measured | UNVERIFIED |
+| Docker image size | not measured | not measured |
 
 Identical measurement implementation and interpreter for both refs:
 
