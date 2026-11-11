@@ -2634,3 +2634,9 @@ The generated Docker allowlist requires canonical ordering; regenerated it with 
 - Verified touched cases, with corrected reruns superseding earlier failures: 82 passed, 0 skipped, zero remaining failures/errors. Reports: targeted.xml, fixed.xml, manifest-fixed.xml.
 - Ruff, removed-setting scan and diff check pass. Settings remaining: 63. Existing retained MCP/native tests are byte-identical to Phase 2.
 - Migration 40 is implemented; full Phase 3 Linux verification remains pending.
+
+### P3-018: current documentation follows removed surfaces
+
+Final reference audit found old README/first-workflow A2A and skill-scanner claims
+and an unqualified pilot release note. Replace current claims with parked status
+and label release notes historical. No behavior or test contract changes.

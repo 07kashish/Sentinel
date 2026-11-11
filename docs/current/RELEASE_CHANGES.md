@@ -1,4 +1,8 @@
-# Release changes — production-readiness branch
+# Release changes — historical release record
+
+Phase 3 supersedes older feature availability claims below: local/vendor discovery,
+analysis, detonation, SOAR fan-out, org/SCIM and A2A are parked. See
+[the current change record](../../CHANGES.md) and [parked features](../PARKED.md).
 
 ## 2026-09-17: CI dependency and distribution repair
 
@@ -300,10 +304,13 @@ Not established: a live advisory call from the AWS deployment (Fargate tasks hav
 
 ## 2026-09-29: pilot onboarding — consented local discovery, a pilot setup view, an advisor slot
 
-Written to answer "people download the product, it asks permission, and the dashboard shows the AI on the computer". What ships is exactly that and no more; the distinction between *found*, *observed* and *enforced* is stated on every surface.
+Written to answer "people download the product, it asks permission, and the dashboard shows the AI on the computer". At that time the pilot shipped that workflow; the distinction between *found*, *observed* and *enforced* is stated on every surface.
 
 
-**Server** (`/v1/pilot/*`, migration 38, `device_discovery` table, tenant-scoped with forced RLS). An administrator previews a report in the console, ticks consent, and imports it; viewers list it; administrators delete it. Imports are validated strictly and rejections never echo the submitted values; reports are capped at 32 KiB and 1,000 devices per tenant. Every stored row is marked `trust: self_reported, enforced: false`; importing never enrols an agent or grants a tool access.
+**Pilot server retired in Phase 3.** The consented local-device routes and
+console import/list/delete controls were parked; migration 40 drops the device
+table. Migration 38 remains unchanged for historical replay. This September
+entry records the former feature, not current availability.
 
 **Advisor slot** (`SENTINEL_ADVISOR_ENDPOINT/_MODEL/_TOKEN`, all three or none, HTTPS only, token excluded from repr). Wires the existing `HttpModelAdvisor`; it adds investigation notes and holds no authority. The control path remains the deterministic policy.
 

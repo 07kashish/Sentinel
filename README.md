@@ -168,16 +168,11 @@ See `.github/workflows/ci.yml`.
 - Live HTML dashboard / MONITORING LIVE
 - Inline kill-switch without integration
 - Improved AUC beyond measured evaluation output
-- **A2A streaming.** `message/stream` and `tasks/resubscribe` return
-  `NOT_SUPPORTED`: a gate in front of an SSE stream must either buffer it — which
-  is not streaming — or forward chunks nobody evaluated.
-- **Interception of traffic that bypasses the proxy.** The A2A wire proxy puts
-  the gate in the path for agents pointed at it; a framework that never points at
-  Sentinel is still outside enforcement, exactly as F-11 records for the tool
-  proxy.
-- **That a clean skill scan means a skill is safe.** The scanner parses and never
-  executes; name matching is defeated by runtime construction. Every `ScanResult`
-  carries that limit in its own `limits` field.
+- **A2A, skill scanning, detonation or local/vendor discovery.** These surfaces
+  are parked; see `docs/PARKED.md` for scope and recovery paths.
+- **Interception of traffic that bypasses the proxy.** Retained tool/MCP proxies
+  enforce only calls routed through them; a framework that never points at
+  Sentinel remains outside enforcement.
 - **S3, Kafka, or `kubectl exec`.** Each is absent by decision rather than
   half-implemented, and each says so where an operator will hit it.
 

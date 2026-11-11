@@ -52,9 +52,8 @@ Pre-effect checks can prevent execution. A target may change state before a time
 - Time-boxed approval windows shorter than the authorization TTL, or approval
   through an external ticketing system.
 - Reconciliation beyond Kubernetes and GitHub contents; AWS mutations and GitHub POSTs still need a human.
-- Any workflow other than this one. Detection, MCP gateway and A2A
-  capabilities exist and are tested, and are not part of this release's
-  promise.
+- Any workflow other than this one. Detection and MCP gateway capabilities remain; A2A is parked.
+  These do not expand this workflow's release promise.
 
 ## Console
 
