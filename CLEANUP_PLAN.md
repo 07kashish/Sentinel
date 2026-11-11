@@ -3605,7 +3605,7 @@ invariant audit, including fixture-only and documentation-only changes.
 | `tests_arch/test_security_edge.py` | P4-006: preserve default 404 checks, require authenticated opt-in schema success, add anonymous/ingest refusal and unused-UI absence; no permission assertion is weakened. | `3756559` |
 | `tests_arch/test_sql_infrastructure.py` | Phase 3 migration 40: historical upgrade fixture and current schema-inventory import; parked tables excluded, all kept schema assertions remain. | `868bbf8`, `16227fd` |
 | `tests_arch/test_tenant_isolation_rls.py` | Phase 1 security-doc relocation and Phase 3 migration 40: use current protected-table inventory, retaining every kept table and RLS/isolation assertion. | `868bbf8`, `16227fd`, `327297b` |
-| `tests_arch/test_transparency_routes.py` | Phase 1 classifier removal: delete only its fixture toggle; every test function is unchanged. | `935ddfc` |
+| `tests_arch/test_transparency_routes.py` | Phase 1 removed only the classifier fixture toggle. Phase 4 P4-013 adds an admin schema credential to two inspectors and explicit 200 checks; all original transparency assertions remain unchanged. | `935ddfc`; P4-013 fix |
 
 The added `test_mcp_reply_independent.py` is the approved Phase 3 extraction
 regression (`0c57dd3`), not replacement or removal of a kept assertion.
@@ -3736,3 +3736,128 @@ including migration took **1.24 seconds**; the server was stopped.
 All README command lines are recorded in baseline/phase4/quickstart-result.json
 and were executed in this phase. Docker/Compose commands are not presented as
 verified. No Phase 5 implementation was performed.
+
+
+### P4-009 — reproducible archive/final measurement decisions
+
+Before measurement: add a repository-local developer measurement command, using
+Git tree blobs for both refs so ignored logs, virtual environments and temporary
+checkouts never inflate source size. Text means UTF-8 without NUL bytes; physical
+LOC uses splitlines (including blank/comment lines). All other blobs contribute
+their actual byte length to binary bytes. Count Python modules as tracked .py
+files under sentinel/, annotated fields on the Settings class, literal route
+decorators on interface functions, direct requirements.txt entries, and YAML jobs
+across .github/workflows. Documented names are unique full SENTINEL_* tokens in
+README, .env.example, Helm, Compose and docs, excluding the three historical
+removal records; report family prefixes separately rather than calling a wildcard
+a concrete setting. Use these identical definitions for archive and final refs.
+
+Construct apps and collect tests using the same interpreter and commands: use a
+clean detached clone for the archive and the current checkout for the candidate
+(only documentation and the measurement helper were pending). Repeat final
+measurements on the clean committed current checkout before pushing. Report the default route count and union across individually
+flipped boolean settings (including nested workflow flags); do not conflate the
+union with one deployment. Historical archive counts may differ from the later
+Phase 0 verified baseline because that baseline included approved initial fixes.
+Final tracked-tree measurements are recalculated after staging the final results
+and checked again after the final commit, so this record includes its own files
+and physical lines. Docker image size is unverified, not zero.
+
+Measurement scratch adjustment: WSL removed the temporary /tmp checkout between
+invocations. Use a uniquely named clone under the user cache for persistence
+across WSL restarts; never modify an existing directory. This changes only
+scratch placement, not the measurement commands, source refs or definitions.
+
+
+### P4-010 — final review and full-suite order
+
+The executing-plans/requesting-code-review skills require one independent,
+read-only review of the completed change range. Review Phase 4 from `142025c`
+through the current branch and the staged measurement helper; no reviewer may
+edit this checkout or delegate further. Complete any material fix and focused
+verification before starting the final uninterrupted suite. Documentation result
+numbers are finalized only after that suite completes. A review does not waive
+the Docker gate or authorize Phase 5, a merge or a PR.
+
+Preliminary measurements succeeded with identical commands on both trees.
+The archive contains 4,609 collected cases, 76 default / 82 optional-union routes,
+76 Settings fields and 989 tracked files. These are direct measurements of
+`d63463c`, not the later Phase 0 baseline. The Phase 4 candidate collects 3,362
+cases, has 52 default / 54 optional-union routes, 62 Settings fields and 594
+tracked files. Final LOC will be recomputed after the result record is staged.
+
+
+### P4-011 — independent review dispositions and final verification
+
+The independent read-only review found no critical or important issues. Correct
+P4-009 to distinguish the clean archive clone from the candidate working checkout;
+repeat measurements against HEAD with a clean tree after the final commit. This
+resolves the sole minor finding without changing application behavior.
+
+Retain the unsupported historical SENTINEL_MODE spelling only in negative
+examples and its regression guard: it is not a supported setting being removed,
+and the guard prevents reintroducing it. Do not add a scan exemption. Retain
+REGION, the documented manual operator APIs, and effective benchmark defaults
+under P4-005/P4-006. GET is the only kept OpenAPI consumer; removal of the
+framework HEAD response is accepted with the unused documentation UI routes.
+The measurement helper's independent ref/checkout inputs will be checked by
+recording the actual archive commit and final clean HEAD alongside results.
+
+Run the entire Linux suite once, uninterrupted, with the Phase 0 command under
+baseline/phase4. Record actual totals and compare every skip with Phase 3. Restore
+the prior absence of docs/dr_sqlite_drill.json if generated. No raw logs or reports
+will be committed. Docker remains unavailable and blocks Checkpoint 2. No Phase 5
+work is authorized or performed.
+
+
+### P4-012 — final result record structure
+
+Keep the original Phase 0 measurements as historical evidence, but replace their
+obsolete empty Phase 4 column with a link to the new, consistently measured
+before/after table. Put the current Phase 4 result, settings/route decisions,
+invariant verdicts, full-suite outcome and Docker limitation in both this plan
+and CHANGES.md. Link the exhaustive reader and route inventories rather than
+duplicating their line-level evidence in the change summary. Final numeric
+results will be inserted only after the uninterrupted suite finishes.
+
+Use the final committed source tree for the after measurements, including these
+records and the measurement helper. After committing, check the checkout is
+clean, its application/test tree matches the measured commit, and the archive
+clone is still the recovery tag before repeating the same measurement command.
+The Docker limitation is the only expected open checkpoint condition; never
+substitute a native health check for container verification.
+
+
+### P4-013 — authenticated schema test callers after the first full run
+
+The first full Linux suite completed uninterrupted: 3,317 passed, 41 skipped,
+4 failed, 0 errors, 0 timeouts. The four failures are the SQLite/PostgreSQL cases
+of test_the_routes_appear_in_the_openapi_document and
+test_no_route_can_append_to_the_log in tests_arch/test_transparency_routes.py.
+Both issue anonymous GET /openapi.json, then fail with KeyError: paths because
+P4-006 now requires the existing admin-only READ_DIAGNOSTICS capability. The
+transparency route/policy assertions themselves did not fail. This test consumer
+was missed in the focused route check; retain the failed full-run evidence.
+
+Before changing tests, verify the anonymous/viewer/admin schema responses with an
+isolated real app. Then add a dedicated admin fixture credential and authenticate
+only the two schema inspections, with explicit HTTP 200 assertions. Keep every
+original transparency assertion, the viewer/ingest roles and all refusal tests
+unchanged. This follows the user's required route-authentication boundary and
+does not relax it. Make no production change, skip or default change. Record
+this necessary fixture adaptation in the protected-test audit. Run Ruff and the
+whole touched file plus schema-security/route-fitness checks before committing
+fix(phase4): authenticate transparency schema checks. Preserve other pending
+result/measurement work. Rerun the entire Linux suite uninterrupted afterwards;
+only a complete zero-failure run may be reported as final verification.
+
+P4-013 diagnosis confirmed with an isolated real app: anonymous schema access
+returns 401, viewer access 403, and admin access 200 with paths. The fixture
+adaptation preserves every original assert AST, changes only the two named test
+functions, and adds two explicit success assertions. No test function or case is
+added/deleted and no production code changes.
+
+P4-013 verification: Ruff passes; the complete transparency-route, security-edge
+and unchanged attack-surface files pass **112 tests** on the configured SQLite
+and PostgreSQL harness. The four former failures are green. No test cases or
+skips were added or removed. The final full run must now be repeated.

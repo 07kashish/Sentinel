@@ -27,6 +27,7 @@ from sentinel.interface.http import create_app
 TENANT = "acme"
 INGEST_KEY = "trans-ingest-000000000000000000000"
 VIEW_KEY = "trans-viewer-000000000000000000000"
+ADMIN_KEY = "trans-admin-0000000000000000000000"
 NOW = "2026-09-03T10:00:00Z"
 
 
@@ -39,7 +40,8 @@ def app(engine_config):
     env = {
         "SENTINEL_ENV": "development",
         "SENTINEL_API_KEYS": (
-            f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer"
+            f"{TENANT}:{INGEST_KEY}:ingest,{TENANT}:{VIEW_KEY}:viewer,"
+            f"{TENANT}:{ADMIN_KEY}:admin"
         ),
         "SENTINEL_EXPOSE_API_DOCS": "true",
     }
@@ -100,7 +102,11 @@ def test_the_transparency_surface_is_reachable(app, path):
 
 def test_the_routes_appear_in_the_openapi_document(app):
     _, client = app
-    paths = client.get("/openapi.json").json()["paths"]
+    response = client.get(
+        "/openapi.json", headers={"Authorization": f"Bearer {ADMIN_KEY}"}
+    )
+    assert response.status_code == 200
+    paths = response.json()["paths"]
 
     for path in (
         "/v1/transparency/root",
@@ -117,7 +123,11 @@ def test_no_route_can_append_to_the_log(app):
     credential an agent holds.
     """
     _, client = app
-    paths = client.get("/openapi.json").json()["paths"]
+    response = client.get(
+        "/openapi.json", headers={"Authorization": f"Bearer {ADMIN_KEY}"}
+    )
+    assert response.status_code == 200
+    paths = response.json()["paths"]
 
     for path, methods in paths.items():
         if "transparency" in path:
